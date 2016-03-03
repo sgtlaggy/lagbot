@@ -8,7 +8,10 @@ class Command():
         """Command constructor."""
         self.name = name
         self.func = func
-        self.serv = servers
+        try:
+            self.serv = servers.values()
+        except:
+            self.serv = servers
 
     def __str__(self):
         """String representation of Command."""
