@@ -1,0 +1,8 @@
+!role add user role,role,role,role (user restricted)
+http://discordpy.readthedocs.org/en/async/api.html#discord.Client.add_roles
+!role rem user role,role,role (user restricted)
+http://discordpy.readthedocs.org/en/async/api.html#discord.Client.remove_roles
+!ban user (user restricted)
+http://discordpy.readthedocs.org/en/async/api.html#discord.Client.ban
+!kick user (user restricted)
+http://discordpy.readthedocs.org/en/async/api.html#discord.Client.kick
