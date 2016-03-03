@@ -111,16 +111,6 @@ async def stream(message, *args):
     with open('stream.json', 'r') as s:
         streamers = json.load(s)
     author = str(message.author)
-    if len(message.mentions) >= len(args):
-        for m in message.mentions:
-            try:
-                name, link = m.name, streamers[m.name]
-            except KeyError:
-                name, link = stream_name_link(m.name)
-            await client.send_message(
-                message.channel,
-                '{} is going live over at {}'.format(name, link))
-        return
     if len(args) == 0:
         try:
             link = streamers[author]
@@ -130,6 +120,16 @@ async def stream(message, *args):
         except KeyError:
             pass
     else:
+        if len(message.mentions) >= len(args):
+            for m in message.mentions:
+                try:
+                    name, link = m.name, streamers[m.name]
+                except KeyError:
+                    name, link = stream_name_link(m.name)
+                await client.send_message(
+                    message.channel,
+                    '{} is going live over at {}'.format(name, link))
+            return
         name, link = stream_name_link(args[0])
         if name in streamers:
             link = streamers[name]
@@ -145,7 +145,9 @@ async def add_stream(message, *args):
             streamers = json.load(s)
     except FileNotFoundError:
         streamers = {}
-    if len(args) == 1:
+    if len(message.mentions) == 1:
+        name, link = str(message.mentions[0]), args[1]
+    elif len(args) == 1:
         name, link = str(message.author), args[0]
     else:
         name, link = args
@@ -162,7 +164,11 @@ async def remove_stream(message, *args):
     with open('stream.json', 'r') as s:
         streamers = json.load(s)
     try:
-        del streamers[args[0]]
+        name = str(message.mentions[0])
+    except:
+        name = args[0]
+    try:
+        del streamers[name]
     except:
         await client.send_message(
             message.channel,
