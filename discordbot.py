@@ -9,8 +9,10 @@ from collections import OrderedDict
 from creds import dis_name, dis_pass
 from command import Command
 
+# Discord Client/Bot
 client = discord.Client()
 
+# Logging Setup
 log = logging.getLogger('discord')
 log.setLevel(logging.INFO)
 fhandler = logging.FileHandler(
@@ -66,27 +68,38 @@ def list_align(words):
     return lens
 
 
+async def com_perm_check(msg, com):
+    """Check if command can be used by user and on server."""
+    if (com.servers is None or msg.server.id in com.servers) and \
+            (com.users is None or msg.author in com.users):
+        return True
+    await client.send_message(msg.channel, 'You cannot perform that command!')
+    return False
+
+
 # Command functions.
 
 
-async def commands(message, commands):
+async def commands(msg, commands):
     """Print all commands available on server.
 
     Arguments:
-    message -- discord.Message, to get server and channel
+    msg -- discord.msg, to get server and channel
     commands -- command dict
     """
-    await client.send_message(message.channel, 'Available commands:')
-    serv_coms = [
-        com for com in commands.values()
-        if message.server.id in com.serv]
+    await client.send_message(msg.channel, 'Available commands:')
+    serv_coms = []
+    for com in commands.values():
+        if await com_perm_check(msg, com):
+            serv_coms.append(com)
+    # serv_coms = [com for com in commands.values()
+    # if await com_perm_check(msg, com)]
     space = list_align([com.name for com in serv_coms])
     for ind, com in enumerate(serv_coms):
-        await client.send_message(message.channel, '`{}{}: {}`'.format(
+        await client.send_message(msg.channel, '`{}{}: {}`'.format(
             com,
             ' ' * (space[ind] + 1),
             func_desc(com.func)))
-    return
 
 
 def stream_name_link(nl):
@@ -101,7 +114,7 @@ def stream_name_link(nl):
     return name, link
 
 
-async def stream(message, *args):
+async def stream(msg, *args):
     """Announce that you or someone else is streaming.
 
     Examples:
@@ -110,95 +123,113 @@ async def stream(message, *args):
     """
     with open('stream.json', 'r') as s:
         streamers = json.load(s)
-    author = str(message.author)
+    author = str(msg.author)
     if len(args) == 0:
         try:
             link = streamers[author]
             await client.send_message(
-                message.channel,
+                msg.channel,
                 '{} is going live over at {}'.format(author, link))
         except KeyError:
             pass
     else:
-        if len(message.mentions) >= len(args):
-            for m in message.mentions:
+        if len(msg.mentions) >= len(args):
+            for m in msg.mentions:
                 try:
                     name, link = m.name, streamers[m.name]
                 except KeyError:
                     name, link = stream_name_link(m.name)
                 await client.send_message(
-                    message.channel,
+                    msg.channel,
                     '{} is going live over at {}'.format(name, link))
             return
         name, link = stream_name_link(args[0])
         if name in streamers:
             link = streamers[name]
         await client.send_message(
-            message.channel,
+            msg.channel,
             '{} is streaming over at {}'.format(name, link))
 
 
-async def add_stream(message, *args):
+async def add_stream(msg, *args):
     """Add or update a streamer's link."""
     try:
         with open('stream.json', 'r') as s:
             streamers = json.load(s)
     except FileNotFoundError:
         streamers = {}
-    if len(message.mentions) == 1:
-        name, link = str(message.mentions[0]), args[1]
+    if len(msg.mentions) == 1:
+        name, link = str(msg.mentions[0]), args[1]
     elif len(args) == 1:
-        name, link = str(message.author), args[0]
+        name, link = str(msg.author), args[0]
     else:
         name, link = args
     streamers[name] = link
     with open('stream.json', 'w') as s:
         json.dump(streamers, s)
         await client.send_message(
-            message.channel,
+            msg.channel,
             'Adding {} ({}) to steamer list.'.format(name, link))
 
 
-async def remove_stream(message, *args):
+async def remove_stream(msg, *args):
     """Remove streamer from list."""
     with open('stream.json', 'r') as s:
         streamers = json.load(s)
     try:
-        name = str(message.mentions[0])
+        name = str(msg.mentions[0])
     except:
         name = args[0]
     try:
         del streamers[name]
     except:
         await client.send_message(
-            message.channel,
+            msg.channel,
             'Streamer {} does not exist in list.'.format(args[0]))
         return
     await client.send_message(
-        message.channel,
+        msg.channel,
         '{} has been removed.'.format(args[0]))
     with open('stream.json', 'w') as s:
         json.dump(streamers, s)
 
 
-async def join(message, *args):
+async def join(msg, *args):
     """Tell bot to join server using ID or discordgg link."""
     try:
         await client.accept_invite(args[0])
+    except IndexError:
+        pass
     except discord.HTTPException:
-        await client.send_message(message.channel, 'Could not join server.')
+        await client.send_message(msg.channel, 'Could not join server.')
     except discord.NotFound:
         await client.send_message(
-            message.channel,
+            msg.channel,
             'Invite is invalid or expired.')
 
 
-async def leave(message, *args):
+async def leave(msg, *args):
     """Tell bot to leave server."""
     try:
-        await client.leave_server(message.server)
+        await client.leave_server(msg.server)
     except discord.HTTPException:
-        await client.send_message(message.channel, 'Could not leave server.')
+        await client.send_message(msg.channel, 'Could not leave server.')
+
+
+# Command Setup
+serv = {
+    'test': '124369415344095234',
+    'tccn': '126440582619856896'}
+coms_list = [
+    Command('!commands', commands, None, None),
+    Command('!join', join, None, None),
+    Command('!leave', leave, None, None),
+    Command('!stream', stream, None, None),
+    Command('!addstream', add_stream, None, None),
+    Command('!remstream', remove_stream, None, None)]
+coms = OrderedDict()
+for com in coms_list:
+    coms[com.name] = com
 
 
 # Discord functions.
@@ -211,34 +242,18 @@ async def on_ready():
 
 
 @client.event
-async def on_message(message):
-    """Define what happens when message is recieved.
-
-    command dict is structured as
-    {com_name: Command(), com_name: Command()}
-    where action is a function
-    """
-    if message.author == client.user:
+async def on_message(msg):
+    """Define what happens when message is recieved."""
+    if msg.author == client.user:
         return
-    serv = {
-        'test': '124369415344095234',
-        'tccn': '126440582619856896'}
-    coms = OrderedDict()
-    coms_list = [
-        Command('!commands', commands, serv),
-        Command('!join', join, serv),
-        Command('!leave', leave, serv),
-        Command('!stream', stream, serv),
-        Command('!addstream', add_stream, serv),
-        Command('!remstream', remove_stream, serv)]
-    for com in coms_list:
-        coms[com.name] = com
-    com, *args = message.content.split()
+    com, *args = msg.content.split()
+    if not await com_perm_check(msg, coms[com]):
+        return
     if com in coms:
         if com == '!commands':
-            await coms[com].func(message, coms)
+            await coms[com].func(msg, coms)
         else:
-            await coms[com].func(message, *args)
+            await coms[com].func(msg, *args)
 
 if __name__ == '__main__':
     client.run(dis_name, dis_pass)

@@ -4,14 +4,12 @@
 class Command():
     """Command class."""
 
-    def __init__(self, name, func, servers):
+    def __init__(self, name, func, servers, users):
         """Command constructor."""
         self.name = name
         self.func = func
-        try:
-            self.serv = servers.values()
-        except:
-            self.serv = servers
+        self.servers = servers
+        self.users = users
 
     def __str__(self):
         """String representation of Command."""
