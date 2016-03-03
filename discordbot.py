@@ -111,6 +111,16 @@ async def stream(message, *args):
     with open('stream.json', 'r') as s:
         streamers = json.load(s)
     author = str(message.author)
+    if len(message.mentions) >= len(args):
+        for m in message.mentions:
+            try:
+                name, link = m.name, streamers[m.name]
+            except KeyError:
+                name, link = stream_name_link(m.name)
+            await client.send_message(
+                message.channel,
+                '{} is going live over at {}'.format(name, link))
+        return
     if len(args) == 0:
         try:
             link = streamers[author]
@@ -165,6 +175,26 @@ async def remove_stream(message, *args):
         json.dump(streamers, s)
 
 
+async def join(message, *args):
+    """Tell bot to join server using ID or discordgg link."""
+    try:
+        await client.accept_invite(args[0])
+    except discord.HTTPException:
+        await client.send_message(message.channel, 'Could not join server.')
+    except discord.NotFound:
+        await client.send_message(
+            message.channel,
+            'Invite is invalid or expired.')
+
+
+async def leave(message, *args):
+    """Tell bot to leave server."""
+    try:
+        await client.leave_server(message.server)
+    except discord.HTTPException:
+        await client.send_message(message.channel, 'Could not leave server.')
+
+
 # Discord functions.
 
 
@@ -190,6 +220,8 @@ async def on_message(message):
     coms = OrderedDict()
     coms_list = [
         Command('!commands', commands, serv),
+        Command('!join', join, serv),
+        Command('!leave', leave, serv),
         Command('!stream', stream, serv),
         Command('!addstream', add_stream, serv),
         Command('!remstream', remove_stream, serv)]
