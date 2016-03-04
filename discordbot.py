@@ -290,7 +290,6 @@ coms_list = [
     Command('!commands', commands, None, None),
     Command('!kick', kick, None, None),
     Command('!ban', ban, None, None),
-    # Command('!role', role, None, None),
     Command('!join', join, None, None),
     Command('!leave', leave, None, None),
     Command('!stream', stream, None, None),
