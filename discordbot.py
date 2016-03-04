@@ -1,10 +1,12 @@
 """Discord bot for Discord."""
 
+from collections import OrderedDict
 import discord
 import asyncio
 import logging
 import json
-from collections import OrderedDict
+import sys
+import os
 
 import creds
 from command import Command
@@ -12,11 +14,19 @@ from command import Command
 # Discord Client/Bot
 client = discord.Client()
 
+app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
+data_path = os.path.join(app_path, 'data')
+log_file = os.path.join(app_path, 'bot.log')
+stream_file = os.path.join(data_path, 'stream.json')
+
+if not os.path.isdir(data_path):
+    os.mkdir(data_path)
+
 # Logging Setup
 log = logging.getLogger('discord')
 log.setLevel(logging.INFO)
 fhandler = logging.FileHandler(
-    filename='discordbot.log',
+    filename=log_file,
     encoding='utf-8',
     mode='w')
 fhandler.setFormatter(logging.Formatter(
@@ -128,8 +138,12 @@ async def stream(msg, *args):
     !stream sgtlaggy -- sgtlaggy is streaming at http://twitch.tv/sgthoppy
     !stream -- YourName is streaming at http://twitch.tv/YourName
     """
-    with open('stream.json', 'r') as s:
-        streamers = json.load(s)
+    try:
+        with open(stream_file, 'r') as s:
+            streamers = json.load(s)
+    except FileNotFoundError:
+        await client.send_message(msg.channel, 'No streamers have been added.')
+        return
     author = str(msg.author)
     if len(args) == 0:
         try:
@@ -161,7 +175,7 @@ async def stream(msg, *args):
 async def add_stream(msg, *args):
     """Add or update a streamer's link."""
     try:
-        with open('stream.json', 'r') as s:
+        with open(stream_file, 'r') as s:
             streamers = json.load(s)
     except FileNotFoundError:
         streamers = {}
@@ -172,7 +186,7 @@ async def add_stream(msg, *args):
     else:
         name, link = args
     streamers[name] = link
-    with open('stream.json', 'w') as s:
+    with open(stream_file, 'w') as s:
         json.dump(streamers, s)
         await client.send_message(
             msg.channel,
@@ -181,7 +195,7 @@ async def add_stream(msg, *args):
 
 async def remove_stream(msg, *args):
     """Remove streamer from list."""
-    with open('stream.json', 'r') as s:
+    with open(stream_file, 'r') as s:
         streamers = json.load(s)
     try:
         name = str(msg.mentions[0])
@@ -197,7 +211,7 @@ async def remove_stream(msg, *args):
     await client.send_message(
         msg.channel,
         '{} has been removed.'.format(args[0]))
-    with open('stream.json', 'w') as s:
+    with open(stream_file, 'w') as s:
         json.dump(streamers, s)
 
 
