@@ -6,7 +6,7 @@ import logging
 import json
 from collections import OrderedDict
 
-from creds import dis_name, dis_pass
+import creds
 from command import Command
 
 # Discord Client/Bot
@@ -68,12 +68,35 @@ def list_align(words):
     return lens
 
 
-async def com_perm_check(msg, com):
+def can_kick_ban(msg, kb):
+    """Determine whether user can kick/ban."""
+    for role in msg.author.roles:
+        if kb == 'kick':
+            if role.permissions.kick_members:
+                return True
+        else:
+            if role.permissions.ban_members:
+                return True
+    return False
+
+
+def stream_name_link(nl):
+    """Get stream link from name or vice-versa."""
+    if nl.startswith('http://') or nl.startswith('https://') or \
+            nl.startswith('twitch.tv') or nl.startswith('hitbox.tv'):
+        link = nl
+        name = link.split('/')[-1]
+    else:
+        name = nl
+        link = 'http://twitch.tv/{}'.format(name.lower())
+    return name, link
+
+
+def com_perm_check(msg, com):
     """Check if command can be used by user and on server."""
     if (com.servers is None or msg.server.id in com.servers) and \
             (com.users is None or msg.author in com.users):
         return True
-    await client.send_message(msg.channel, 'You cannot perform that command!')
     return False
 
 
@@ -89,29 +112,13 @@ async def commands(msg, commands):
     """
     await client.send_message(msg.channel, 'Available commands:')
     serv_coms = []
-    for com in commands.values():
-        if await com_perm_check(msg, com):
-            serv_coms.append(com)
-    # serv_coms = [com for com in commands.values()
-    # if await com_perm_check(msg, com)]
+    serv_coms = [com for com in commands.values() if com_perm_check(msg, com)]
     space = list_align([com.name for com in serv_coms])
     for ind, com in enumerate(serv_coms):
         await client.send_message(msg.channel, '`{}{}: {}`'.format(
             com,
             ' ' * (space[ind] + 1),
             func_desc(com.func)))
-
-
-def stream_name_link(nl):
-    """Get stream link from name or vice-versa."""
-    if nl.startswith('http://') or nl.startswith('https://') or \
-            nl.startswith('twitch.tv') or nl.startswith('hitbox.tv'):
-        link = nl
-        name = link.split('/')[-1]
-    else:
-        name = nl
-        link = 'http://twitch.tv/{}'.format(name.lower())
-    return name, link
 
 
 async def stream(msg, *args):
@@ -216,12 +223,60 @@ async def leave(msg, *args):
         await client.send_message(msg.channel, 'Could not leave server.')
 
 
+async def kick_ban(msg, kb, days=1):
+    """Kick/ban user from server."""
+    if can_kick_ban(msg, kb):
+        for m in msg.mentions:
+            try:
+                if kb == 'kick':
+                    await client.kick(m)
+                    kbs = 'Kicked'
+                else:
+                    await client.ban(m, days)
+                    kbs = 'Banned'
+                await client.send_message(
+                    msg.channel,
+                    "{} {}.".format(kbs, str(m)))
+            except discord.Forbidden:
+                await client.send_message(
+                    msg.channel,
+                    "I don't have permission to {} {}.".format(kb, str(m)))
+            except discord.HTTPException:
+                await client.send_message(
+                    msg.channel,
+                    'Failed to {} {}.'.format(kb, str(m)))
+    else:
+        await client.send_message(
+            msg.channel,
+            "You don't have permission to {} users.".format(kb))
+
+
+async def kick(msg, *args):
+    """Kick user from server if you have permission."""
+    await kick_ban(msg, 'kick')
+
+
+async def ban(msg, *args):
+    """Ban user from server if you have permission."""
+    days = 1
+    try:
+        days = int(args[0])
+        if days > 7:
+            days = 7
+        elif days < 0:
+            days = 0
+    except KeyError:
+        return
+    except ValueError:
+        pass
+    await kick_ban(msg, 'ban', days)
+
 # Command Setup
-serv = {
-    'test': '124369415344095234',
-    'tccn': '126440582619856896'}
 coms_list = [
     Command('!commands', commands, None, None),
+    Command('!kick', kick, None, None),
+    Command('!ban', ban, None, None),
+    # Command('!role', role, None, None),
     Command('!join', join, None, None),
     Command('!leave', leave, None, None),
     Command('!stream', stream, None, None),
@@ -247,13 +302,16 @@ async def on_message(msg):
     if msg.author == client.user:
         return
     com, *args = msg.content.split()
-    if not await com_perm_check(msg, coms[com]):
-        return
     if com in coms:
+        if not com_perm_check(msg, coms[com]):
+            await client.send_message(
+                msg.channel,
+                'You cannot perform that command!')
+            return
         if com == '!commands':
             await coms[com].func(msg, coms)
         else:
             await coms[com].func(msg, *args)
 
 if __name__ == '__main__':
-    client.run(dis_name, dis_pass)
+    client.run(creds.dis_name, creds.dis_pass)
