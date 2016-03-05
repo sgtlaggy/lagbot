@@ -274,7 +274,7 @@ async def add_stream(msg, *args):
     elif len(args) == 1:
         name, link = msg.author.name, args[0]
     else:
-        return
+        name, link = stream_name_link(msg.author.name)
     streamers[name] = link
     with open(stream_file, 'w') as s:
         json.dump(streamers, s)
