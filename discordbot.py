@@ -116,9 +116,7 @@ def com_perm_check(msg, com):
 async def commands(msg, commands):
     """Print all commands available on server.
 
-    Arguments:
-    msg -- discord.msg, to get server and channel
-    commands -- command dict
+    Usage: !commands
     """
     await client.send_message(msg.channel, 'Available commands:')
     serv_coms = []
@@ -131,8 +129,38 @@ async def commands(msg, commands):
             func_desc(com.func)))
 
 
-async def emote(msg, emotes):
-    """Print all emotes available."""
+async def help_com(msg, commands, *args):
+    """Print description and usage of command.
+
+    Usage:
+    !help help
+    !help !help
+    """
+    try:
+        com = args[0]
+    except:
+        await client.send_message(msg.channel, 'Try `!commands`')
+        return
+    if not com.startswith('!'):
+        com = '!' + com
+    if com in commands:
+        await client.send_message(
+            msg.channel,
+            '`{} : {}`'.format(com, func_desc(commands[com].func)))
+        for line in commands[com].func.__doc__.splitlines()[1:-1]:
+            if line:
+                await client.send_message(
+                    msg.channel,
+                    '`{}`'.format(line))
+    else:
+        await client.send_message(msg.channel, 'Try `!commands`')
+
+
+async def emotes_com(msg, emotes):
+    """Print all emotes available.
+
+    Usage: !emotes
+    """
     await client.send_message(msg.channel, 'Available emotes:')
     space = list_align(emotes.keys())
     for ind, emote in enumerate(emotes.values()):
@@ -145,8 +173,7 @@ async def emote(msg, emotes):
 async def do_emote(msg, emote):
     """Send emote, with mentions."""
     mentions = ''
-    for m in msg.mentions:
-        mentions += m.mention + ' '
+    mentions += ' '.join([m.mention for m in msg.mentions])
     await client.send_message(
         msg.channel,
         '{}{}'.format(mentions, emote))
@@ -156,13 +183,29 @@ async def do_emote(msg, emote):
         pass
 
 
+async def stream_message(msg, *args):
+    """Get message in stream announcement."""
+    if '#' in args:
+        for i, a in enumerate(args):
+            if a == '#':
+                return '@everyone ' + ' '.join(args[i + 1:])
+                break
+    elif '$' in args:
+        for i, a in enumerate(args):
+            if a == '$':
+                return ' '.join(args[i + 1:])
+                break
+    return ''
+
+
 async def stream(msg, *args):
     """Announce that you or someone else is streaming.
 
-    Examples:
-    !stream sgtlaggy -- sgtlaggy is streaming at http://twitch.tv/sgthoppy
-    !stream -- YourName is streaming at http://twitch.tv/YourName
+    Usage:
+    !stream twitch.tv/sgthoppy
+    !stream @sgtlaggy
     """
+    stream_text = '{} is streaming at {}'
     try:
         with open(stream_file, 'r') as s:
             streamers = json.load(s)
@@ -170,46 +213,65 @@ async def stream(msg, *args):
         await client.send_message(msg.channel, 'No streamers have been added.')
         return
     author = str(msg.author)
-    if len(args) == 0:
+    message = await stream_message(msg, *args)
+    if message:
+        message += '\n'
+    message += stream_text
+    if len(args) == 0 or args[0] in ('#', '$'):
         try:
             link = streamers[author]
             await client.send_message(
                 msg.channel,
-                '{} is going live over at {}'.format(author, link))
+                message.format(author, link))
         except KeyError:
+            await client.send_message(
+                msg.channel,
+                'You are not in the list of streamers.')
             pass
+    elif len(msg.mentions) < len(args):
+        if args[0].startswith('http:') or args[0].startswith('twitch.tv'):
+            name, link = stream_name_link(args[0])
+            await client.send_message(
+                msg.channel,
+                message.format(name, link))
     else:
-        if len(msg.mentions) >= len(args):
-            for m in msg.mentions:
-                try:
-                    name, link = m.name, streamers[m.name]
-                except KeyError:
-                    name, link = stream_name_link(m.name)
+        for m in msg.mentions:
+            try:
                 await client.send_message(
                     msg.channel,
-                    '{} is going live over at {}'.format(name, link))
-            return
-        name, link = stream_name_link(args[0])
-        if name in streamers:
-            link = streamers[name]
-        await client.send_message(
-            msg.channel,
-            '{} is streaming over at {}'.format(name, link))
+                    message.format(m.name, streamers[m.name]))
+            except:
+                await client.send_message(
+                    msg.channel,
+                    '{} is not in the list of streamers.'.format(m.name))
+    try:
+        await client.delete_message(msg)
+    except:
+        pass
 
 
 async def add_stream(msg, *args):
-    """Add or update a streamer's link."""
+    """Add or update a streamer's link.
+
+    Usage:
+    !addstream                              (your link, matching name)
+    !addstream twitch.tv/sgthoppy           (your link)
+    !addstream @sgtlaggy twitch.tv/sgthoppy (someone else's link)
+    """
     try:
         with open(stream_file, 'r') as s:
             streamers = json.load(s)
     except FileNotFoundError:
         streamers = {}
-    if len(msg.mentions) == 1:
-        name, link = str(msg.mentions[0]), args[1]
+    if len(args) == 2:
+        try:
+            name, link = str(msg.mentions[0]), args[1]
+        except:
+            return
     elif len(args) == 1:
-        name, link = str(msg.author), args[0]
+        name, link = msg.author.name, args[0]
     else:
-        name, link = args
+        return
     streamers[name] = link
     with open(stream_file, 'w') as s:
         json.dump(streamers, s)
@@ -219,13 +281,16 @@ async def add_stream(msg, *args):
 
 
 async def remove_stream(msg, *args):
-    """Remove streamer from list."""
+    """Remove streamer from list.
+
+    Usage: !remstream @sgtlaggy
+    """
     with open(stream_file, 'r') as s:
         streamers = json.load(s)
     try:
         name = str(msg.mentions[0])
     except:
-        name = args[0]
+        return
     try:
         del streamers[name]
     except:
@@ -241,9 +306,17 @@ async def remove_stream(msg, *args):
 
 
 async def join(msg, *args):
-    """Tell bot to join server using ID or discordgg link."""
+    """Tell bot to join server using ID or discordgg link.
+
+    Usage:
+    !join 0h4QlpGEPGkSCO6I                    (invite ID)
+    !join https://discord.gg/0h4QlpGEPGkSCO6I (invite link)
+    """
     try:
         await client.accept_invite(args[0])
+        await client.send_message(
+            msg.channel,
+            'Successfully joined {}'.format(args[0]))
     except IndexError:
         pass
     except discord.HTTPException:
@@ -255,7 +328,14 @@ async def join(msg, *args):
 
 
 async def leave(msg, *args):
-    """Tell bot to leave server."""
+    """Tell bot to leave server.
+
+    Usage: !leave
+    """
+    if not can_kick_ban(msg, 'kick'):
+        await client.send_message(
+            msg.channel,
+            "You can't tell me to leave.")
     try:
         await client.leave_server(msg.server)
     except discord.HTTPException:
@@ -291,12 +371,18 @@ async def kick_ban(msg, kb, days=1):
 
 
 async def kick(msg, *args):
-    """Kick user from server if you have permission."""
+    """Kick user from server if you have permission.
+
+    Usage: !kick @sgtlaggy
+    """
     await kick_ban(msg, 'kick')
 
 
 async def ban(msg, *args):
-    """Ban user from server if you have permission."""
+    """Ban user from server if you have permission.
+
+    Usage: !ban @sgtlaggy
+    """
     days = 1
     try:
         days = int(args[0])
@@ -314,7 +400,8 @@ async def ban(msg, *args):
 # Command Setup
 coms_list = [
     Command('!commands', commands),
-    Command('!emotes', emote),
+    Command('!help', help_com),
+    Command('!emotes', emotes_com),
     Command('!kick', kick),
     Command('!ban', ban),
     Command('!join', join),
@@ -367,6 +454,8 @@ async def on_message(msg):
             await coms[com].func(msg, coms)
         elif com == '!emotes':
             await coms[com].func(msg, emotes)
+        elif com == '!help':
+            await coms[com].func(msg, coms, *args)
         else:
             await coms[com].func(msg, *args)
 
