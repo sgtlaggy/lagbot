@@ -113,7 +113,7 @@ def com_perm_check(msg, com):
 # Command functions.
 
 
-async def source_code(msg, *args):
+async def source_code(msg, *_):
     """Print link to bot's source code.
 
     Usage: !source
@@ -346,7 +346,7 @@ async def join(msg, *args):
             'Invite is invalid or expired.')
 
 
-async def leave(msg, *args):
+async def leave(msg, *_):
     """Tell bot to leave server.
 
     Usage: !leave
@@ -389,7 +389,7 @@ async def kick_ban(msg, kb, days=1):
             "You don't have permission to {} users.".format(kb))
 
 
-async def kick(msg, *args):
+async def kick(msg, *_):
     """Kick user from server if you have permission.
 
     Usage: !kick @sgtlaggy
