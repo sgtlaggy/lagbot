@@ -131,6 +131,31 @@ async def commands(msg, commands):
             func_desc(com.func)))
 
 
+async def emote(msg, emotes):
+    """Print all emotes available."""
+    await client.send_message(msg.channel, 'Available emotes:')
+    space = list_align(emotes.keys())
+    for ind, emote in enumerate(emotes.values()):
+        await client.send_message(msg.channel, '`{}{}: {}`'.format(
+            emote.name,
+            ' ' * (space[ind] + 1),
+            emote.func))
+
+
+async def do_emote(msg, emote):
+    """Send emote, with mentions."""
+    mentions = ''
+    for m in msg.mentions:
+        mentions += m.mention + ' '
+    await client.send_message(
+        msg.channel,
+        '{}{}'.format(mentions, emote))
+    try:
+        await client.delete_message(msg)
+    except:
+        pass
+
+
 async def stream(msg, *args):
     """Announce that you or someone else is streaming.
 
@@ -285,19 +310,34 @@ async def ban(msg, *args):
         pass
     await kick_ban(msg, 'ban', days)
 
+
 # Command Setup
 coms_list = [
-    Command('!commands', commands, None, None),
-    Command('!kick', kick, None, None),
-    Command('!ban', ban, None, None),
-    Command('!join', join, None, None),
-    Command('!leave', leave, None, None),
-    Command('!stream', stream, None, None),
-    Command('!addstream', add_stream, None, None),
-    Command('!remstream', remove_stream, None, None)]
+    Command('!commands', commands),
+    Command('!emotes', emote),
+    Command('!kick', kick),
+    Command('!ban', ban),
+    Command('!join', join),
+    Command('!leave', leave),
+    Command('!stream', stream),
+    Command('!addstream', add_stream),
+    Command('!remstream', remove_stream)]
 coms = OrderedDict()
 for com in coms_list:
     coms[com.name] = com
+
+emote_list = [
+    Command('!disapprove', 'ಠ_ಠ'),
+    Command('!lenny', '( ͡° ͜ʖ ͡°)'),
+    Command('!lennies', '( ͡°( ͡° ͜ʖ( ͡° ͜ʖ ͡°)ʖ ͡°) ͡°)'),
+    Command('!fight', '(ง ͠° ͟ل͜ ͡°)ง'),
+    Command('!shrug', '¯\\_(ツ)_/¯'),
+    Command('!donger', 'ヽ༼ຈل͜ຈ༽ﾉ raise your dongers ヽ༼ຈل͜ຈ༽ﾉ'),
+    Command('!give', '༼ つ ◕_◕ ༽つ'),
+    Command('!zoidberg', '(\\\/) (°,,,°) (\\\/)')]
+emotes = OrderedDict()
+for emote in emote_list:
+    emotes[emote.name] = emote
 
 
 # Discord functions.
@@ -315,14 +355,18 @@ async def on_message(msg):
     if msg.author == client.user:
         return
     com, *args = msg.content.split()
-    if com in coms:
+    if com in emotes:
+        await do_emote(msg, emotes[com].func)
+    elif com in coms:
         if not com_perm_check(msg, coms[com]):
             await client.send_message(
                 msg.channel,
-                'You cannot perform that command!')
+                'You cannot use that command!')
             return
         if com == '!commands':
             await coms[com].func(msg, coms)
+        elif com == '!emotes':
+            await coms[com].func(msg, emotes)
         else:
             await coms[com].func(msg, *args)
 

@@ -4,7 +4,7 @@
 class Command():
     """Command class."""
 
-    def __init__(self, name, func, servers, users):
+    def __init__(self, name, func, servers=None, users=None):
         """Command constructor."""
         self.name = name
         self.func = func
