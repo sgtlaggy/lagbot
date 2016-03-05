@@ -118,15 +118,17 @@ async def commands(msg, commands):
 
     Usage: !commands
     """
-    await client.send_message(msg.channel, 'Available commands:')
+    message = ''
+    message += 'Available commands:\n'
     serv_coms = []
     serv_coms = [com for com in commands.values() if com_perm_check(msg, com)]
     space = list_align([com.name for com in serv_coms])
     for ind, com in enumerate(serv_coms):
-        await client.send_message(msg.channel, '`{}{}: {}`'.format(
+        message += '`{}{}: {}`\n'.format(
             com,
             ' ' * (space[ind] + 1),
-            func_desc(com.func)))
+            func_desc(com.func))
+    await client.send_message(msg.channel, message)
 
 
 async def help_com(msg, commands, *args):
@@ -136,6 +138,7 @@ async def help_com(msg, commands, *args):
     !help help
     !help !help
     """
+    message = ''
     try:
         com = args[0]
     except:
@@ -144,14 +147,11 @@ async def help_com(msg, commands, *args):
     if not com.startswith('!'):
         com = '!' + com
     if com in commands:
-        await client.send_message(
-            msg.channel,
-            '`{} : {}`'.format(com, func_desc(commands[com].func)))
+        message += '`{} : {}`\n'.format(com, func_desc(commands[com].func))
         for line in commands[com].func.__doc__.splitlines()[1:-1]:
             if line:
-                await client.send_message(
-                    msg.channel,
-                    '`{}`'.format(line))
+                message += '`{}`\n'.format(line)
+        await client.send_message(msg.channel, message)
     else:
         await client.send_message(msg.channel, 'Try `!commands`')
 
@@ -164,7 +164,7 @@ async def emotes_com(msg, emotes):
     await client.send_message(msg.channel, 'Available emotes:')
     space = list_align(emotes.keys())
     for ind, emote in enumerate(emotes.values()):
-        await client.send_message(msg.channel, '`{}{}: {}`'.format(
+        await client.send_message(msg.channel, '`{}{}`: {}\n'.format(
             emote.name,
             ' ' * (space[ind] + 1),
             emote.func))
@@ -286,14 +286,19 @@ async def add_stream(msg, *args):
 async def remove_stream(msg, *args):
     """Remove streamer from list.
 
-    Usage: !remstream @sgtlaggy
+    Usage:
+    !remstream
+    !remstream @sgtlaggy
     """
     with open(stream_file, 'r') as s:
         streamers = json.load(s)
-    try:
-        name = str(msg.mentions[0])
-    except:
-        return
+    if len(args) == 0:
+        name = msg.author.name
+    else:
+        try:
+            name = msg.mentions[0].name
+        except:
+            return
     try:
         del streamers[name]
     except:
