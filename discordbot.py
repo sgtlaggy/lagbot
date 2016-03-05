@@ -113,6 +113,17 @@ def com_perm_check(msg, com):
 # Command functions.
 
 
+async def source_code(msg, *args):
+    """Print link to bot's source code.
+
+    Usage: !source
+    """
+    source_link = 'https://github.com/mikevb1/discordbot'
+    await client.send_message(
+        msg.channel,
+        'See my source code at {}'.format(source_link))
+
+
 async def commands(msg, commands):
     """Print all commands available on server.
 
@@ -407,6 +418,7 @@ async def ban(msg, *args):
 
 # Command Setup
 coms_list = [
+    Command('!source', source_code),
     Command('!commands', commands),
     Command('!help', help_com),
     Command('!emotes', emotes_com),
