@@ -202,8 +202,11 @@ async def stream(msg, *args):
     """Announce that you or someone else is streaming.
 
     Usage:
-    !stream twitch.tv/sgthoppy
-    !stream @sgtlaggy
+    !stream twitch.tv/sgthoppy      (announce someone not in discord)
+    !stream @sgtlaggy               (announce someone else)
+    !stream                         (announce yourself)
+    !stream # announcement message  (announce with a message, mention everyone)
+    !stream $ announcement message  (announce with a message, no mention)
     """
     stream_text = '{} is streaming at {}'
     try:
