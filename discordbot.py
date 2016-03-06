@@ -259,7 +259,7 @@ async def stream(msg, *args):
                 msg.channel,
                 'You are not in the list of streamers.')
             pass
-    elif len(msg.mentions) < len(args):
+    elif len(msg.mentions) == 0:
         if args[0].startswith('http:'):
             name, link = stream_name_link(args[0])
             await client.send_message(
