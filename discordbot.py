@@ -117,11 +117,11 @@ def unformat_str(raw):
         '*': '\*',
         '`': '\`',
         '~': '\~'}
+    rep = ['_', '*', '`', '~']
     for c in raw:
-        try:
-            new += replace[c]
-        except KeyError:
-            new += c
+        if c in rep:
+            new += '\\'
+        new += c
     return new
 
 
@@ -187,13 +187,14 @@ async def emotes_com(msg, emotes):
 
     Usage: !emotes
     """
-    await client.send_message(msg.channel, 'Available emotes:')
+    message = 'Available emotes:\n'
     space = list_align(emotes.keys())
     for ind, emote in enumerate(emotes.values()):
-        await client.send_message(msg.channel, '`{}{}`: {}\n'.format(
+        message += '`{}{}:` {}\n'.format(
             emote.name,
             ' ' * (space[ind] + 1),
-            unformat_str(emote.func)))
+            unformat_str(repr(emote.func))[1:-1])
+    await client.send_message(msg.channel, message)
 
 
 async def do_emote(msg, emote):
@@ -466,10 +467,10 @@ emote_list = [
     Command('!lenny', '( ͡° ͜ʖ ͡°)'),
     Command('!lennies', '( ͡°( ͡° ͜ʖ( ͡° ͜ʖ ͡°)ʖ ͡°) ͡°)'),
     Command('!fight', '(ง ͠° ͟ل͜ ͡°)ง'),
-    Command('!shrug', '¯\\_(ツ)_/¯'),
+    Command('!shrug', '¯\_(ツ)_/¯'),
     Command('!donger', 'ヽ༼ຈل͜ຈ༽ﾉ raise your dongers ヽ༼ຈل͜ຈ༽ﾉ'),
     Command('!give', '༼ つ ◕_◕ ༽つ'),
-    Command('!zoidberg', '(\\\/) (°,,,°) (\\\/)')]
+    Command('!zoidberg', '(\/) (°,,,°) (\/)')]
 emotes = OrderedDict()
 for emote in emote_list:
     emotes[emote.name] = emote
