@@ -92,8 +92,7 @@ def can_kick_ban(msg, kb):
 
 def stream_name_link(nl):
     """Get stream link from name or vice-versa."""
-    if nl.startswith('http://') or nl.startswith('https://') or \
-            nl.startswith('twitch.tv') or nl.startswith('hitbox.tv'):
+    if nl.startswith('http://'):
         link = nl
         name = link.split('/')[-1]
     else:
@@ -110,6 +109,22 @@ def com_perm_check(msg, com):
     return False
 
 
+def unformat_str(raw):
+    """Make a string discord-friendly."""
+    new = ''
+    replace = {
+        '_': '\_',
+        '*': '\*',
+        '`': '\`',
+        '~': '\~'}
+    for c in raw:
+        try:
+            new += replace[c]
+        except KeyError:
+            new += c
+    return new
+
+
 # Command functions.
 
 
@@ -118,7 +133,7 @@ async def source_code(msg, *_):
 
     Usage: !source
     """
-    source_link = 'https://github.com/mikevb1/discordbot'
+    source_link = unformat_str('https://github.com/mikevb1/discordbot')
     await client.send_message(
         msg.channel,
         'See my source code at {}'.format(source_link))
@@ -178,7 +193,7 @@ async def emotes_com(msg, emotes):
         await client.send_message(msg.channel, '`{}{}`: {}\n'.format(
             emote.name,
             ' ' * (space[ind] + 1),
-            emote.func))
+            unformat_str(emote.func)))
 
 
 async def do_emote(msg, emote):
@@ -196,28 +211,31 @@ async def do_emote(msg, emote):
 
 async def stream_message(msg, *args):
     """Get message in stream announcement."""
+    message = ''
     if '#' in args:
         for i, a in enumerate(args):
             if a == '#':
-                return '@everyone ' + ' '.join(args[i + 1:])
+                message = '@everyone ' + ' '.join(args[i + 1:])
                 break
     elif '$' in args:
         for i, a in enumerate(args):
             if a == '$':
-                return ' '.join(args[i + 1:])
+                message = ' '.join(args[i + 1:])
                 break
-    return ''
+    if message:
+        message += '\n'
+    return message
 
 
 async def stream(msg, *args):
     """Announce that you or someone else is streaming.
 
     Usage:
-    !stream twitch.tv/sgthoppy      (announce someone not in discord)
-    !stream @sgtlaggy               (announce someone else)
-    !stream                         (announce yourself)
-    !stream # announcement message  (announce with a message, mention everyone)
-    !stream $ announcement message  (announce with a message, no mention)
+    !stream http://twitch.tv/sgthoppy (announce someone not in discord)
+    !stream @sgtlaggy                 (announce someone else)
+    !stream                           (announce yourself)
+    !stream # announcement message    (announce with message, mention everyone)
+    !stream $ announcement message    (announce with message, no mention)
     """
     stream_text = '{} is streaming at {}'
     try:
@@ -226,24 +244,22 @@ async def stream(msg, *args):
     except FileNotFoundError:
         await client.send_message(msg.channel, 'No streamers have been added.')
         return
-    author = str(msg.author)
     message = await stream_message(msg, *args)
-    if message:
-        message += '\n'
     message += stream_text
     if len(args) == 0 or args[0] in ('#', '$'):
         try:
-            link = streamers[author]
+            author = msg.author
+            link = streamers[author.id]
             await client.send_message(
                 msg.channel,
-                message.format(author, link))
+                message.format(author.name, link))
         except KeyError:
             await client.send_message(
                 msg.channel,
                 'You are not in the list of streamers.')
             pass
     elif len(msg.mentions) < len(args):
-        if args[0].startswith('http:') or args[0].startswith('twitch.tv'):
+        if args[0].startswith('http:'):
             name, link = stream_name_link(args[0])
             await client.send_message(
                 msg.channel,
@@ -253,7 +269,7 @@ async def stream(msg, *args):
             try:
                 await client.send_message(
                     msg.channel,
-                    message.format(m.name, streamers[m.name]))
+                    message.format(m.name, streamers[m.id]))
             except:
                 await client.send_message(
                     msg.channel,
@@ -280,13 +296,16 @@ async def add_stream(msg, *args):
     if len(args) == 2:
         try:
             name, link = str(msg.mentions[0]), args[1]
+            sid = msg.mentions[0].id
         except:
             return
     elif len(args) == 1:
         name, link = msg.author.name, args[0]
+        sid = msg.author.id
     else:
         name, link = stream_name_link(msg.author.name)
-    streamers[name] = link
+        sid = msg.author.id
+    streamers[sid] = link
     with open(stream_file, 'w') as s:
         json.dump(streamers, s)
         await client.send_message(
@@ -307,19 +326,19 @@ async def remove_stream(msg, *args):
         name = msg.author.name
     else:
         try:
-            name = msg.mentions[0].name
+            name, sid = msg.mentions[0].name, msg.mentions[0].id
         except:
             return
     try:
-        del streamers[name]
+        del streamers[sid]
     except:
         await client.send_message(
             msg.channel,
-            'Streamer {} does not exist in list.'.format(args[0]))
+            'Streamer {} does not exist in list.'.format(name))
         return
     await client.send_message(
         msg.channel,
-        '{} has been removed.'.format(args[0]))
+        '{} has been removed.'.format(name))
     with open(stream_file, 'w') as s:
         json.dump(streamers, s)
 
@@ -416,8 +435,17 @@ async def ban(msg, *args):
     await kick_ban(msg, 'ban', days)
 
 
+async def mid(msg, *args):
+    """Stuff."""
+    message = ''
+    for m in msg.mentions:
+        message += '{} : {}\n'.format(m.name, m.id)
+    await client.send_message(msg.channel, message)
+
+
 # Command Setup
 coms_list = [
+    Command('!id', mid),
     Command('!source', source_code),
     Command('!commands', commands),
     Command('!help', help_com),
