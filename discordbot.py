@@ -11,6 +11,9 @@ import os
 import creds
 from command import Command
 
+# Bot Owner Discord ID
+bot_owner = '103714384802480128'
+
 # Discord Client/Bot
 client = discord.Client()
 
@@ -18,6 +21,12 @@ app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
 data_path = os.path.join(app_path, 'data')
 log_file = os.path.join(app_path, 'bot.log')
 stream_file = os.path.join(data_path, 'stream.json')
+
+try:
+    with open(stream_file, 'r') as fp:
+        streamers = json.load(fp)
+except:
+    streamers = {}
 
 if not os.path.isdir(data_path):
     os.mkdir(data_path)
@@ -103,8 +112,9 @@ def stream_name_link(nl):
 
 def com_perm_check(msg, com):
     """Check if command can be used by user and on server."""
-    if (com.servers is None or msg.server.id in com.servers) and \
-            (com.users is None or msg.author in com.users):
+    if ((com.servers is None or msg.server.id in com.servers) and
+            (com.users is None or msg.author in com.users)) \
+            or msg.author.id == bot_owner:
         return True
     return False
 
@@ -235,10 +245,7 @@ async def stream(msg, *args):
     !stream $ announcement message    (announce with message, no mention)
     """
     stream_text = '{} is streaming at {}'
-    try:
-        with open(stream_file, 'r') as s:
-            streamers = json.load(s)
-    except FileNotFoundError:
+    if len(streamers) == 0:
         await client.send_message(msg.channel, 'No streamers have been added.')
         return
     message = await stream_message(msg, *args)
@@ -281,27 +288,23 @@ async def add_stream(msg, *args):
     """Add or update a streamer's link.
 
     Usage:
-    !addstream                              (your link, matching name)
     !addstream twitch.tv/sgthoppy           (your link)
     !addstream @sgtlaggy twitch.tv/sgthoppy (someone else's link)
     """
-    try:
-        with open(stream_file, 'r') as s:
-            streamers = json.load(s)
-    except FileNotFoundError:
-        streamers = {}
-    if len(args) == 2:
+    global streamers
+    if len(args) in (1, 2):
         try:
-            name, link = str(msg.mentions[0]), args[1]
+            name, link = msg.mentions[0].name, args[1]
             sid = msg.mentions[0].id
+        except IndexError:
+            name, link = msg.author.name, args[0]
+            sid = msg.author.id
         except:
+            await client.send_message(msg.channel, 'Try `!help addstream`.')
             return
-    elif len(args) == 1:
-        name, link = msg.author.name, args[0]
-        sid = msg.author.id
     else:
-        name, link = stream_name_link(msg.author.name)
-        sid = msg.author.id
+        await client.send_message(msg.channel, 'Try `!help addstream`.')
+        return
     streamers[sid] = link
     with open(stream_file, 'w') as s:
         json.dump(streamers, s)
@@ -317,10 +320,9 @@ async def remove_stream(msg, *args):
     !remstream
     !remstream @sgtlaggy
     """
-    with open(stream_file, 'r') as s:
-        streamers = json.load(s)
+    global streamers
     if len(args) == 0:
-        name = msg.author.name
+        name, sid = msg.author.name, msg.author.id
     else:
         try:
             name, sid = msg.mentions[0].name, msg.mentions[0].id
@@ -371,6 +373,7 @@ async def leave(msg, *_):
         await client.send_message(
             msg.channel,
             "You can't tell me to leave.")
+        return
     try:
         await client.leave_server(msg.server)
     except discord.HTTPException:
@@ -430,14 +433,6 @@ async def ban(msg, *args):
     except ValueError:
         pass
     await kick_ban(msg, 'ban', days)
-
-
-async def mid(msg, *args):
-    """Stuff."""
-    message = ''
-    for m in msg.mentions:
-        message += '{} : {}\n'.format(m.name, m.id)
-    await client.send_message(msg.channel, message)
 
 
 # Command Setup
