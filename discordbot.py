@@ -112,11 +112,6 @@ def com_perm_check(msg, com):
 def unformat_str(raw):
     """Make a string discord-friendly."""
     new = ''
-    replace = {
-        '_': '\_',
-        '*': '\*',
-        '`': '\`',
-        '~': '\~'}
     rep = ['_', '*', '`', '~']
     for c in raw:
         if c in rep:
@@ -128,22 +123,20 @@ def unformat_str(raw):
 # Command functions.
 
 
-async def source_code(msg, *_):
-    """Print link to bot's source code.
-
-    Usage: !source
-    """
+async def bot_info(msg, *_):
+    """Print bot information."""
+    lib_link = unformat_str('https://github.com/Rapptz/discord.py/tree/async')
     source_link = unformat_str('https://github.com/mikevb1/discordbot')
-    await client.send_message(
-        msg.channel,
-        'See my source code at {}'.format(source_link))
+    message = """This bot is written in Python using discord.py from {}
+    The source code can be found at {}
+    Say `!help` to see available commands.
+    Say `!help command` to see how to use a command.""".format(
+        lib_link, source_link)
+    await client.send_message(msg.channel, message)
 
 
 async def commands(msg, commands):
-    """Print all commands available on server.
-
-    Usage: !commands
-    """
+    """Print all commands available on server."""
     message = ''
     message += 'Available commands:\n'
     serv_coms = []
@@ -161,6 +154,7 @@ async def help_com(msg, commands, *args):
     """Print description and usage of command.
 
     Usage:
+    !help
     !help help
     !help !help
     """
@@ -168,7 +162,7 @@ async def help_com(msg, commands, *args):
     try:
         com = args[0]
     except:
-        await client.send_message(msg.channel, 'Try `!commands`')
+        await commands(msg, commands)
         return
     if not com.startswith('!'):
         com = '!' + com
@@ -179,7 +173,9 @@ async def help_com(msg, commands, *args):
                 message += '`{}`\n'.format(line)
         await client.send_message(msg.channel, message)
     else:
-        await client.send_message(msg.channel, 'Try `!commands`')
+        await client.send_message(
+            msg.channel,
+            '{} is not a valid command.'.format(args[0]))
 
 
 async def emotes_com(msg, emotes):
@@ -445,32 +441,31 @@ async def mid(msg, *args):
 
 
 # Command Setup
+compre = '!'
 coms_list = [
-    Command('!id', mid),
-    Command('!source', source_code),
-    Command('!commands', commands),
-    Command('!help', help_com),
-    Command('!emotes', emotes_com),
-    Command('!kick', kick),
-    Command('!ban', ban),
-    Command('!join', join),
-    Command('!leave', leave),
-    Command('!stream', stream),
-    Command('!addstream', add_stream),
-    Command('!remstream', remove_stream)]
+    Command(compre + 'info', bot_info),
+    Command(compre + 'help', help_com),
+    Command(compre + 'emotes', emotes_com),
+    Command(compre + 'kick', kick),
+    Command(compre + 'ban', ban),
+    Command(compre + 'join', join),
+    Command(compre + 'leave', leave),
+    Command(compre + 'stream', stream),
+    Command(compre + 'addstream', add_stream),
+    Command(compre + 'remstream', remove_stream)]
 coms = OrderedDict()
 for com in coms_list:
     coms[com.name] = com
 
 emote_list = [
-    Command('!disapprove', 'ಠ_ಠ'),
-    Command('!lenny', '( ͡° ͜ʖ ͡°)'),
-    Command('!lennies', '( ͡°( ͡° ͜ʖ( ͡° ͜ʖ ͡°)ʖ ͡°) ͡°)'),
-    Command('!fight', '(ง ͠° ͟ل͜ ͡°)ง'),
-    Command('!shrug', '¯\_(ツ)_/¯'),
-    Command('!donger', 'ヽ༼ຈل͜ຈ༽ﾉ raise your dongers ヽ༼ຈل͜ຈ༽ﾉ'),
-    Command('!give', '༼ つ ◕_◕ ༽つ'),
-    Command('!zoidberg', '(\/) (°,,,°) (\/)')]
+    Command(compre + 'disapprove', 'ಠ_ಠ'),
+    Command(compre + 'lenny', '( ͡° ͜ʖ ͡°)'),
+    Command(compre + 'lennies', '( ͡°( ͡° ͜ʖ( ͡° ͜ʖ ͡°)ʖ ͡°) ͡°)'),
+    Command(compre + 'fight', '(ง ͠° ͟ل͜ ͡°)ง'),
+    Command(compre + 'shrug', '¯\_(ツ)_/¯'),
+    Command(compre + 'donger', 'ヽ༼ຈل͜ຈ༽ﾉ raise your dongers ヽ༼ຈل͜ຈ༽ﾉ'),
+    Command(compre + 'give', '༼ つ ◕_◕ ༽つ'),
+    Command(compre + 'zoidberg', '(\/) (°,,,°) (\/)')]
 emotes = OrderedDict()
 for emote in emote_list:
     emotes[emote.name] = emote
@@ -499,9 +494,7 @@ async def on_message(msg):
                 msg.channel,
                 'You cannot use that command!')
             return
-        if com == '!commands':
-            await coms[com].func(msg, coms)
-        elif com == '!emotes':
+        if com == '!emotes':
             await coms[com].func(msg, emotes)
         elif com == '!help':
             await coms[com].func(msg, coms, *args)
