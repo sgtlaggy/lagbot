@@ -465,7 +465,8 @@ emote_list = [
     Command(compre + 'shrug', '¯\_(ツ)_/¯'),
     Command(compre + 'donger', 'ヽ༼ຈل͜ຈ༽ﾉ raise your dongers ヽ༼ຈل͜ຈ༽ﾉ'),
     Command(compre + 'give', '༼ つ ◕_◕ ༽つ'),
-    Command(compre + 'zoidberg', '(\/) (°,,,°) (\/)')]
+    Command(compre + 'zoidberg', '(\/) (°,,,°) (\/)'),
+    Command(compre + 'ayy', ':alien: ayy lmao')]
 emotes = OrderedDict()
 for emote in emote_list:
     emotes[emote.name] = emote
