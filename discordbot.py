@@ -135,12 +135,12 @@ async def bot_info(msg, *_):
     await client.send_message(msg.channel, message)
 
 
-async def commands(msg, commands):
+async def commands(msg, coms):
     """Print all commands available on server."""
     message = ''
     message += 'Available commands:\n'
     serv_coms = []
-    serv_coms = [com for com in commands.values() if com_perm_check(msg, com)]
+    serv_coms = [com for com in coms.values() if com_perm_check(msg, com)]
     space = list_align([com.name for com in serv_coms])
     for ind, com in enumerate(serv_coms):
         message += '`{}{}: {}`\n'.format(
@@ -150,7 +150,7 @@ async def commands(msg, commands):
     await client.send_message(msg.channel, message)
 
 
-async def help_com(msg, commands, *args):
+async def help_com(msg, coms, *args):
     """Print description and usage of command.
 
     Usage:
@@ -162,13 +162,13 @@ async def help_com(msg, commands, *args):
     try:
         com = args[0]
     except:
-        await commands(msg, commands)
+        await commands(msg, coms)
         return
     if not com.startswith('!'):
         com = '!' + com
-    if com in commands:
-        message += '`{} : {}`\n'.format(com, func_desc(commands[com].func))
-        for line in commands[com].func.__doc__.splitlines()[1:-1]:
+    if com in coms:
+        message += '`{} : {}`\n'.format(com, func_desc(coms[com].func))
+        for line in coms[com].func.__doc__.splitlines()[1:-1]:
             if line:
                 message += '`{}`\n'.format(line)
         await client.send_message(msg.channel, message)
