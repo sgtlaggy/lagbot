@@ -474,6 +474,7 @@ for emote in emote_list:
 async def on_ready():
     """Called when bot is ready."""
     log.info('Bot ready!')
+    await client.change_status(game=discord.Game(name='Destroy All Humans!'))
 
 
 @client.event
