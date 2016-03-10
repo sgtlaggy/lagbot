@@ -215,6 +215,12 @@ async def do_emote(msg, emote):
         pass
 
 
+async def poke_bot(msg, *args):
+    """Make sure bot is working."""
+    replies = ['Hey!', 'Ow!', 'Stop that!', "I'm here!", 'I need an adult!']
+    await client.send_message(msg.channel, random.choice(replies))
+
+
 async def stream_message(msg, *args):
     """Get message in stream announcement."""
     message = ''
@@ -440,6 +446,7 @@ coms_list = [
     Command(compre + 'info', bot_info),
     Command(compre + 'help', help_com),
     Command(compre + 'emotes', emotes_com),
+    Command(compre + 'poke', poke_bot),
     Command(compre + 'kick', kick),
     Command(compre + 'ban', ban),
     Command(compre + 'join', join),
