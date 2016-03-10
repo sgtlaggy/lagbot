@@ -205,11 +205,10 @@ async def emotes_com(msg, emotes):
 
 async def do_emote(msg, emote):
     """Send emote, with mentions."""
-    mentions = ''
-    mentions += ' '.join([m.mention for m in msg.mentions])
+    mentions = ' '.join([m.mention for m in msg.mentions])
     await client.send_message(
         msg.channel,
-        '{}{}'.format(mentions, emote))
+        '{}: {}{}'.format(msg.author.name, emote, mentions))
     try:
         await client.delete_message(msg)
     except:
