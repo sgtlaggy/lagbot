@@ -4,6 +4,7 @@ from collections import OrderedDict
 import discord
 import asyncio
 import logging
+import random
 import json
 import sys
 import os
@@ -132,6 +133,10 @@ def unformat_str(raw):
 
 # Command functions.
 
+
+async def shutdown_bot(*_):
+    """Shutdown bot."""
+    await client.logout()
 
 async def bot_info(msg, *_):
     """Print bot information."""
@@ -443,6 +448,7 @@ async def ban(msg, *args):
 # Command Setup
 compre = '!'
 coms_list = [
+    Command(compre + 'die', shutdown_bot, users=[bot_owner]),
     Command(compre + 'info', bot_info),
     Command(compre + 'help', help_com),
     Command(compre + 'emotes', emotes_com),
