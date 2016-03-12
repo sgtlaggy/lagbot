@@ -16,7 +16,7 @@ from command import Command
 bot_owner = '103714384802480128'
 
 # Discord Client/Bot
-client = discord.Client()
+bot = discord.Client()
 
 app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
 data_path = os.path.join(app_path, 'data')
@@ -136,7 +136,7 @@ def unformat_str(raw):
 
 async def shutdown_bot(*_):
     """Shutdown bot."""
-    await client.logout()
+    await bot.logout()
 
 async def bot_info(msg, *_):
     """Print bot information."""
@@ -147,7 +147,7 @@ async def bot_info(msg, *_):
     Say `!help` to see available commands.
     Say `!help command` to see how to use a command.""".format(
         lib_link, source_link)
-    await client.send_message(msg.channel, message)
+    await bot.send_message(msg.channel, message)
 
 
 async def commands(msg, coms):
@@ -162,7 +162,7 @@ async def commands(msg, coms):
             com,
             ' ' * (space[ind] + 1),
             func_desc(com.func))
-    await client.send_message(msg.channel, message)
+    await bot.send_message(msg.channel, message)
 
 
 async def help_com(msg, coms, *args):
@@ -186,9 +186,9 @@ async def help_com(msg, coms, *args):
         for line in coms[com].func.__doc__.splitlines()[1:-1]:
             if line:
                 message += '`{}`\n'.format(line)
-        await client.send_message(msg.channel, message)
+        await bot.send_message(msg.channel, message)
     else:
-        await client.send_message(
+        await bot.send_message(
             msg.channel,
             '{} is not a valid command.'.format(args[0]))
 
@@ -205,17 +205,17 @@ async def emotes_com(msg, emotes):
             emote.name,
             ' ' * (space[ind] + 1),
             unformat_str(repr(emote.func))[1:-1])
-    await client.send_message(msg.channel, message)
+    await bot.send_message(msg.channel, message)
 
 
 async def do_emote(msg, emote):
     """Send emote, with mentions."""
     mentions = ' '.join([m.mention for m in msg.mentions])
-    await client.send_message(
+    await bot.send_message(
         msg.channel,
         '{}: {}{}'.format(msg.author.name, emote, mentions))
     try:
-        await client.delete_message(msg)
+        await bot.delete_message(msg)
     except:
         pass
 
@@ -223,7 +223,7 @@ async def do_emote(msg, emote):
 async def poke_bot(msg, *args):
     """Make sure bot is working."""
     replies = ['Hey!', 'Ow!', 'Stop that!', "I'm here!", 'I need an adult!']
-    await client.send_message(msg.channel, random.choice(replies))
+    await bot.send_message(msg.channel, random.choice(replies))
 
 
 async def stream_message(msg, *args):
@@ -256,7 +256,7 @@ async def stream(msg, *args):
     """
     stream_text = '{} is streaming at {}'
     if len(streamers) == 0:
-        await client.send_message(msg.channel, 'No streamers have been added.')
+        await bot.send_message(msg.channel, 'No streamers have been added.')
         return
     message = await stream_message(msg, *args)
     message += stream_text
@@ -264,32 +264,32 @@ async def stream(msg, *args):
         try:
             author = msg.author
             link = streamers[author.id]
-            await client.send_message(
+            await bot.send_message(
                 msg.channel,
                 message.format(author.name, link))
         except KeyError:
-            await client.send_message(
+            await bot.send_message(
                 msg.channel,
                 'You are not in the list of streamers.')
             pass
     elif len(msg.mentions) == 0:
         if args[0].startswith('http:'):
             name, link = stream_name_link(args[0])
-            await client.send_message(
+            await bot.send_message(
                 msg.channel,
                 message.format(name, link))
     else:
         for m in msg.mentions:
             try:
-                await client.send_message(
+                await bot.send_message(
                     msg.channel,
                     message.format(m.name, streamers[m.id]))
             except:
-                await client.send_message(
+                await bot.send_message(
                     msg.channel,
                     '{} is not in the list of streamers.'.format(m.name))
     try:
-        await client.delete_message(msg)
+        await bot.delete_message(msg)
     except:
         pass
 
@@ -310,15 +310,15 @@ async def add_stream(msg, *args):
             name, link = msg.author.name, args[0]
             sid = msg.author.id
         except:
-            await client.send_message(msg.channel, 'Try `!help addstream`.')
+            await bot.send_message(msg.channel, 'Try `!help addstream`.')
             return
     else:
-        await client.send_message(msg.channel, 'Try `!help addstream`.')
+        await bot.send_message(msg.channel, 'Try `!help addstream`.')
         return
     streamers[sid] = link
     with open(stream_file, 'w') as s:
         json.dump(streamers, s)
-        await client.send_message(
+        await bot.send_message(
             msg.channel,
             'Adding {} ({}) to steamer list.'.format(name, link))
 
@@ -341,11 +341,11 @@ async def remove_stream(msg, *args):
     try:
         del streamers[sid]
     except:
-        await client.send_message(
+        await bot.send_message(
             msg.channel,
             'Streamer {} does not exist in list.'.format(name))
         return
-    await client.send_message(
+    await bot.send_message(
         msg.channel,
         '{} has been removed.'.format(name))
     with open(stream_file, 'w') as s:
@@ -360,16 +360,16 @@ async def join(msg, *args):
     !join https://discord.gg/0h4QlpGEPGkSCO6I (invite link)
     """
     try:
-        await client.accept_invite(args[0])
-        await client.send_message(
+        await bot.accept_invite(args[0])
+        await bot.send_message(
             msg.channel,
             'Successfully joined {}'.format(args[0]))
     except IndexError:
         pass
     except discord.HTTPException:
-        await client.send_message(msg.channel, 'Could not join server.')
+        await bot.send_message(msg.channel, 'Could not join server.')
     except discord.NotFound:
-        await client.send_message(
+        await bot.send_message(
             msg.channel,
             'Invite is invalid or expired.')
 
@@ -380,14 +380,14 @@ async def leave(msg, *_):
     Usage: !leave
     """
     if not can_kick_ban(msg, 'kick'):
-        await client.send_message(
+        await bot.send_message(
             msg.channel,
             "You can't tell me to leave.")
         return
     try:
-        await client.leave_server(msg.server)
+        await bot.leave_server(msg.server)
     except discord.HTTPException:
-        await client.send_message(msg.channel, 'Could not leave server.')
+        await bot.send_message(msg.channel, 'Could not leave server.')
 
 
 async def kick_ban(msg, kb, days=1):
@@ -396,24 +396,24 @@ async def kick_ban(msg, kb, days=1):
         for m in msg.mentions:
             try:
                 if kb == 'kick':
-                    await client.kick(m)
+                    await bot.kick(m)
                     kbs = 'Kicked'
                 else:
-                    await client.ban(m, days)
+                    await bot.ban(m, days)
                     kbs = 'Banned'
-                await client.send_message(
+                await bot.send_message(
                     msg.channel,
                     "{} {}.".format(kbs, str(m)))
             except discord.Forbidden:
-                await client.send_message(
+                await bot.send_message(
                     msg.channel,
                     "I don't have permission to {} {}.".format(kb, str(m)))
             except discord.HTTPException:
-                await client.send_message(
+                await bot.send_message(
                     msg.channel,
                     'Failed to {} {}.'.format(kb, str(m)))
     else:
-        await client.send_message(
+        await bot.send_message(
             msg.channel,
             "You don't have permission to {} users.".format(kb))
 
@@ -482,24 +482,24 @@ for emote in emote_list:
 # Discord functions.
 
 
-@client.event
+@bot.event
 async def on_ready():
     """Called when bot is ready."""
     log.info('Bot ready!')
-    await client.change_status(game=discord.Game(name='Destroy All Humans!'))
+    await bot.change_status(game=discord.Game(name='Destroy All Humans!'))
 
 
-@client.event
+@bot.event
 async def on_message(msg):
     """Define what happens when message is recieved."""
-    if msg.author == client.user:
+    if msg.author == bot.user:
         return
     com, *args = msg.content.split()
     if com in emotes:
         await do_emote(msg, emotes[com].func)
     elif com in coms:
         if not com_perm_check(msg, coms[com]):
-            await client.send_message(
+            await bot.send_message(
                 msg.channel,
                 'You cannot use that command!')
             return
@@ -511,4 +511,4 @@ async def on_message(msg):
             await coms[com].func(msg, *args)
 
 if __name__ == '__main__':
-    client.run(creds.dis_name, creds.dis_pass)
+    bot.run(creds.dis_name, creds.dis_pass)
