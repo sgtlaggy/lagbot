@@ -182,7 +182,7 @@ async def poke():
     await bot.say(random.choice(replies))
 
 
-@bot.group(pass_context=True)
+@bot.group(pass_context=True, invoke_without_command=True)
 async def stream(ctx, *args):
     """Announce that you or someone else is streaming.
 
@@ -222,14 +222,15 @@ async def stream(ctx, *args):
             pass
 
 
-@stream.command(name='add')
-async def add_stream(member, link):
+@stream.command(name='add', pass_context=True)
+async def add_stream(ctx, _, link):
     """Add or update a streamer's link.
 
     Usage:
     !stream add @user http://twitch.tv/user
     """
     global streamers
+    member = ctx.message.mentions[0]
     try:
         name, link = member.name, link
         sid = member.id
@@ -241,14 +242,15 @@ async def add_stream(member, link):
     await bot.say('Added {} ({}) to steamer list.'.format(name, link))
 
 
-@stream.command(name='remove', aliases=['rem'])
-async def remove_stream(member):
+@stream.command(name='remove', aliases=['rem'], pass_context=True)
+async def remove_stream(ctx, _):
     """Remove streamer from list.
 
     Usage:
     !stream rem @user
     """
     global streamers
+    member = ctx.message.mentions[0]
     try:
         name, sid = member.name, member.id
     except:
