@@ -100,9 +100,16 @@ def list_align(words):
     return lens
 
 
+def is_url(text):
+    """Check if a string is a standard http(s) URL."""
+    if text.startswith('http:') or text.startswith('https:'):
+        return True
+    return False
+
+
 def stream_name_link(nl):
     """Get stream link from name or vice-versa."""
-    if nl.startswith('http://'):
+    if is_url(nl):
         link = nl
         name = link.split('/')[-1]
     else:
@@ -206,9 +213,8 @@ async def stream(ctx, *args):
             except KeyError:
                 await bot.say('You are not in the list of streamers.')
         elif len(msg.mentions) == 0:
-            if args[0].startswith('http:'):
-                name, link = stream_name_link(args[0])
-                await bot.say(message.format(name, link))
+            name, link = stream_name_link(args[0])
+            await bot.say(message.format(name, link))
         else:
             for m in msg.mentions:
                 try:
