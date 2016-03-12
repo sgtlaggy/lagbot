@@ -1,7 +1,6 @@
 """Discord bot for Discord."""
 
 from collections import OrderedDict
-import discord
 import asyncio
 import logging
 import random
@@ -9,6 +8,8 @@ import json
 import sys
 import os
 
+from discord.ext import commands
+import discord
 import creds
 from command import Command
 
@@ -16,7 +17,8 @@ from command import Command
 bot_owner = '103714384802480128'
 
 # Discord Client/Bot
-bot = discord.Client()
+bot = commands.Bot(command_prefix='!')
+bot.remove_command('help')
 
 app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
 data_path = os.path.join(app_path, 'data')
@@ -31,6 +33,17 @@ except:
 
 if not os.path.isdir(data_path):
     os.mkdir(data_path)
+
+emotes = OrderedDict([
+    ('disapprove', 'ಠ_ಠ'),
+    ('lenny', '( ͡° ͜ʖ ͡°)'),
+    ('lennies', '( ͡°( ͡° ͜ʖ( ͡° ͜ʖ ͡°)ʖ ͡°) ͡°)'),
+    ('fight', '(ง ͠° ͟ل͜ ͡°)ง'),
+    ('shrug', '¯\_(ツ)_/¯'),
+    ('donger', 'ヽ༼ຈل͜ຈ༽ﾉ raise your dongers ヽ༼ຈل͜ຈ༽ﾉ'),
+    ('give', '༼ つ ◕_◕ ༽つ'),
+    ('zoidberg', '(\/) (°,,,°) (\/)'),
+    ('ayy', ':alien: ayy lmao')])
 
 # Logging Setup
 log = logging.getLogger('discord')
@@ -88,18 +101,6 @@ def list_align(words):
     return lens
 
 
-def can_kick_ban(msg, kb):
-    """Determine whether user can kick/ban."""
-    for role in msg.author.roles:
-        if kb == 'kick':
-            if role.permissions.kick_members:
-                return True
-        else:
-            if role.permissions.ban_members:
-                return True
-    return False
-
-
 def stream_name_link(nl):
     """Get stream link from name or vice-versa."""
     if nl.startswith('http://'):
@@ -109,15 +110,6 @@ def stream_name_link(nl):
         name = nl
         link = 'http://twitch.tv/{}'.format(name.lower())
     return name, link
-
-
-def com_perm_check(msg, com):
-    """Check if command can be used by user and on server."""
-    if ((com.servers is None or msg.server.id in com.servers) and
-            (com.users is None or msg.author in com.users)) \
-            or msg.author.id == bot_owner:
-        return True
-    return False
 
 
 def unformat_str(raw):
@@ -131,102 +123,7 @@ def unformat_str(raw):
     return new
 
 
-# Command functions.
-
-
-async def shutdown_bot(*_):
-    """Shutdown bot."""
-    await bot.logout()
-
-async def bot_info(msg, *_):
-    """Print bot information."""
-    lib_link = unformat_str('https://github.com/Rapptz/discord.py/tree/async')
-    source_link = unformat_str('https://github.com/mikevb1/discordbot')
-    message = """This bot is written in Python using discord.py from {}
-    The source code can be found at {}
-    Say `!help` to see available commands.
-    Say `!help command` to see how to use a command.""".format(
-        lib_link, source_link)
-    await bot.send_message(msg.channel, message)
-
-
-async def commands(msg, coms):
-    """Print all commands available on server."""
-    message = ''
-    message += 'Available commands:\n'
-    serv_coms = []
-    serv_coms = [com for com in coms.values() if com_perm_check(msg, com)]
-    space = list_align([com.name for com in serv_coms])
-    for ind, com in enumerate(serv_coms):
-        message += '`{}{}: {}`\n'.format(
-            com,
-            ' ' * (space[ind] + 1),
-            func_desc(com.func))
-    await bot.send_message(msg.channel, message)
-
-
-async def help_com(msg, coms, *args):
-    """Print description and usage of command.
-
-    Usage:
-    !help
-    !help help
-    !help !help
-    """
-    message = ''
-    try:
-        com = args[0]
-    except:
-        await commands(msg, coms)
-        return
-    if not com.startswith('!'):
-        com = '!' + com
-    if com in coms:
-        message += '`{} : {}`\n'.format(com, func_desc(coms[com].func))
-        for line in coms[com].func.__doc__.splitlines()[1:-1]:
-            if line:
-                message += '`{}`\n'.format(line)
-        await bot.send_message(msg.channel, message)
-    else:
-        await bot.send_message(
-            msg.channel,
-            '{} is not a valid command.'.format(args[0]))
-
-
-async def emotes_com(msg, emotes):
-    """Print all emotes available.
-
-    Usage: !emotes
-    """
-    message = 'Available emotes:\n'
-    space = list_align(emotes.keys())
-    for ind, emote in enumerate(emotes.values()):
-        message += '`{}{}:` {}\n'.format(
-            emote.name,
-            ' ' * (space[ind] + 1),
-            unformat_str(repr(emote.func))[1:-1])
-    await bot.send_message(msg.channel, message)
-
-
-async def do_emote(msg, emote):
-    """Send emote, with mentions."""
-    mentions = ' '.join([m.mention for m in msg.mentions])
-    await bot.send_message(
-        msg.channel,
-        '{}: {}{}'.format(msg.author.name, emote, mentions))
-    try:
-        await bot.delete_message(msg)
-    except:
-        pass
-
-
-async def poke_bot(msg, *args):
-    """Make sure bot is working."""
-    replies = ['Hey!', 'Ow!', 'Stop that!', "I'm here!", 'I need an adult!']
-    await bot.send_message(msg.channel, random.choice(replies))
-
-
-async def stream_message(msg, *args):
+def stream_message(*args):
     """Get message in stream announcement."""
     message = ''
     if '#' in args:
@@ -244,115 +141,132 @@ async def stream_message(msg, *args):
     return message
 
 
-async def stream(msg, *args):
-    """Announce that you or someone else is streaming.
+# Command functions.
 
-    Usage:
-    !stream http://twitch.tv/sgthoppy (announce someone not in discord)
-    !stream @sgtlaggy                 (announce someone else)
-    !stream                           (announce yourself)
-    !stream # announcement message    (announce with message, mention everyone)
-    !stream $ announcement message    (announce with message, no mention)
-    """
-    stream_text = '{} is streaming at {}'
-    if len(streamers) == 0:
-        await bot.send_message(msg.channel, 'No streamers have been added.')
-        return
-    message = await stream_message(msg, *args)
-    message += stream_text
-    if len(args) == 0 or args[0] in ('#', '$'):
-        try:
-            author = msg.author
-            link = streamers[author.id]
-            await bot.send_message(
-                msg.channel,
-                message.format(author.name, link))
-        except KeyError:
-            await bot.send_message(
-                msg.channel,
-                'You are not in the list of streamers.')
-            pass
-    elif len(msg.mentions) == 0:
-        if args[0].startswith('http:'):
-            name, link = stream_name_link(args[0])
-            await bot.send_message(
-                msg.channel,
-                message.format(name, link))
-    else:
-        for m in msg.mentions:
-            try:
-                await bot.send_message(
-                    msg.channel,
-                    message.format(m.name, streamers[m.id]))
-            except:
-                await bot.send_message(
-                    msg.channel,
-                    '{} is not in the list of streamers.'.format(m.name))
+@bot.command()
+async def info():
+    """Print bot information."""
+    lib_link = unformat_str('https://github.com/Rapptz/discord.py/tree/async')
+    source_link = unformat_str('https://github.com/mikevb1/discordbot')
+    message = """This bot is written in Python using discord.py from {}
+    The source code can be found at {}""".format(lib_link, source_link)
+    await bot.say(message)
+
+
+@bot.command(name='emotes')
+async def emotes_com():
+    """Print all emotes available."""
+    message = 'Available emotes:\n'
+    space = list_align(emotes.keys())
+    for i, k, v in enumerate(emotes.items()):
+        message += '`{}{}:` {}\n'.format(
+            k,
+            ' ' * (space[i] + 1),
+            unformat_str(repr(v))[1:-1])
+    await bot.say(message)
+
+
+@bot.command(aliases=emotes.keys(), pass_context=True)
+async def do_emote(ctx):
+    """Send emote, with mentions."""
+    emote = emotes[ctx.invoked_with]
+    mentions = ' '.join([m.mention for m in ctx.message.mentions])
+    await bot.say('{}: {} {}'.format(ctx.message.author.name, emote, mentions))
     try:
-        await bot.delete_message(msg)
+        await bot.delete_message(ctx.message)
     except:
         pass
 
 
-async def add_stream(msg, *args):
+@bot.command()
+async def poke():
+    """Make sure bot is working."""
+    replies = ['Hey!', 'Ow!', 'Stop that!', "I'm here!", 'I need an adult!']
+    await bot.say(random.choice(replies))
+
+
+@bot.group(pass_context=True)
+async def stream(ctx, *args):
+    """Announce that you or someone else is streaming.
+
+    Usage:
+    !stream http://twitch.tv/user  (announce someone not in discord)
+    !stream @user                  (announce someone else)
+    !stream                        (announce yourself)
+    !stream # announcement message (announce with message, mention everyone)
+    !stream $ announcement message (announce with message, no mention)
+    """
+    if ctx.invoked_subcommand is None:
+        stream_text = '{} is streaming at {}'
+        msg = ctx.message
+        message = stream_message(args)
+        message += stream_text
+        if len(args) == 0 or args[0] in ('#', '$'):
+            try:
+                author = msg.author
+                link = streamers[author.id]
+                await bot.say(message.format(author.name, link))
+            except KeyError:
+                await bot.say('You are not in the list of streamers.')
+        elif len(msg.mentions) == 0:
+            if args[0].startswith('http:'):
+                name, link = stream_name_link(args[0])
+                await bot.say(message.format(name, link))
+        else:
+            for m in msg.mentions:
+                try:
+                    await bot.say(message.format(m.name, streamers[m.id]))
+                except:
+                    await bot.say('{} is not in the list of streamers.'.format(
+                        m.name))
+        try:
+            await bot.delete_message(msg)
+        except:
+            pass
+
+
+@stream.command(name='add')
+async def add_stream(member, link):
     """Add or update a streamer's link.
 
     Usage:
-    !addstream twitch.tv/sgthoppy           (your link)
-    !addstream @sgtlaggy twitch.tv/sgthoppy (someone else's link)
+    !stream add @user http://twitch.tv/user
     """
     global streamers
-    if len(args) in (1, 2):
-        try:
-            name, link = msg.mentions[0].name, args[1]
-            sid = msg.mentions[0].id
-        except IndexError:
-            name, link = msg.author.name, args[0]
-            sid = msg.author.id
-        except:
-            await bot.send_message(msg.channel, 'Try `!help addstream`.')
-            return
-    else:
-        await bot.send_message(msg.channel, 'Try `!help addstream`.')
+    try:
+        name, link = member.name, link
+        sid = member.id
+    except:
         return
     streamers[sid] = link
     with open(stream_file, 'w') as s:
         json.dump(streamers, s)
-        await bot.send_message(
-            msg.channel,
-            'Adding {} ({}) to steamer list.'.format(name, link))
+    await bot.say('Added {} ({}) to steamer list.'.format(name, link))
 
 
-async def remove_stream(msg, *args):
+@stream.command(name='remove', aliases=['rem'])
+async def remove_stream(member):
     """Remove streamer from list.
 
     Usage:
-    !remstream
-    !remstream @sgtlaggy
+    !stream rem @user
     """
     global streamers
-    if len(args) == 0:
-        name, sid = msg.author.name, msg.author.id
-    else:
-        try:
-            name, sid = msg.mentions[0].name, msg.mentions[0].id
-        except:
-            return
+    try:
+        name, sid = member.name, member.id
+    except:
+        return
     try:
         del streamers[sid]
     except:
-        await bot.send_message(
-            msg.channel,
-            'Streamer {} does not exist in list.'.format(name))
         return
-    await bot.send_message(
-        msg.channel,
-        '{} has been removed.'.format(name))
     with open(stream_file, 'w') as s:
         json.dump(streamers, s)
+    await bot.say('{} has been removed.'.format(name))
 
 
-async def join(msg, *args):
+@bot.command()
+async def join(channel):
     """Tell bot to join server using ID or discordgg link.
 
     Usage:
@@ -360,126 +274,50 @@ async def join(msg, *args):
     !join https://discord.gg/0h4QlpGEPGkSCO6I (invite link)
     """
     try:
-        await bot.accept_invite(args[0])
-        await bot.send_message(
-            msg.channel,
-            'Successfully joined {}'.format(args[0]))
-    except IndexError:
+        await bot.accept_invite(channel)
+    except:
         pass
-    except discord.HTTPException:
-        await bot.send_message(msg.channel, 'Could not join server.')
-    except discord.NotFound:
-        await bot.send_message(
-            msg.channel,
-            'Invite is invalid or expired.')
 
 
-async def leave(msg, *_):
+@bot.command(pass_context=True)
+@commands.has_permissions(kick_members=True)
+@commands.bot_has_permissions(kick_members=True)
+async def leave(ctx):
     """Tell bot to leave server.
 
     Usage: !leave
     """
-    if not can_kick_ban(msg, 'kick'):
-        await bot.send_message(
-            msg.channel,
-            "You can't tell me to leave.")
-        return
-    try:
-        await bot.leave_server(msg.server)
-    except discord.HTTPException:
-        await bot.send_message(msg.channel, 'Could not leave server.')
+    await bot.leave_server(ctx.message.server)
 
 
-async def kick_ban(msg, kb, days=1):
-    """Kick/ban user from server."""
-    if can_kick_ban(msg, kb):
-        for m in msg.mentions:
-            try:
-                if kb == 'kick':
-                    await bot.kick(m)
-                    kbs = 'Kicked'
-                else:
-                    await bot.ban(m, days)
-                    kbs = 'Banned'
-                await bot.send_message(
-                    msg.channel,
-                    "{} {}.".format(kbs, str(m)))
-            except discord.Forbidden:
-                await bot.send_message(
-                    msg.channel,
-                    "I don't have permission to {} {}.".format(kb, str(m)))
-            except discord.HTTPException:
-                await bot.send_message(
-                    msg.channel,
-                    'Failed to {} {}.'.format(kb, str(m)))
-    else:
-        await bot.send_message(
-            msg.channel,
-            "You don't have permission to {} users.".format(kb))
-
-
-async def kick(msg, *_):
+@bot.command(pass_context=True)
+@commands.has_permissions(kick_members=True)
+@commands.bot_has_permissions(kick_members=True)
+async def kick(ctx):
     """Kick user from server if you have permission.
 
-    Usage: !kick @sgtlaggy
+    Usage:
+    !kick @user
     """
-    await kick_ban(msg, 'kick')
+    for m in ctx.message.mentions:
+        await bot.kick(m)
 
 
-async def ban(msg, *args):
+@bot.command()
+@commands.has_permissions(ban_members=True)
+@commands.bot_has_permissions(ban_members=True)
+async def ban(member, days=1):
     """Ban user from server if you have permission.
 
-    Usage: !ban @sgtlaggy
+    Usage:
+    !ban @user
     """
-    days = 1
-    try:
-        days = int(args[0])
-        if days > 7:
-            days = 7
-        elif days < 0:
-            days = 0
-    except KeyError:
-        return
-    except ValueError:
-        pass
-    await kick_ban(msg, 'ban', days)
-
-
-# Command Setup
-compre = '!'
-coms_list = [
-    Command(compre + 'die', shutdown_bot, users=[bot_owner]),
-    Command(compre + 'info', bot_info),
-    Command(compre + 'help', help_com),
-    Command(compre + 'emotes', emotes_com),
-    Command(compre + 'poke', poke_bot),
-    Command(compre + 'kick', kick),
-    Command(compre + 'ban', ban),
-    Command(compre + 'join', join),
-    Command(compre + 'leave', leave),
-    Command(compre + 'stream', stream),
-    Command(compre + 'addstream', add_stream),
-    Command(compre + 'remstream', remove_stream)]
-coms = OrderedDict()
-for com in coms_list:
-    coms[com.name] = com
-
-emote_list = [
-    Command(compre + 'disapprove', 'ಠ_ಠ'),
-    Command(compre + 'lenny', '( ͡° ͜ʖ ͡°)'),
-    Command(compre + 'lennies', '( ͡°( ͡° ͜ʖ( ͡° ͜ʖ ͡°)ʖ ͡°) ͡°)'),
-    Command(compre + 'fight', '(ง ͠° ͟ل͜ ͡°)ง'),
-    Command(compre + 'shrug', '¯\_(ツ)_/¯'),
-    Command(compre + 'donger', 'ヽ༼ຈل͜ຈ༽ﾉ raise your dongers ヽ༼ຈل͜ຈ༽ﾉ'),
-    Command(compre + 'give', '༼ つ ◕_◕ ༽つ'),
-    Command(compre + 'zoidberg', '(\/) (°,,,°) (\/)'),
-    Command(compre + 'ayy', ':alien: ayy lmao')]
-emotes = OrderedDict()
-for emote in emote_list:
-    emotes[emote.name] = emote
-
-
-# Discord functions.
+    days = int(days)
+    if days > 7:
+        days = 7
+    elif days < 0:
+        days = 0
+    await bot.ban(member, days)
 
 
 @bot.event
@@ -488,27 +326,6 @@ async def on_ready():
     log.info('Bot ready!')
     await bot.change_status(game=discord.Game(name='Destroy All Humans!'))
 
-
-@bot.event
-async def on_message(msg):
-    """Define what happens when message is recieved."""
-    if msg.author == bot.user:
-        return
-    com, *args = msg.content.split()
-    if com in emotes:
-        await do_emote(msg, emotes[com].func)
-    elif com in coms:
-        if not com_perm_check(msg, coms[com]):
-            await bot.send_message(
-                msg.channel,
-                'You cannot use that command!')
-            return
-        if com == '!emotes':
-            await coms[com].func(msg, emotes)
-        elif com == '!help':
-            await coms[com].func(msg, coms, *args)
-        else:
-            await coms[com].func(msg, *args)
 
 if __name__ == '__main__':
     bot.run(creds.dis_name, creds.dis_pass)
