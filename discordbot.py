@@ -140,8 +140,6 @@ def stream_message(*args):
     return message
 
 
-# Command functions.
-
 @bot.command()
 async def info():
     """Print bot information."""
@@ -157,11 +155,11 @@ async def emotes_com():
     """Print all emotes available."""
     message = 'Available emotes:\n'
     space = list_align(emotes.keys())
-    for i, k, v in enumerate(emotes.items()):
+    for i, emote in enumerate(emotes):
         message += '`{}{}:` {}\n'.format(
-            k,
+            emote,
             ' ' * (space[i] + 1),
-            unformat_str(repr(v))[1:-1])
+            unformat_str(repr(emotes[emote]))[1:-1])
     await bot.say(message)
 
 
