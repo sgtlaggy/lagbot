@@ -11,7 +11,6 @@ import os
 from discord.ext import commands
 import discord
 import creds
-from command import Command
 
 # Bot Owner Discord ID
 bot_owner = '103714384802480128'
