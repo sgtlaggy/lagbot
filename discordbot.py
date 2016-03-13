@@ -378,6 +378,7 @@ async def on_message(msg):
                 fp.write(image)
             with open(temote_image, 'rb') as fp:
                 await bot.send_file(msg.channel, fp)
+    await bot.process_commands(msg)
 
 
 if __name__ == '__main__':
