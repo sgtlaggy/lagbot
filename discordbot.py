@@ -122,7 +122,7 @@ def func_desc(func):
     return desc
 
 
-def list_align(words):
+def list_align(words, extra=0):
     """Find word of greatest length and return list of differences in length.
 
     Arguments:
@@ -138,6 +138,7 @@ def list_align(words):
             longest = len(word)
     for word in words:
         lens.append(longest - len(word))
+    lens = [space + extra for space in lens]
     return lens
 
 
@@ -188,6 +189,34 @@ def stream_message(*args):
     return message
 
 
+@bot.command(name='help')
+async def help_cmd(cmd=None):
+    """Print this help."""
+    if cmd is None:
+        coms = OrderedDict()
+        com_list = [
+            'help', 'info', 'emotes', 'poke',
+            'stream', 'join', 'leave', 'kick', 'ban']
+        space = list_align(com_list, 2)
+        for com in com_list:
+            coms[com] = bot.commands[com]
+        message = ['Available commands:', '```']
+        for i, com in enumerate(coms):
+            message.append('{}{}: {}'.format(
+                com, ' ' * space[i], coms[com].help.splitlines()[0]))
+        message.append('```')
+        message = '\n'.join(message)
+        await bot.say(message)
+    else:
+        try:
+            message = bot.commands[cmd].help.format(bot.command_prefix)
+        except KeyError:
+            return
+        except:
+            message = bot.command[cmd].help
+        await bot.say('```' + message + '```')
+
+
 @bot.command()
 async def info():
     """Print bot information."""
@@ -206,17 +235,19 @@ async def info():
 @bot.command(name='emotes')
 async def emotes_com():
     """Print all emotes available."""
-    message = 'Available emotes:\n'
-    space = list_align(emotes.keys())
+    message = ['Available emotes:']
+    space = list_align(emotes.keys(), 1)
     for i, emote in enumerate(emotes):
-        message += '`{}{}:` {}\n'.format(
+        message.append('`{}{}{}:` {}'.format(
+            bot.command_prefix,
             emote,
-            ' ' * (space[i] + 1),
-            unformat_str(repr(emotes[emote]))[1:-1])
+            ' ' * space[i],
+            unformat_str(repr(emotes[emote]))[1:-1]))
+    message = '\n'.join(message)
     await bot.say(message)
 
 
-@bot.command(aliases=emotes.keys(), pass_context=True)
+@bot.command(name=None, aliases=emotes.keys(), pass_context=True)
 async def do_emote(ctx):
     """Send emote, with mentions."""
     emote = emotes[ctx.invoked_with]
@@ -240,11 +271,13 @@ async def stream(ctx, *args):
     """Announce that you or someone else is streaming.
 
     Usage:
-    !stream http://twitch.tv/user  (announce someone not in discord)
-    !stream @user                  (announce someone else)
-    !stream                        (announce yourself)
-    !stream # announcement message (announce with message, mention everyone)
-    !stream $ announcement message (announce with message, no mention)
+    {0}stream link                   (announce someone not in discord)
+    {0}stream @user                  (announce someone else)
+    {0}stream                        (announce yourself)
+    {0}stream # announcement message (announce with message, mention everyone)
+    {0}stream $ announcement message (announce with message, no mention)
+    {0}stream add @user link         (add someone to list)
+    {0}stream rem @user              (remove someone from list)
     """
     if ctx.invoked_subcommand is None:
         stream_text = '{} is streaming at {}'
@@ -279,7 +312,7 @@ async def add_stream(ctx, _, link):
     """Add or update a streamer's link.
 
     Usage:
-    !stream add @user http://twitch.tv/user
+    {0}stream add @user link
     """
     global streamers
     member = ctx.message.mentions[0]
@@ -299,7 +332,7 @@ async def remove_stream(ctx, _):
     """Remove streamer from list.
 
     Usage:
-    !stream rem @user
+    {0}stream rem @user
     """
     global streamers
     member = ctx.message.mentions[0]
@@ -318,11 +351,11 @@ async def remove_stream(ctx, _):
 
 @bot.command()
 async def join(channel):
-    """Tell bot to join server using ID or discordgg link.
+    """Tell bot to join server using ID or discord.gg link.
 
     Usage:
-    !join 0h4QlpGEPGkSCO6I                    (invite ID)
-    !join https://discord.gg/0h4QlpGEPGkSCO6I (invite link)
+    {0}join 0h4QlpGEPGkSCO6I                    (invite ID)
+    {0}join https://discord.gg/0h4QlpGEPGkSCO6I (invite link)
     """
     try:
         await bot.accept_invite(channel)
@@ -332,11 +365,11 @@ async def join(channel):
 
 @bot.command(pass_context=True)
 @commands.has_permissions(kick_members=True)
-@commands.bot_has_permissions(kick_members=True)
 async def leave(ctx):
     """Tell bot to leave server.
 
-    Usage: !leave
+    Usage:
+    {0}leave
     """
     await bot.leave_server(ctx.message.server)
 
@@ -348,27 +381,27 @@ async def kick(ctx):
     """Kick user from server if you have permission.
 
     Usage:
-    !kick @user
+    {0}kick @user
     """
     for m in ctx.message.mentions:
         await bot.kick(m)
 
 
-@bot.command()
+@bot.command(pass_context=True)
 @commands.has_permissions(ban_members=True)
 @commands.bot_has_permissions(ban_members=True)
-async def ban(member, days=1):
+async def ban(ctx, _, days=1):
     """Ban user from server if you have permission.
 
     Usage:
-    !ban @user
+    {0}ban @user
     """
     days = int(days)
     if days > 7:
         days = 7
     elif days < 0:
         days = 0
-    await bot.ban(member, days)
+    await bot.ban(ctx.message.mentions[0], days)
 
 
 @bot.event
