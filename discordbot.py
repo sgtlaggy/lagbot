@@ -412,15 +412,19 @@ async def on_message(msg):
     global temotes
     msg_lower = msg.content.lower().split()
     if emote_prefix in msg.content:
+        emote = False
         message = [msg.author.name + ':']
         for word in msg_lower:
             if emote_prefix in word:
                 try:
                     message.append(emotes[word.split(emote_prefix)[1]])
+                    emote = True
                     continue
                 except:
                     pass
             message.append(word)
+        if not emote:
+            return
         mentions = ' '.join([m.mention for m in msg.mentions])
         message.append(mentions)
         message = ' '.join(message)
