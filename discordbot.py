@@ -176,8 +176,11 @@ async def info():
     """Print bot information."""
     lib_link = unformat_str('https://github.com/Rapptz/discord.py/tree/async')
     source_link = unformat_str('https://github.com/mikevb1/discordbot')
+    twitch_emote_link = unformat_str('https://twitchemotes.com/')
     message = """This bot is written in Python using discord.py from {}
-    The source code can be found at {}""".format(lib_link, source_link)
+    The source code can be found at {}
+    Global Twitch emote functionality provided by {}""".format(
+        lib_link, source_link, twitch_emote_link)
     await bot.say(message)
 
 
