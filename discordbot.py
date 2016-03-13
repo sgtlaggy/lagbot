@@ -18,7 +18,7 @@ import creds
 bot_owner = '103714384802480128'
 
 # Discord Client/Bot
-bot = commands.Bot(command_prefix='!')
+bot = commands.Bot(command_prefix='%!')
 bot.remove_command('help')
 
 # Files and Paths
@@ -27,17 +27,15 @@ data_path = os.path.join(app_path, 'data')
 log_file = os.path.join(app_path, 'bot.log')
 
 stream_file = os.path.join(data_path, 'stream.json')
-
-temote_file = os.path.join(data_path, 'temotes.json')
-temote_link = "https://twitchemotes.com/api_cache/v2/global.json"
-temote_image = os.path.join(data_path, 'emote.png')
-
 try:
     with open(stream_file, 'r') as fp:
         streamers = json.load(fp)
 except:
     streamers = {}
 
+emote_image = os.path.join(data_path, 'emote.png')
+temote_api = "https://twitchemotes.com/api_cache/v2/global.json"
+temote_file = os.path.join(data_path, 'temotes.json')
 try:
     with open(temote_file, 'r') as fp:
         temotes = json.load(fp)
@@ -48,11 +46,30 @@ try:
         raise Exception
 except:
     with open(temote_file, 'w') as fp:
-        temotes = requests.get(temote_link).json()
+        temotes = requests.get(temote_api).json()
         temotes['emotes'] = {e.lower(): temotes['emotes'][e]['image_id']
                              for e in temotes['emotes']}
         json.dump(temotes, fp)
 
+bemote_api = "https://api.betterttv.net/2/emotes"
+bemote_file = os.path.join(data_path, 'bemotes.json')
+try:
+    with open(bemote_file, 'r') as fp:
+        bemotes = json.load(fp)
+    if datetime.datetime.strptime(
+            bemotes['time'], '%Y-%m-%dT%H:%M:%SZ') \
+            + datetime.timedelta(days=7) < datetime.datetime.utcnow():
+        raise Exception
+except:
+    with open(bemote_file, 'w') as fp:
+        bemotes = requests.get(bemote_api).json()
+        bemotes['emotes'] = {e['code'].lower(): e['id']
+                             for e in bemotes['emotes']}
+        bemotes['urlTemplate'] = 'http:' + bemotes['urlTemplate'].replace(
+            '{{id}}', '{image_id}').replace('{{image}}', '1x')
+        bemotes['time'] = datetime.datetime.utcnow().strftime(
+            '%Y-%m-%dT%H:%M%SZ')
+        json.dump(bemotes, fp)
 
 if not os.path.isdir(data_path):
     os.mkdir(data_path)
@@ -367,19 +384,29 @@ async def on_message(msg):
     global temotes
     if ';' in msg.content:
         msg_lower = msg.content.lower().split()
-        ids = []
+        tids = []
+        bids = []
         for word in msg_lower:
             if ';' in word:
                 try:
-                    ids.append(temotes['emotes'][word.split(';')[1].lower()])
+                    tids.append(temotes['emotes'][word.split(';')[1].lower()])
+                except KeyError:
+                    bids.append(bemotes['emotes'][word.split(';')[1].lower()])
                 except:
                     pass
-        for image_id in ids:
+        for image_id in tids:
             image = requests.get(temotes['template']['small'].format(
                 image_id=image_id)).content
-            with open(temote_image, 'wb') as fp:
+            with open(emote_image, 'wb') as fp:
                 fp.write(image)
-            with open(temote_image, 'rb') as fp:
+            with open(emote_image, 'rb') as fp:
+                await bot.send_file(msg.channel, fp)
+        for image_id in bids:
+            image = requests.get(bemotes['urlTemplate'].format(
+                image_id=image_id)).content
+            with open(emote_image, 'wb') as fp:
+                fp.write(image)
+            with open(emote_image, 'rb') as fp:
                 await bot.send_file(msg.channel, fp)
     await bot.process_commands(msg)
 

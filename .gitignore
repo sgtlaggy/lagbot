@@ -63,5 +63,6 @@ target/
 
 #
 temotes.json
+bemotes.json
 stream.json
 *.png
