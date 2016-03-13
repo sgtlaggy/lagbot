@@ -34,6 +34,8 @@ except:
     streamers = {}
 
 emote_image = os.path.join(data_path, 'emote.png')
+emote_prefix = ':'
+temote_prefix = ';'
 temote_api = "https://twitchemotes.com/api_cache/v2/global.json"
 temote_file = os.path.join(data_path, 'temotes.json')
 try:
@@ -204,6 +206,9 @@ async def help_cmd(cmd=None):
         for i, com in enumerate(coms):
             message.append('{}{}: {}'.format(
                 com, ' ' * space[i], coms[com].help.splitlines()[0]))
+        message.append(
+                '\nTo use Twitch/BTTV emotes, prefix the emote with {}'.format(
+                    temote_prefix))
         message.append('```')
         message = '\n'.join(message)
         await bot.say(message)
@@ -239,24 +244,12 @@ async def emotes_com():
     space = list_align(emotes.keys(), 1)
     for i, emote in enumerate(emotes):
         message.append('`{}{}{}:` {}'.format(
-            bot.command_prefix,
+            emote_prefix,
             emote,
             ' ' * space[i],
             unformat_str(repr(emotes[emote]))[1:-1]))
     message = '\n'.join(message)
     await bot.say(message)
-
-
-@bot.command(name=None, aliases=emotes.keys(), pass_context=True)
-async def do_emote(ctx):
-    """Send emote, with mentions."""
-    emote = emotes[ctx.invoked_with]
-    mentions = ' '.join([m.mention for m in ctx.message.mentions])
-    await bot.say('{}: {} {}'.format(ctx.message.author.name, emote, mentions))
-    try:
-        await bot.delete_message(ctx.message)
-    except:
-        pass
 
 
 @bot.command()
@@ -417,16 +410,18 @@ async def on_message(msg):
     if msg.author == bot.user:
         return
     global temotes
-    if ';' in msg.content:
-        msg_lower = msg.content.lower().split()
+    msg_lower = msg.content.lower().split()
+    if temote_prefix in msg.content:
         tids = []
         bids = []
         for word in msg_lower:
-            if ';' in word:
+            if temote_prefix in word:
                 try:
-                    tids.append(temotes['emotes'][word.split(';')[1].lower()])
+                    tids.append(temotes['emotes']
+                                [word.split(temote_prefix)[1].lower()])
                 except KeyError:
-                    bids.append(bemotes['emotes'][word.split(';')[1].lower()])
+                    bids.append(bemotes['emotes']
+                                [word.split(temote_prefix)[1].lower()])
                 except:
                     pass
         for image_id in tids:
@@ -443,6 +438,24 @@ async def on_message(msg):
                 fp.write(image)
             with open(emote_image, 'rb') as fp:
                 await bot.send_file(msg.channel, fp)
+    if emote_prefix in msg.content:
+        message = [msg.author.name + ':']
+        for word in msg_lower:
+            if emote_prefix in word:
+                try:
+                    message.append(emotes[word.split(emote_prefix)[1]])
+                    continue
+                except:
+                    pass
+            message.append(word)
+        mentions = ' '.join([m.mention for m in msg.mentions])
+        message.append(mentions)
+        message = ' '.join(message)
+        await bot.send_message(msg.channel, message)
+        try:
+            await bot.delete_message(msg)
+        except:
+            pass
     await bot.process_commands(msg)
 
 
