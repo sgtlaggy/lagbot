@@ -62,4 +62,6 @@ target/
 .ipynb_checkpoints
 
 #
+temotes.json
 stream.json
+*.png

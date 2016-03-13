@@ -1,6 +1,8 @@
 """Discord bot for Discord."""
 
 from collections import OrderedDict
+import datetime
+import requests
 import asyncio
 import logging
 import random
@@ -19,16 +21,38 @@ bot_owner = '103714384802480128'
 bot = commands.Bot(command_prefix='!')
 bot.remove_command('help')
 
+# Files and Paths
 app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
 data_path = os.path.join(app_path, 'data')
 log_file = os.path.join(app_path, 'bot.log')
+
 stream_file = os.path.join(data_path, 'stream.json')
+
+temote_file = os.path.join(data_path, 'temotes.json')
+temote_link = "https://twitchemotes.com/api_cache/v2/global.json"
+temote_image = os.path.join(data_path, 'emote.png')
 
 try:
     with open(stream_file, 'r') as fp:
         streamers = json.load(fp)
 except:
     streamers = {}
+
+try:
+    with open(temote_file, 'r') as fp:
+        temotes = json.load(fp)
+    if datetime.datetime.strptime(
+            temotes['meta']['generated_at'],
+            '%Y-%m-%dT%H:%M:%SZ') + datetime.timedelta(days=7) < \
+            datetime.datetime.utcnow():
+        raise Exception
+except:
+    with open(temote_file, 'w') as fp:
+        temotes = requests.get(temote_link).json()
+        temotes['emotes'] = {e.lower(): temotes['emotes'][e]['image_id']
+                             for e in temotes['emotes']}
+        json.dump(temotes, fp)
+
 
 if not os.path.isdir(data_path):
     os.mkdir(data_path)
@@ -330,6 +354,30 @@ async def on_ready():
     """Called when bot is ready."""
     log.info('Bot ready!')
     await bot.change_status(game=discord.Game(name='Destroy All Humans!'))
+
+
+@bot.event
+async def on_message(msg):
+    """Called when message is recieved."""
+    if msg.author == bot.user:
+        return
+    global temotes
+    if ';' in msg.content:
+        msg_lower = msg.content.lower().split()
+        ids = []
+        for word in msg_lower:
+            if ';' in word:
+                try:
+                    ids.append(temotes['emotes'][word.split(';')[1].lower()])
+                except:
+                    pass
+        for image_id in ids:
+            image = requests.get(temotes['template']['small'].format(
+                image_id=image_id)).content
+            with open(temote_image, 'wb') as fp:
+                fp.write(image)
+            with open(temote_image, 'rb') as fp:
+                await bot.send_file(msg.channel, fp)
 
 
 if __name__ == '__main__':
