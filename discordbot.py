@@ -18,7 +18,7 @@ import creds
 bot_owner = '103714384802480128'
 
 # Discord Client/Bot
-bot = commands.Bot(command_prefix='%!')
+bot = commands.Bot(command_prefix='!')
 bot.remove_command('help')
 
 # Files and Paths
@@ -194,10 +194,12 @@ async def info():
     lib_link = unformat_str('https://github.com/Rapptz/discord.py/tree/async')
     source_link = unformat_str('https://github.com/mikevb1/discordbot')
     twitch_emote_link = unformat_str('https://twitchemotes.com/')
+    bttv_emote_link = unformat_str('http://www.nightdev.com/betterttv/')
     message = """This bot is written in Python using discord.py from {}
     The source code can be found at {}
-    Global Twitch emote functionality provided by {}""".format(
-        lib_link, source_link, twitch_emote_link)
+    Global Twitch emote functionality provided by {}
+    BTTV emote functionality provided by night (see code for API) {}""".format(
+        lib_link, source_link, twitch_emote_link, bttv_emote_link)
     await bot.say(message)
 
 
