@@ -411,6 +411,24 @@ async def on_message(msg):
         return
     global temotes
     msg_lower = msg.content.lower().split()
+    if emote_prefix in msg.content:
+        message = [msg.author.name + ':']
+        for word in msg_lower:
+            if emote_prefix in word:
+                try:
+                    message.append(emotes[word.split(emote_prefix)[1]])
+                    continue
+                except:
+                    pass
+            message.append(word)
+        mentions = ' '.join([m.mention for m in msg.mentions])
+        message.append(mentions)
+        message = ' '.join(message)
+        await bot.send_message(msg.channel, message)
+        try:
+            await bot.delete_message(msg)
+        except:
+            pass
     if temote_prefix in msg.content:
         tids = []
         bids = []
@@ -438,24 +456,6 @@ async def on_message(msg):
                 fp.write(image)
             with open(emote_image, 'rb') as fp:
                 await bot.send_file(msg.channel, fp)
-    if emote_prefix in msg.content:
-        message = [msg.author.name + ':']
-        for word in msg_lower:
-            if emote_prefix in word:
-                try:
-                    message.append(emotes[word.split(emote_prefix)[1]])
-                    continue
-                except:
-                    pass
-            message.append(word)
-        mentions = ' '.join([m.mention for m in msg.mentions])
-        message.append(mentions)
-        message = ' '.join(message)
-        await bot.send_message(msg.channel, message)
-        try:
-            await bot.delete_message(msg)
-        except:
-            pass
     await bot.process_commands(msg)
 
 
