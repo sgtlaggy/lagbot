@@ -7,6 +7,7 @@ import asyncio
 import logging
 import random
 import json
+import time
 import sys
 import os
 
@@ -466,4 +467,18 @@ async def on_message(msg):
 
 
 if __name__ == '__main__':
-    bot.run(creds.dis_name, creds.dis_pass)
+    while True:
+        try:
+            bot.run(creds.dis_name, creds.dis_pass)
+        except discord.LoginFailure:
+            print('Incorrect login credentials.')
+            sys.exit(0)
+        except discord.HTTPException as e:
+            print('HTTP Exception: {}'.format(e))
+        except discord.ClientException:
+            print('Websocket closed.')
+        except discord.GatewayNotFound:
+            print('Discord API outage. Restarting in 5 minutes.')
+            time.sleep(300)
+        except:
+            pass
