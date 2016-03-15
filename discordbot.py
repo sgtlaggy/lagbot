@@ -15,9 +15,6 @@ from discord.ext import commands
 import discord
 import creds
 
-# Bot Owner Discord ID
-bot_owner = '103714384802480128'
-
 # Discord Client/Bot
 bot = commands.Bot(command_prefix='!')
 bot.remove_command('help')
@@ -37,8 +34,9 @@ try:
 except:
     streamers = {}
 
+# Emote Stuff
 emote_prefix = ':'
-emotes = OrderedDict([
+text_emotes = OrderedDict([
     ("disapprove", "ಠ_ಠ"),
     ("lenny", "( ͡° ͜ʖ ͡°)"),
     ("highlenny", "( ͡⊙ ͜ʖ ͡⊙)"),
@@ -54,40 +52,10 @@ emote_image = os.path.join(data_path, 'emote.png')
 temote_prefix = ';'
 temote_api = "https://twitchemotes.com/api_cache/v2/global.json"
 temote_file = os.path.join(data_path, 'temotes.json')
-try:
-    with open(temote_file, 'r') as fp:
-        temotes = json.load(fp)
-    if datetime.datetime.strptime(
-            temotes['meta']['generated_at'],
-            '%Y-%m-%dT%H:%M:%SZ') + datetime.timedelta(days=1) < \
-            datetime.datetime.utcnow():
-        raise Exception
-except:
-    with open(temote_file, 'w') as fp:
-        temotes = requests.get(temote_api).json()
-        temotes['emotes'] = {e.lower(): temotes['emotes'][e]['image_id']
-                             for e in temotes['emotes']}
-        json.dump(temotes, fp)
-
+temotes = {}
 bemote_api = "https://api.betterttv.net/2/emotes"
 bemote_file = os.path.join(data_path, 'bemotes.json')
-try:
-    with open(bemote_file, 'r') as fp:
-        bemotes = json.load(fp)
-    if datetime.datetime.strptime(
-            bemotes['time'], '%Y-%m-%dT%H:%M:%SZ') \
-            + datetime.timedelta(days=1) < datetime.datetime.utcnow():
-        raise Exception
-except:
-    with open(bemote_file, 'w') as fp:
-        bemotes = requests.get(bemote_api).json()
-        bemotes['emotes'] = {e['code'].lower(): e['id']
-                             for e in bemotes['emotes']}
-        bemotes['urlTemplate'] = 'http:' + bemotes['urlTemplate'].replace(
-            '{{id}}', '{image_id}').replace('{{image}}', '1x')
-        bemotes['time'] = datetime.datetime.utcnow().strftime(
-            '%Y-%m-%dT%H:%M%SZ')
-        json.dump(bemotes, fp)
+bemotes = {}
 
 # Logging Setup
 log = logging.getLogger('discord')
@@ -102,8 +70,6 @@ log.addHandler(fhandler)
 
 
 # General helper functions.
-
-
 def func_desc(func):
     """Get first sentence/description of function from docstring.
 
@@ -193,6 +159,49 @@ def stream_message(*args):
     return message
 
 
+def update_emotes(site=None):
+    """Update Twitch/BTTV emotes."""
+    global temotes
+    global bemotes
+    if site is None or site[0].lower() == 't':
+        with open(temote_file, 'w') as fp:
+            temotes = requests.get(temote_api).json()
+            temotes['emotes'] = {e.lower(): temotes['emotes'][e]['image_id']
+                                 for e in temotes['emotes']}
+            json.dump(temotes, fp)
+    if site is None or site[0].lower() == 'b':
+        with open(bemote_file, 'w') as fp:
+            bemotes = requests.get(bemote_api).json()
+            bemotes['emotes'] = {e['code'].lower(): e['id']
+                                 for e in bemotes['emotes']}
+            bemotes['urlTemplate'] = 'http:' + bemotes['urlTemplate'].replace(
+                '{{id}}', '{image_id}').replace('{{image}}', '1x')
+            bemotes['time'] = datetime.datetime.utcnow().strftime(
+                '%Y-%m-%dT%H:%M%SZ')
+            json.dump(bemotes, fp)
+
+
+try:
+    with open(temote_file, 'r') as fp:
+        temotes = json.load(fp)
+    if datetime.datetime.strptime(
+            temotes['meta']['generated_at'],
+            '%Y-%m-%dT%H:%M:%SZ') + datetime.timedelta(days=1) < \
+            datetime.datetime.utcnow():
+        raise Exception
+except:
+    update_emotes('t')
+try:
+    with open(bemote_file, 'r') as fp:
+        bemotes = json.load(fp)
+    if datetime.datetime.strptime(
+            bemotes['time'], '%Y-%m-%dT%H:%M:%SZ') \
+            + datetime.timedelta(days=1) < datetime.datetime.utcnow():
+        raise Exception
+except:
+    update_emotes('b')
+
+
 @bot.command(name='help')
 async def help_cmd(cmd=None):
     """Print this help."""
@@ -239,19 +248,26 @@ async def info():
     await bot.say(message)
 
 
-@bot.command(name='emotes')
-async def emotes_com():
+@bot.group(pass_context=True, invoke_without_commands=True)
+async def emotes(ctx):
     """Print all emotes available."""
-    message = ['Available emotes:']
-    space = list_align(emotes.keys(), 1)
-    for i, emote in enumerate(emotes):
-        message.append('`{}{}{}:` {}'.format(
-            emote_prefix,
-            emote,
-            ' ' * space[i],
-            unformat_str(repr(emotes[emote]))[1:-1]))
-    message = '\n'.join(message)
-    await bot.say(message)
+    if ctx.invoked_subcommand is None:
+        message = ['Available emotes:']
+        space = list_align(text_emotes.keys(), 1)
+        for i, emote in enumerate(text_emotes):
+            message.append('`{}{}{}:` {}'.format(
+                emote_prefix,
+                emote,
+                ' ' * space[i],
+                unformat_str(repr(text_emotes[emote]))[1:-1]))
+        message = '\n'.join(message)
+        await bot.say(message)
+
+
+@emotes.command(name='update')
+async def emotes_update(site=None):
+    """Update Twitch/BTTV emotes."""
+    update_emotes(site)
 
 
 @bot.command()
@@ -419,7 +435,7 @@ async def on_message(msg):
         for word in msg_lower:
             if emote_prefix in word:
                 try:
-                    message.append(emotes[word.split(emote_prefix)[1]])
+                    message.append(text_emotes[word.split(emote_prefix)[1]])
                     emote = True
                     continue
                 except:
