@@ -26,6 +26,9 @@ app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
 data_path = os.path.join(app_path, 'data')
 log_file = os.path.join(app_path, 'bot.log')
 
+if not os.path.isdir(data_path):
+    os.mkdir(data_path)
+
 stream_file = os.path.join(data_path, 'stream.json')
 try:
     with open(stream_file, 'r') as fp:
@@ -33,8 +36,20 @@ try:
 except:
     streamers = {}
 
-emote_image = os.path.join(data_path, 'emote.png')
 emote_prefix = ':'
+emotes = OrderedDict([
+    ("disapprove", "ಠ_ಠ"),
+    ("lenny", "( ͡° ͜ʖ ͡°)"),
+    ("highlenny", "( ͡⊙ ͜ʖ ͡⊙)"),
+    ("lennies", "( ͡°( ͡° ͜ʖ( ͡° ͜ʖ ͡°)ʖ ͡°) ͡°)"),
+    ("fight", "(ง ͠° ͟ل͜ ͡°)ง"),
+    ("shrug", "¯\\_(ツ)_/¯"),
+    ("donger", "ヽ༼ຈل͜ຈ༽ﾉ raise your dongers ヽ༼ຈل͜ຈ༽ﾉ"),
+    ("give", "༼ つ ◕_◕ ༽つ"),
+    ("zoidberg", "(\\/) (°,,,°) (\\/)"),
+    ("ayy", ":alien: ayy lmao")])
+
+emote_image = os.path.join(data_path, 'emote.png')
 temote_prefix = ';'
 temote_api = "https://twitchemotes.com/api_cache/v2/global.json"
 temote_file = os.path.join(data_path, 'temotes.json')
@@ -72,20 +87,6 @@ except:
         bemotes['time'] = datetime.datetime.utcnow().strftime(
             '%Y-%m-%dT%H:%M%SZ')
         json.dump(bemotes, fp)
-
-if not os.path.isdir(data_path):
-    os.mkdir(data_path)
-
-emotes = OrderedDict([
-    ('disapprove', 'ಠ_ಠ'),
-    ('lenny', '( ͡° ͜ʖ ͡°)'),
-    ('lennies', '( ͡°( ͡° ͜ʖ( ͡° ͜ʖ ͡°)ʖ ͡°) ͡°)'),
-    ('fight', '(ง ͠° ͟ل͜ ͡°)ง'),
-    ('shrug', '¯\_(ツ)_/¯'),
-    ('donger', 'ヽ༼ຈل͜ຈ༽ﾉ raise your dongers ヽ༼ຈل͜ຈ༽ﾉ'),
-    ('give', '༼ つ ◕_◕ ༽つ'),
-    ('zoidberg', '(\/) (°,,,°) (\/)'),
-    ('ayy', ':alien: ayy lmao')])
 
 # Logging Setup
 log = logging.getLogger('discord')
