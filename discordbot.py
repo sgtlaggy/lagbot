@@ -207,8 +207,8 @@ async def help_cmd(cmd=None):
             message.append('{}{}: {}'.format(
                 com, ' ' * space[i], coms[com].help.splitlines()[0]))
         message.append(
-                '\nTo use Twitch/BTTV emotes, prefix the emote with {}'.format(
-                    temote_prefix))
+            '\nTo use Twitch/BTTV emotes, prefix the emote with {}'.format(
+                temote_prefix))
         message.append('```')
         message = '\n'.join(message)
         await bot.say(message)
@@ -442,10 +442,11 @@ async def on_message(msg):
                     tids.append(temotes['emotes']
                                 [word.split(temote_prefix)[1].lower()])
                 except KeyError:
-                    bids.append(bemotes['emotes']
-                                [word.split(temote_prefix)[1].lower()])
-                except:
-                    pass
+                    try:
+                        bids.append(bemotes['emotes']
+                                    [word.split(temote_prefix)[1].lower()])
+                    except KeyError:
+                        pass
         for image_id in tids:
             image = requests.get(temotes['template']['small'].format(
                 image_id=image_id)).content
