@@ -59,7 +59,7 @@ try:
         temotes = json.load(fp)
     if datetime.datetime.strptime(
             temotes['meta']['generated_at'],
-            '%Y-%m-%dT%H:%M:%SZ') + datetime.timedelta(days=7) < \
+            '%Y-%m-%dT%H:%M:%SZ') + datetime.timedelta(days=1) < \
             datetime.datetime.utcnow():
         raise Exception
 except:
@@ -76,7 +76,7 @@ try:
         bemotes = json.load(fp)
     if datetime.datetime.strptime(
             bemotes['time'], '%Y-%m-%dT%H:%M:%SZ') \
-            + datetime.timedelta(days=7) < datetime.datetime.utcnow():
+            + datetime.timedelta(days=1) < datetime.datetime.utcnow():
         raise Exception
 except:
     with open(bemote_file, 'w') as fp:
