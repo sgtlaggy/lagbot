@@ -465,6 +465,11 @@ async def on_message(msg):
                                     [word.split(temote_prefix)[1].lower()])
                     except KeyError:
                         pass
+        if len(tids) + len(bids) == len(msg.content.split()):
+            try:
+                await bot.delete_message(msg)
+            except:
+                pass
         for image_id in tids:
             image = requests.get(temotes['template']['small'].format(
                 image_id=image_id)).content
