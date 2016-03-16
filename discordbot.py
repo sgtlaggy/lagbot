@@ -15,6 +15,17 @@ from discord.ext import commands
 import discord
 import creds
 
+# Logging Setup
+log = logging.getLogger('discord')
+log.setLevel(logging.INFO)
+fhandler = logging.FileHandler(
+    filename=log_file,
+    encoding='utf-8',
+    mode='a')
+fhandler.setFormatter(logging.Formatter(
+    '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
+log.addHandler(fhandler)
+
 # Discord Client/Bot
 bot = commands.Bot(command_prefix='!')
 bot.remove_command('help')
@@ -56,17 +67,6 @@ temotes = {}
 bemote_api = "https://api.betterttv.net/2/emotes"
 bemote_file = os.path.join(data_path, 'bemotes.json')
 bemotes = {}
-
-# Logging Setup
-log = logging.getLogger('discord')
-log.setLevel(logging.INFO)
-fhandler = logging.FileHandler(
-    filename=log_file,
-    encoding='utf-8',
-    mode='a')
-fhandler.setFormatter(logging.Formatter(
-    '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
-log.addHandler(fhandler)
 
 
 # General helper functions.
@@ -488,18 +488,6 @@ async def on_message(msg):
 
 
 if __name__ == '__main__':
-    while True:
-        try:
-            bot.run(creds.dis_name, creds.dis_pass)
-        except discord.LoginFailure:
-            print('Incorrect login credentials.')
-            sys.exit(0)
-        except discord.HTTPException as e:
-            print('HTTP Exception: {}'.format(e))
-        except discord.ClientException:
-            print('Websocket closed.')
-        except discord.GatewayNotFound:
-            print('Discord API outage. Restarting in 5 minutes.')
-            time.sleep(300)
-        except:
-            pass
+    if any('debug' in arg.lower() for arg in sys.argv):
+        bot.command_prefix = '%!'
+    bot.run(creds.dis_name, creds.dis_pass)
