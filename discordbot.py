@@ -15,6 +15,13 @@ from discord.ext import commands
 import discord
 import creds
 
+# Files and Paths
+app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
+data_path = os.path.join(app_path, 'data')
+log_file = os.path.join(app_path, 'bot.log')
+if not os.path.isdir(data_path):
+    os.mkdir(data_path)
+
 # Logging Setup
 log = logging.getLogger('discord')
 log.setLevel(logging.INFO)
@@ -30,14 +37,7 @@ log.addHandler(fhandler)
 bot = commands.Bot(command_prefix='!')
 bot.remove_command('help')
 
-# Files and Paths
-app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
-data_path = os.path.join(app_path, 'data')
-log_file = os.path.join(app_path, 'bot.log')
-
-if not os.path.isdir(data_path):
-    os.mkdir(data_path)
-
+# Stream Stuff
 stream_file = os.path.join(data_path, 'stream.json')
 try:
     with open(stream_file, 'r') as fp:
