@@ -11,6 +11,12 @@ class Admin:
         """Constructor."""
         self.bot = bot
 
+    @commands.command(name='id', pass_context=True)
+    async def get_id(self, ctx):
+        """Get discord ID's."""
+        for m in ctx.message.mentions:
+            await self.bot.say('{0.name}: {0.id}'.format(m))
+
     @commands.command()
     async def join(self, channel):
         """Tell bot to join server using ID or discord.gg link.
