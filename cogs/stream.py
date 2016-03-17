@@ -17,7 +17,7 @@ class Stream:
 
         self.stream_file = os.path.join(
             *os.path.split(
-                os.path.abspath(__file__))[0].split('\\')[:-1],
+                os.path.abspath(__file__))[0].split(os.sep)[:-1],
             'data', 'stream.json')
         try:
             with open(self.stream_file, 'r') as fp:
