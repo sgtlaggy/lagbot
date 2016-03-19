@@ -54,7 +54,6 @@ class Stream:
         self.stream_file = os.path.join(
             os.path.split(os.path.split(os.path.abspath(__file__))[0])[0],
             'data', 'stream.json')
-        print(self.stream_file)
         try:
             with open(self.stream_file, 'r') as fp:
                 self.streamers = json.load(fp)

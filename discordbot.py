@@ -135,6 +135,7 @@ async def emotes_update(site=None):
 async def on_ready():
     """Called when bot is ready."""
     log.info('Bot ready!')
+    bot.uptime = datetime.datetime.utcnow()
     for cog in cogs:
         try:
             bot.load_extension(cog)

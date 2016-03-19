@@ -1,6 +1,7 @@
 """Cog for miscellaneous stuff."""
 
 from collections import OrderedDict
+import datetime
 import random
 
 from discord.ext import commands
@@ -99,6 +100,21 @@ class Misc:
         replies = [
             'Hey!', 'Ow!', 'Stop that!', "I'm here!", 'I need an adult!']
         await self.bot.say(random.choice(replies))
+
+    @commands.command()
+    async def uptime(self):
+        """Display bot uptime."""
+        now = datetime.datetime.utcnow()
+        delta = now - self.bot.uptime
+        hours, remainder = divmod(int(delta.total_seconds()), 3600)
+        minutes, seconds = divmod(remainder, 60)
+        days, hours = divmod(hours, 24)
+        if days:
+            fmt = '{d} days, {h} hours, {m} minutes, {s} seconds'
+        else:
+            fmt = '{h} hours, {m} minutes, {s} seconds'
+        up = fmt.format(d=days, h=hours, m=minutes, s=seconds)
+        await self.bot.say('Uptime: **{}**'.format(up))
 
 
 def setup(bot):
