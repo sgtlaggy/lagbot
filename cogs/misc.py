@@ -63,6 +63,9 @@ class Misc:
                 message.append('{}{}: {}'.format(
                     com, ' ' * space[i], coms[com].help.splitlines()[0]))
             message.append(
+                '\nTo see help for individual commands, '
+                'use {}help command'.format(self.bot.command_prefix))
+            message.append(
                 '\nTo use Twitch/BTTV emotes, prefix the emote with {}'.format(
                     self.temote_prefix))
             message.append('```')
