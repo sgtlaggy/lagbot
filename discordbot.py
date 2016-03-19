@@ -55,7 +55,10 @@ text_emotes = OrderedDict([
     ("zoidberg", "(\\/) (°,,,°) (\\/)"),
     ("ayy", ":alien: ayy lmao")])
 
-emote_image = os.path.join(data_path, 'emote.png')
+emote_path = os.path.join(data_path, 'emotes')
+emote_image = os.path.join(emote_path, '{}.png')
+if not os.path.isdir(emote_path):
+    os.mkdir(emote_path)
 temote_prefix = ';'
 temote_api = "https://twitchemotes.com/api_cache/v2/global.json"
 temote_file = os.path.join(data_path, 'temotes.json')
@@ -149,22 +152,20 @@ async def on_message(msg):
         return
     global temotes
     msg_lower = msg.content.lower().split()
-    for _ in range(1):
-        if emote_prefix in msg.content:
-            emote = False
-            message = [msg.author.name + ':']
-            for word in msg_lower:
-                if emote_prefix in word:
-                    try:
-                        message.append(
-                            text_emotes[word.split(emote_prefix)[1]])
-                        emote = True
-                        continue
-                    except:
-                        pass
-                message.append(word)
-            if not emote:
-                break
+    if emote_prefix in msg.content:
+        emote = False
+        message = [msg.author.name + ':']
+        for word in msg_lower:
+            if emote_prefix in word:
+                try:
+                    message.append(
+                        text_emotes[word.split(emote_prefix)[1]])
+                    emote = True
+                    continue
+                except:
+                    pass
+            message.append(word)
+        if emote:
             mentions = ' '.join([m.mention for m in msg.mentions])
             message.append(mentions)
             message = ' '.join(message)
@@ -174,38 +175,39 @@ async def on_message(msg):
             except:
                 pass
     if temote_prefix in msg.content:
-        tids = []
-        bids = []
+        ids = []
         for word in msg_lower:
             if temote_prefix in word:
                 try:
-                    tids.append(temotes['emotes']
-                                [word.split(temote_prefix)[1].lower()])
+                    ids.append(temotes['emotes']
+                               [word.split(temote_prefix)[1].lower()])
                 except KeyError:
                     try:
-                        bids.append(bemotes['emotes']
-                                    [word.split(temote_prefix)[1].lower()])
+                        ids.append(bemotes['emotes']
+                                   [word.split(temote_prefix)[1].lower()])
                     except KeyError:
                         pass
-        if len(tids) + len(bids) == len(msg.content.split()):
+        if len(ids) == len(msg.content.split()):
             try:
                 await bot.delete_message(msg)
             except:
                 pass
-        for image_id in tids:
-            image = requests.get(temotes['template']['small'].format(
-                image_id=image_id)).content
-            with open(emote_image, 'wb') as fp:
-                fp.write(image)
-            with open(emote_image, 'rb') as fp:
-                await bot.send_file(msg.channel, fp)
-        for image_id in bids:
-            image = requests.get(bemotes['urlTemplate'].format(
-                image_id=image_id)).content
-            with open(emote_image, 'wb') as fp:
-                fp.write(image)
-            with open(emote_image, 'rb') as fp:
-                await bot.send_file(msg.channel, fp)
+        for image_id in ids:
+            try:
+                with open(emote_image.format(image_id), 'rb') as fp:
+                    await bot.send_file(msg.channel, fp)
+            except FileNotFoundError:
+                image = requests.get(temotes['template']['small'].format(
+                    image_id=image_id))
+                if '404' in str(image):
+                    image = requests.get(bemotes['urlTemplate'].format(
+                        image_id=image_id))
+                with open(emote_image.format(image_id), 'wb') as fp:
+                    fp.write(image.content)
+                with open(emote_image.format(image_id), 'rb') as fp:
+                    await bot.send_file(msg.channel, fp)
+            except:
+                pass
     await bot.process_commands(msg)
 
 
