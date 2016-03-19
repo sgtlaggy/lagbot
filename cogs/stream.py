@@ -5,7 +5,7 @@ import asyncio
 import json
 import os
 
-from .utils import *
+from .utils import stream_name_link, stream_message
 
 
 class Stream:
@@ -15,10 +15,12 @@ class Stream:
         """Constructor."""
         self.bot = bot
 
+        # wrapped in os.path.split()[0] twice for windows compatibility because
+        # .join just doesn't work properly
         self.stream_file = os.path.join(
-            *os.path.split(
-                os.path.abspath(__file__))[0].split(os.sep)[:-1],
+            os.path.split(os.path.split(os.path.abspath(__file__))[0])[0],
             'data', 'stream.json')
+        print(self.stream_file)
         try:
             with open(self.stream_file, 'r') as fp:
                 self.streamers = json.load(fp)
@@ -41,7 +43,7 @@ class Stream:
         if ctx.invoked_subcommand is None:
             stream_text = '{} is streaming at {}'
             msg = ctx.message
-            message = stream_message(args)
+            message = stream_message(*args)
             message += stream_text
             if len(args) == 0 or args[0] in ('#', '$'):
                 try:
