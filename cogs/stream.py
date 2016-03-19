@@ -5,7 +5,41 @@ import asyncio
 import json
 import os
 
-from .utils import stream_name_link, stream_message
+
+def is_url(text):
+    """Check if a string is a standard http(s) URL."""
+    if text.startswith('http:') or text.startswith('https:'):
+        return True
+    return False
+
+
+def stream_name_link(nl):
+    """Get stream link from name or vice-versa."""
+    if is_url(nl):
+        link = nl
+        name = link.split('/')[-1]
+    else:
+        name = nl
+        link = 'http://twitch.tv/{}'.format(name.lower())
+    return name, link
+
+
+def stream_message(*args):
+    """Get message in stream announcement."""
+    message = ''
+    if '#' in args:
+        for i, a in enumerate(args):
+            if a == '#':
+                message = '@everyone ' + ' '.join(args[i + 1:])
+                break
+    elif '$' in args:
+        for i, a in enumerate(args):
+            if a == '$':
+                message = ' '.join(args[i + 1:])
+                break
+    if message:
+        message += '\n'
+    return message
 
 
 class Stream:

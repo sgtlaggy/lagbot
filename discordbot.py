@@ -12,7 +12,6 @@ import os
 from discord.ext import commands
 import discord
 import creds
-from cogs.utils import *
 
 # Files and Paths
 app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
