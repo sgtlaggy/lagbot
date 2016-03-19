@@ -5,9 +5,7 @@ import datetime
 import requests
 import asyncio
 import logging
-import random
 import json
-import time
 import sys
 import os
 
@@ -158,7 +156,8 @@ async def on_message(msg):
             for word in msg_lower:
                 if emote_prefix in word:
                     try:
-                        message.append(text_emotes[word.split(emote_prefix)[1]])
+                        message.append(
+                            text_emotes[word.split(emote_prefix)[1]])
                         emote = True
                         continue
                     except:
