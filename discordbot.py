@@ -38,6 +38,7 @@ bot.remove_command('help')
 cogs = [
     'cogs.admin',
     'cogs.misc',
+    'cogs.meta',
     'cogs.stream']
 
 # Emote Stuff

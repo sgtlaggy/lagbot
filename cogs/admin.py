@@ -11,35 +11,6 @@ class Admin:
         """Constructor."""
         self.bot = bot
 
-    @commands.command(name='id', pass_context=True)
-    async def get_id(self, ctx):
-        """Get discord ID's."""
-        for m in ctx.message.mentions:
-            await self.bot.say('{0.name}: {0.id}'.format(m))
-
-    @commands.command()
-    async def join(self, channel):
-        """Tell bot to join server using ID or discord.gg link.
-
-        Usage:
-        {0}join 0h4QlpGEPGkSCO6I                    (invite ID)
-        {0}join https://discord.gg/0h4QlpGEPGkSCO6I (invite link)
-        """
-        try:
-            await self.bot.accept_invite(channel)
-        except:
-            pass
-
-    @commands.command(pass_context=True)
-    @commands.has_permissions(kick_members=True)
-    async def leave(self, ctx):
-        """Tell bot to leave server.
-
-        Usage:
-        {0}leave
-        """
-        await self.bot.leave_server(ctx.message.server)
-
     @commands.command(pass_context=True)
     @commands.has_permissions(kick_members=True)
     @commands.bot_has_permissions(kick_members=True)
