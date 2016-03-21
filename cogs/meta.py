@@ -107,8 +107,12 @@ class Meta:
         days, hours = divmod(hours, 24)
         if days:
             fmt = '{d} day{dp}, {h} hour{hp}, {m} minute{mp}, {s} second{sp}'
-        else:
+        elif hours:
             fmt = '{h} hour{hp}, {m} minute{mp}, {s} second{sp}'
+        elif minutes:
+            fmt = '{m} minute{mp}, {s} second{sp}'
+        else:
+            fmt = '{s} second{sp}'
 
         def plural(num):
             return 's' if num != 1 else ''
