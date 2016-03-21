@@ -106,10 +106,18 @@ class Meta:
         minutes, seconds = divmod(remainder, 60)
         days, hours = divmod(hours, 24)
         if days:
-            fmt = '{d} days, {h} hours, {m} minutes, {s} seconds'
+            fmt = '{d} day{dp}, {h} hour{hp}, {m} minute{mp}, {s} second{sp}'
         else:
-            fmt = '{h} hours, {m} minutes, {s} seconds'
-        up = fmt.format(d=days, h=hours, m=minutes, s=seconds)
+            fmt = '{h} hour{hp}, {m} minute{mp}, {s} second{sp}'
+
+        def plural(num):
+            return 's' if num != 1 else ''
+
+        up = fmt.format(
+            d=days, dp=plural(days),
+            h=hours, hp=plural(hours),
+            m=minutes, mp=plural(minutes),
+            s=seconds, sp=plural(seconds))
         await self.bot.say('Uptime: **{}**'.format(up))
 
     @commands.command()
