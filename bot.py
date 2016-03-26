@@ -11,6 +11,8 @@ import os
 
 from discord.ext import commands
 import discord
+
+from cogs.utils import list_align
 import creds
 
 # Files and Paths
