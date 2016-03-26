@@ -7,18 +7,7 @@ import random
 from discord.ext import commands
 import asyncio
 
-from .utils import list_align
-
-
-def unformat_str(raw):
-    """Make a string discord-friendly."""
-    new = ''
-    rep = ['_', '*', '`', '~']
-    for c in raw:
-        if c in rep:
-            new += '\\'
-        new += c
-    return new
+from .utils import list_align, unformat_str
 
 
 class Meta:

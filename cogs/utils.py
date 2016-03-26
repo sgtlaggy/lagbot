@@ -19,3 +19,14 @@ def list_align(words, extra=0):
         lens.append(longest - len(word))
     lens = [space + extra for space in lens]
     return lens
+
+
+def unformat_str(raw):
+    """Make a string discord-friendly."""
+    new = ''
+    rep = ['_', '*', '`', '~']
+    for c in raw:
+        if c in rep:
+            new += '\\'
+        new += c
+    return new

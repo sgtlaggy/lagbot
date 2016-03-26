@@ -12,7 +12,7 @@ import os
 from discord.ext import commands
 import discord
 
-from cogs.utils import list_align
+from cogs.utils import list_align, unformat_str
 import creds
 
 # Files and Paths
