@@ -24,11 +24,11 @@ if not os.path.isdir(data_path):
 
 # Logging Setup
 log = logging.getLogger('discord')
-log.setLevel(logging.INFO)
+log.setLevel(logging.DEBUG)
 fhandler = logging.FileHandler(
     filename=log_file,
     encoding='utf-8',
-    mode='a')
+    mode='w')
 fhandler.setFormatter(logging.Formatter(
     '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 log.addHandler(fhandler)
