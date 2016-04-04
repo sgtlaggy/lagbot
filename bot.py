@@ -33,8 +33,13 @@ fhandler.setFormatter(logging.Formatter(
     '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
 log.addHandler(fhandler)
 
+
+def create_bot():
+    """Create bot."""
+    return commands.Bot(command_prefix='!')
+
 # Discord Client/Bot
-bot = commands.Bot(command_prefix='!')
+bot = create_bot()
 bot.remove_command('help')
 
 cogs = [
@@ -223,3 +228,4 @@ if __name__ == '__main__':
         except Exception as e:
             log.error(e)
             print(e)
+            bot = create_bot()
