@@ -22,7 +22,7 @@ class Misc:
         message = []
         for i in range(1, count + 1):
             value = random.randint(1, sides)
-            message += 'Roll {}: {}'.format(i, value)
+            message.append('Roll {}: {}'.format(i, value))
         message = '\n'.join(message)
         await self.bot.say(message)
 
