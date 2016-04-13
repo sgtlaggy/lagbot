@@ -18,7 +18,7 @@ class Admin:
         """Kick user from server if you have permission.
 
         Usage:
-        {0}kick @user
+        {prefix}kick @user
         """
         for m in ctx.message.mentions:
             await self.bot.kick(m)
@@ -30,7 +30,7 @@ class Admin:
         """Ban user from server if you have permission.
 
         Usage:
-        {0}ban @user
+        {prefix}ban @user
         """
         days = int(days)
         if days > 7:

@@ -65,13 +65,13 @@ class Stream:
         """Announce that you or someone else is streaming.
 
         Usage:
-        {0}stream link                   (announce someone not in discord)
-        {0}stream @user                  (announce someone else)
-        {0}stream                        (announce yourself)
-        {0}stream # announcement message (announce message, mention everyone)
-        {0}stream $ announcement message (announce message, no mention)
-        {0}stream add @user link         (add someone to list)
-        {0}stream rem @user              (remove someone from list)
+        {prefix}stream link                   (announce someone not in discord)
+        {prefix}stream @user                  (announce someone else)
+        {prefix}stream                        (announce yourself)
+        {prefix}stream # announcement message (announce message, mention everyone)
+        {prefix}stream $ announcement message (announce message, no mention)
+        {prefix}stream add @user link         (add someone to list)
+        {prefix}stream rem @user              (remove someone from list)
         """
         if ctx.invoked_subcommand is None:
             stream_text = '{} is streaming at {}'
@@ -104,11 +104,7 @@ class Stream:
 
     @stream.command(name='add', pass_context=True)
     async def add_stream(self, ctx, _, link):
-        """Add or update a streamer's link.
-
-        Usage:
-        {0}stream add @user link
-        """
+        """Add or update a streamer's link."""
         member = ctx.message.mentions[0]
         try:
             name, link = member.name, link
@@ -122,11 +118,7 @@ class Stream:
 
     @stream.command(name='remove', aliases=['rem'], pass_context=True)
     async def remove_stream(self, ctx, _):
-        """Remove streamer from list.
-
-        Usage:
-        {0}stream rem @user
-        """
+        """Remove streamer from list."""
         member = ctx.message.mentions[0]
         try:
             name, sid = member.name, member.id

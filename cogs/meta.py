@@ -24,7 +24,7 @@ class Meta:
         if cmd is None:
             coms = OrderedDict()
             com_list = [
-                'help', 'info', 'uptime', 'poke', 'emotes',
+                'help', 'info', 'uptime', 'poke', 'roll', 'emotes',
                 'stream', 'join', 'leave', 'kick', 'ban']
             space = list_align(com_list, 2)
             for com in com_list:
@@ -45,11 +45,9 @@ class Meta:
         else:
             try:
                 message = self.bot.commands[cmd].help.format(
-                    self.bot.command_prefix)
-            except KeyError:
-                return
+                    prefix=self.bot.command_prefix)
             except:
-                message = self.bot.commands[cmd].help
+                return
             await self.bot.say('```' + message + '```')
 
     @commands.command()
@@ -113,8 +111,8 @@ class Meta:
         """Tell bot to join server using ID or discord.gg link.
 
         Usage:
-        {0}join 0h4QlpGEPGkSCO6I                    (invite ID)
-        {0}join https://discord.gg/0h4QlpGEPGkSCO6I (invite link)
+        {prefix}join 0h4QlpGEPGkSCO6I                    (invite ID)
+        {prefix}join https://discord.gg/0h4QlpGEPGkSCO6I (invite link)
         """
         try:
             await self.bot.accept_invite(channel)
@@ -124,11 +122,7 @@ class Meta:
     @commands.command(pass_context=True)
     @commands.has_permissions(kick_members=True)
     async def leave(self, ctx):
-        """Tell bot to leave server.
-
-        Usage:
-        {0}leave
-        """
+        """Tell bot to leave server."""
         await self.bot.leave_server(ctx.message.server)
 
 
