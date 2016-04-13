@@ -2,6 +2,7 @@
 
 from discord.ext import commands
 import asyncio
+import random
 
 
 class Misc:
@@ -10,6 +11,20 @@ class Misc:
     def __init__(self, bot):
         """Constructor."""
         self.bot = bot
+
+    @commands.command()
+    async def roll(self, dice='1d6'):
+        """In format XdY, rolls X dice each with Y sides. Default: 1d6"""
+        try:
+            count, sides = map(int, dice.split('d'))
+        except:
+            return
+        message = []
+        for i in range(1, count + 1):
+            value = random.randint(1, sides)
+            message += 'Roll {}: {}'.format(i, value)
+        message = '\n'.join(message)
+        await self.bot.say(message)
 
 
 def setup(bot):
