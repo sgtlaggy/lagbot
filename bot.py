@@ -228,4 +228,9 @@ if __name__ == '__main__':
         except Exception as e:
             log.error(e)
             print(e)
+            try:
+                bot.loop.run_until_complete(bot.logout())
+            except:
+                pass
+        finally:
             bot = create_bot()
