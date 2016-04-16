@@ -222,15 +222,4 @@ async def on_message(msg):
 if __name__ == '__main__':
     if any('debug' in arg.lower() for arg in sys.argv):
         bot.command_prefix = '%!'
-    while True:
-        try:
-            bot.run(creds.dis_name, creds.dis_pass)
-        except Exception as e:
-            log.error(e)
-            print(e)
-            try:
-                bot.loop.run_until_complete(bot.logout())
-            except:
-                pass
-        finally:
-            bot = create_bot()
+    bot.run(creds.dis_name, creds.dis_pass)
