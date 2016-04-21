@@ -222,4 +222,8 @@ async def on_message(msg):
 if __name__ == '__main__':
     if any('debug' in arg.lower() for arg in sys.argv):
         bot.command_prefix = '%!'
-    bot.run(creds.dis_name, creds.dis_pass)
+    try:
+        bot.run(creds.dis_name, creds.dis_pass)
+    except Exception as e:
+        print(e)
+        log.error(e)
