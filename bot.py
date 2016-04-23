@@ -24,7 +24,7 @@ if not os.path.isdir(data_path):
 
 # Logging Setup
 log = logging.getLogger('discord')
-log.setLevel(logging.DEBUG)
+log.setLevel(logging.INFO)
 fhandler = logging.FileHandler(
     filename=log_file,
     encoding='utf-8',
