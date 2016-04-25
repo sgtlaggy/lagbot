@@ -13,7 +13,6 @@ from discord.ext import commands
 import discord
 
 from cogs.utils import list_align, unformat_str
-import creds
 
 # Files and Paths
 app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
@@ -24,7 +23,7 @@ if not os.path.isdir(data_path):
 
 # Logging Setup
 log = logging.getLogger('discord')
-log.setLevel(logging.INFO)
+log.setLevel(logging.DEBUG)
 fhandler = logging.FileHandler(
     filename=log_file,
     encoding='utf-8',
@@ -222,8 +221,10 @@ async def on_message(msg):
 if __name__ == '__main__':
     if any('debug' in arg.lower() for arg in sys.argv):
         bot.command_prefix = '%!'
+    with open('token.txt', 'r') as fp:
+        token = fp.read()[:-1]
     try:
-        bot.run(creds.dis_name, creds.dis_pass)
+        bot.run(token)
     except Exception as e:
         print(e)
         log.error(e)
