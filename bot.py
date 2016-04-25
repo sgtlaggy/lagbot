@@ -17,6 +17,7 @@ from cogs.utils import list_align, unformat_str
 # Files and Paths
 app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
 data_path = os.path.join(app_path, 'data')
+token_file = os.path.join(app_path, 'token.txt')
 log_file = os.path.join(app_path, 'bot.log')
 if not os.path.isdir(data_path):
     os.mkdir(data_path)
@@ -221,7 +222,7 @@ async def on_message(msg):
 if __name__ == '__main__':
     if any('debug' in arg.lower() for arg in sys.argv):
         bot.command_prefix = '%!'
-    with open('token.txt', 'r') as fp:
+    with open(token_file, 'r') as fp:
         token = fp.read()[:-1]
     try:
         bot.run(token)
