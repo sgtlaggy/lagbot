@@ -164,7 +164,7 @@ async def on_message(msg):
         emote = False
         message = [msg.author.name + ':']
         for word in msg_lower:
-            if emote_prefix in word:
+            if word.startswith(emote_prefix):
                 try:
                     message.append(
                         text_emotes[word.split(emote_prefix)[1]])
@@ -185,7 +185,7 @@ async def on_message(msg):
     if temote_prefix in msg.content:
         ids = []
         for word in msg_lower:
-            if temote_prefix in word:
+            if word.startswith(temote_prefix):
                 try:
                     ids.append(temotes['emotes']
                                [word.split(temote_prefix)[1].lower()])
