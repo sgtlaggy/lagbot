@@ -7,7 +7,7 @@ import random
 from discord.ext import commands
 import asyncio
 
-from .utils import list_align, unformat_str
+from .utils import list_align
 
 
 class Meta:
@@ -24,7 +24,7 @@ class Meta:
         if cmd is None:
             coms = OrderedDict()
             com_list = [
-                'help', 'info', 'uptime', 'poke', 'roll', 'emotes',
+                'help', 'info', 'uptime', 'poke', 'roll',
                 'stream', 'join', 'leave', 'kick', 'ban']
             space = list_align(com_list, 2)
             for com in com_list:
@@ -53,17 +53,10 @@ class Meta:
     @commands.command()
     async def info(self):
         """Print bot information."""
-        lib_link = \
-            unformat_str('https://github.com/Rapptz/discord.py/tree/async')
-        source_link = unformat_str('https://github.com/mikevb1/discordbot')
-        twitch_emote_link = unformat_str('https://twitchemotes.com/')
-        bttv_emote_link = unformat_str('http://www.nightdev.com/betterttv/')
+        lib_link = 'https://github.com/Rapptz/discord.py/tree/async'
+        source_link = 'https://github.com/mikevb1/discordbot'
         message = """This bot is written in Python using discord.py from {}.
-        The source code can be found at {}.
-        Global Twitch emote functionality provided by {}.
-        BTTV emote functionality provided by night (see code for API) {}.""". \
-            format(
-                lib_link, source_link, twitch_emote_link, bttv_emote_link)
+        The source code can be found at {}.""".format(lib_link, source_link)
         await self.bot.say(message)
 
     @commands.command()
