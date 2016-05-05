@@ -1,11 +1,8 @@
 """Discord bot for Discord."""
 
-from collections import OrderedDict
 import datetime
-import requests
 import asyncio
 import logging
-import json
 import sys
 import os
 
