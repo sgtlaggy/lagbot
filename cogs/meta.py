@@ -102,12 +102,12 @@ class Meta:
         if self.bot.client_id is None:
             return
         perm = discord.Permissions()
-        perm.kick_members(True)
-        perm.ban_members(True)
-        perm.read_messages(True)
-        perm.send_messages(True)
-        perm.manage_messages(True)
-        perm.embed_links(True)
+        perm.kick_members = True
+        perm.ban_members = True
+        perm.read_messages = True
+        perm.send_messages = True
+        perm.manage_messages = True
+        perm.embed_links = True
         await self.bot.say(discord.utils.oauth_url(
             self.bot.client_id,
             permissions=perm))
