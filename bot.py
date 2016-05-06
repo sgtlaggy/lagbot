@@ -65,7 +65,13 @@ if __name__ == '__main__':
     if any('debug' in arg.lower() for arg in sys.argv):
         bot.command_prefix = '%!'
     with open(token_file, 'r') as fp:
-        token = fp.read()[:-1]
+        lines = fp.readlines()
+        if len(lines) == 2:
+            bot.client_id = lines[0]
+            token = lines[1]
+        else:
+            bot.client_id = None
+            token = lines[0]
     try:
         bot.run(token)
     except Exception as e:

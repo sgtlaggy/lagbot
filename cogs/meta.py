@@ -5,6 +5,7 @@ import datetime
 import random
 
 from discord.ext import commands
+import discord
 import asyncio
 
 from .utils import list_align
@@ -50,7 +51,8 @@ class Meta:
     async def info(self):
         """Print bot information."""
         source_link = 'https://github.com/mikevb1/discordbot'
-        message = 'This bot is written in Python using discord.py from https://github.com/Rapptz/discord.py/tree/async.'
+        message = 'This bot is written in Python using discord.py from ' + \
+            'https://github.com/Rapptz/discord.py/tree/async.'
         message += '\nThe source code can be found at {}.'.format(source_link)
         await self.bot.say(message)
 
@@ -62,14 +64,15 @@ class Meta:
         hours, remainder = divmod(int(delta.total_seconds()), 3600)
         minutes, seconds = divmod(remainder, 60)
         days, hours = divmod(hours, 24)
+        fmt = ''
         if days:
-            fmt = '{d} day{dp}, {h} hour{hp}, {m} minute{mp}, {s} second{sp}'
-        elif hours:
-            fmt = '{h} hour{hp}, {m} minute{mp}, {s} second{sp}'
-        elif minutes:
-            fmt = '{m} minute{mp}, {s} second{sp}'
-        else:
-            fmt = '{s} second{sp}'
+            fmt += '{d} day{dp}'
+        if hours:
+            fmt += ', {h} hour{hp}'
+        if minutes:
+            fmt += ', {m} minute{mp}'
+        if seconds:
+            fmt += ', {s} second{sp}'
 
         def plural(num):
             return 's' if num != 1 else ''
@@ -95,17 +98,20 @@ class Meta:
             await self.bot.say('{0.name}: {0.id}'.format(m))
 
     @commands.command()
-    async def join(self, channel):
-        """Tell bot to join server using ID or discord.gg link.
-
-        Usage:
-        {prefix}join 0h4QlpGEPGkSCO6I                    (invite ID)
-        {prefix}join https://discord.gg/0h4QlpGEPGkSCO6I (invite link)
-        """
-        try:
-            await self.bot.accept_invite(channel)
-        except:
-            pass
+    async def join(self):
+        """Add bot to one of your servers."""
+        if self.bot.client_id is None:
+            return
+        perm = discord.Permissions()
+        perm.kick_members(True)
+        perm.ban_members(True)
+        perm.read_messages(True)
+        perm.send_messages(True)
+        perm.manage_messages(True)
+        perm.embed_links(True)
+        await self.bot.say(discord.utils.oauth_url(
+            self.bot.client_id,
+            permissions=perm))
 
     @commands.command(pass_context=True)
     @commands.has_permissions(kick_members=True)
