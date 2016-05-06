@@ -68,10 +68,10 @@ if __name__ == '__main__':
         lines = fp.readlines()
         if len(lines) == 2:
             bot.client_id = lines[0]
-            token = lines[1]
+            token = lines[1][:-1]
         else:
             bot.client_id = None
-            token = lines[0]
+            token = lines[0][:-1]
     try:
         bot.run(token)
     except Exception as e:
