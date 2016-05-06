@@ -64,15 +64,14 @@ class Meta:
         hours, remainder = divmod(int(delta.total_seconds()), 3600)
         minutes, seconds = divmod(remainder, 60)
         days, hours = divmod(hours, 24)
-        fmt = ''
         if days:
-            fmt += '{d} day{dp}'
+            fmt = '{d} day{dp}, {h} hour{hp}, {m} minute{mp}, {s} second{sp}'
         if hours:
-            fmt += ', {h} hour{hp}'
+            fmt = '{h} hour{hp}, {m} minute{mp}, {s} second{sp}'
         if minutes:
-            fmt += ', {m} minute{mp}'
+            fmt = '{m} minute{mp}, {s} second{sp}'
         if seconds:
-            fmt += ', {s} second{sp}'
+            fmt = '{s} second{sp}'
 
         def plural(num):
             return 's' if num != 1 else ''
