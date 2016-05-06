@@ -49,10 +49,9 @@ class Meta:
     @commands.command()
     async def info(self):
         """Print bot information."""
-        lib_link = 'https://github.com/Rapptz/discord.py/tree/async'
         source_link = 'https://github.com/mikevb1/discordbot'
-        message = """This bot is written in Python using discord.py from {}.
-    The source code can be found at {}.""".format(lib_link, source_link)
+        message = 'This bot is written in Python using discord.py from https://github.com/Rapptz/discord.py/tree/async.'
+        message += '\nThe source code can be found at {}.'.format(source_link)
         await self.bot.say(message)
 
     @commands.command()
