@@ -16,7 +16,6 @@ class Meta:
     def __init__(self, bot):
         """Constructor."""
         self.bot = bot
-        self.temote_prefix = ';'
 
     @commands.command(name='help')
     async def help_cmd(self, cmd=None):
@@ -36,9 +35,6 @@ class Meta:
             message.append(
                 '\nTo see help for individual commands, '
                 'use {}help command'.format(self.bot.command_prefix))
-            message.append(
-                '\nTo use Twitch/BTTV emotes, prefix the emote with {}'.format(
-                    self.temote_prefix))
             message.append('```')
             message = '\n'.join(message)
             await self.bot.say(message)
@@ -56,7 +52,7 @@ class Meta:
         lib_link = 'https://github.com/Rapptz/discord.py/tree/async'
         source_link = 'https://github.com/mikevb1/discordbot'
         message = """This bot is written in Python using discord.py from {}.
-        The source code can be found at {}.""".format(lib_link, source_link)
+    The source code can be found at {}.""".format(lib_link, source_link)
         await self.bot.say(message)
 
     @commands.command()
