@@ -108,9 +108,8 @@ class Meta:
         perm.send_messages = True
         perm.manage_messages = True
         perm.embed_links = True
-        await self.bot.say(discord.utils.oauth_url(
-            self.bot.client_id,
-            permissions=perm))
+        url = discord.utils.oauth_url(self.bot.client_id, permissions=perm)
+        await self.bot.say(url)
 
     @commands.command(pass_context=True)
     @commands.has_permissions(kick_members=True)
