@@ -1,14 +1,9 @@
-"""Cog for administration stuff."""
-
 from discord.ext import commands
 import asyncio
 
 
 class Admin:
-    """Server admin stuff."""
-
     def __init__(self, bot):
-        """Constructor."""
         self.bot = bot
 
     @commands.command(pass_context=True)
@@ -41,5 +36,5 @@ class Admin:
 
 
 def setup(bot):
-    """'Magic' function to set up cog."""
+    """Magic function to set up cog."""
     bot.add_cog(Admin(bot))

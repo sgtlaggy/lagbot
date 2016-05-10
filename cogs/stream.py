@@ -1,5 +1,3 @@
-"""Cog for stream stuff."""
-
 from discord.ext import commands
 import asyncio
 import json
@@ -134,5 +132,5 @@ class Stream:
 
 
 def setup(bot):
-    """'Magic' function to set up cog."""
+    """Magic function to set up cog."""
     bot.add_cog(Stream(bot))

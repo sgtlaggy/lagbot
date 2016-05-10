@@ -1,5 +1,3 @@
-"""Discord bot for Discord."""
-
 import datetime
 import asyncio
 import logging
@@ -41,7 +39,6 @@ cogs = [
 
 @bot.event
 async def on_ready():
-    """Called when bot is ready."""
     log.info('Bot ready!')
     bot.uptime = datetime.datetime.utcnow()
     for cog in cogs:
@@ -55,7 +52,6 @@ async def on_ready():
 
 @bot.event
 async def on_message(msg):
-    """Called when message is recieved."""
     if msg.author == bot.user:
         return
     await bot.process_commands(msg)

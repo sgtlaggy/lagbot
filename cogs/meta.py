@@ -1,5 +1,3 @@
-"""Cog for meta/bot stuff."""
-
 from collections import OrderedDict
 import datetime
 import random
@@ -10,10 +8,7 @@ import asyncio
 
 
 class Meta:
-    """Meta/bot stuff."""
-
     def __init__(self, bot):
-        """Constructor."""
         self.bot = bot
 
     @commands.command(name='help')
@@ -64,11 +59,11 @@ class Meta:
         days, hours = divmod(hours, 24)
         if days:
             fmt = '{d} day{dp}, {h} hour{hp}, {m} minute{mp}, {s} second{sp}'
-        if hours:
+        elif hours:
             fmt = '{h} hour{hp}, {m} minute{mp}, {s} second{sp}'
-        if minutes:
+        elif minutes:
             fmt = '{m} minute{mp}, {s} second{sp}'
-        if seconds:
+        elif seconds:
             fmt = '{s} second{sp}'
 
         def plural(num):
@@ -117,5 +112,5 @@ class Meta:
 
 
 def setup(bot):
-    """'Magic' function to set up cog."""
+    """Magic function to set up cog."""
     bot.add_cog(Meta(bot))
