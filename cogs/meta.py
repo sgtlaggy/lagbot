@@ -8,8 +8,6 @@ from discord.ext import commands
 import discord
 import asyncio
 
-from .utils import list_align
-
 
 class Meta:
     """Meta/bot stuff."""
@@ -26,13 +24,13 @@ class Meta:
             com_list = [
                 'help', 'info', 'uptime', 'poke', 'roll',
                 'stream', 'join', 'leave', 'kick', 'ban']
-            space = list_align(com_list, 2)
+            width = max(map(lambda t: len(t), com_list)) + 1
             for com in com_list:
                 coms[com] = self.bot.commands[com]
             message = ['Available commands:', '```']
             for i, com in enumerate(coms):
-                message.append('{}{}: {}'.format(
-                    com, ' ' * space[i], coms[com].help.splitlines()[0]))
+                message.append('{0:<{width}}: {1}'.format(
+                    com, coms[com].help.splitlines()[0], width=width))
             message.append(
                 '\nTo see help for individual commands, '
                 'use {}help command'.format(self.bot.command_prefix))
