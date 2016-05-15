@@ -88,9 +88,9 @@ class Meta:
     async def get_id(self, ctx):
         """Get discord ID's."""
         for m in ctx.message.mentions:
-            await self.bot.say('{0.name}#{0.discriminator}: {0.id}'.format(m))
+            await self.bot.say('@{0.name}#{0.discriminator}: {0.id}'.format(m))
         for c in ctx.message.channel_mentions:
-            await self.bot.say('{0.name}: {0.id}'.format(c))
+            await self.bot.say('#{0.name}: {0.id}'.format(c))
 
     @commands.command()
     async def join(self):
