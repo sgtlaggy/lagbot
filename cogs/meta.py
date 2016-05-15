@@ -47,6 +47,7 @@ class Meta:
         message = 'This bot is written in Python using discord.py from ' + \
             'https://github.com/Rapptz/discord.py/tree/async.'
         message += '\nThe source code can be found at {}.'.format(source_link)
+        message += '\nThe dev is {} in Discord.'.format('sgtlaggy#5516')
         await self.bot.say(message)
 
     @commands.command()
@@ -87,7 +88,9 @@ class Meta:
     async def get_id(self, ctx):
         """Get discord ID's."""
         for m in ctx.message.mentions:
-            await self.bot.say('{0.name}: {0.id}'.format(m))
+            await self.bot.say('{0.name}#{0.discriminator}: {0.id}'.format(m))
+        for c in ctx.message.channel_mentions:
+            await self.bot.say('{0.name}: {0.id}'.format(c))
 
     @commands.command()
     async def join(self):
