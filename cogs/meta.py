@@ -44,10 +44,9 @@ class Meta:
     async def info(self):
         """Print bot information."""
         source_link = 'https://github.com/mikevb1/discordbot'
-        message = 'This bot is written in Python using discord.py from ' + \
-            'https://github.com/Rapptz/discord.py/tree/async.'
         message += '\nThe source code can be found at {}.'.format(source_link)
-        message += '\nThe dev is {} in Discord.'.format('sgtlaggy#5516')
+        if self.bot.owner_name:
+            message += '\nThe developer is {}.'.format(self.bot.owner_name)
         await self.bot.say(message)
 
     @commands.command()

@@ -1,6 +1,7 @@
 import datetime
 import asyncio
 import logging
+import json
 import sys
 import os
 
@@ -57,17 +58,19 @@ async def on_message(msg):
     await bot.process_commands(msg)
 
 
+def load_config():
+    with open('config.json', 'r') as fp:
+        config = json.load(fp)
+    return config
+
+
 if __name__ == '__main__':
     if any('debug' in arg.lower() for arg in sys.argv):
         bot.command_prefix = '%!'
-    with open(token_file, 'r') as fp:
-        lines = fp.readlines()
-        if len(lines) == 2:
-            bot.client_id = lines[0][:-1]
-            token = lines[1][:-1]
-        else:
-            bot.client_id = None
-            token = lines[0][:-1]
+    config = load_config()
+    bot.owner_name = config.pop('owner_name', None)
+    bot.client_id = config.pop('client_id', None)
+    token = config.pop('bot_token', None)
     try:
         bot.run(token)
     except Exception as e:
