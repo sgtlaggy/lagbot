@@ -11,7 +11,7 @@ import discord
 # Files and Paths
 app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
 data_path = os.path.join(app_path, 'data')
-token_file = os.path.join(app_path, 'token.txt')
+config_file = os.path.join(app_path, 'config.json')
 log_file = os.path.join(app_path, 'bot.log')
 if not os.path.isdir(data_path):
     os.mkdir(data_path)
@@ -59,7 +59,7 @@ async def on_message(msg):
 
 
 def load_config():
-    with open('config.json', 'r') as fp:
+    with open(config_file, 'r') as fp:
         config = json.load(fp)
     return config
 
