@@ -28,7 +28,7 @@ def stream_message(*args):
     if '#' in args:
         for i, a in enumerate(args):
             if a == '#':
-                message = '@everyone ' + ' '.join(args[i + 1:])
+                message = '@here ' + ' '.join(args[i + 1:])
                 break
     elif '$' in args:
         for i, a in enumerate(args):
