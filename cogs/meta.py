@@ -6,6 +6,8 @@ from discord.ext import commands
 import discord
 import asyncio
 
+from .utils import checks
+
 
 class Meta:
     def __init__(self, bot):
@@ -99,7 +101,7 @@ class Meta:
         await self.bot.say(url)
 
     @commands.command(pass_context=True)
-    @commands.has_permissions(kick_members=True)
+    @checks.owner_or_permissions(kick_members=True)
     async def leave(self, ctx):
         """Tell bot to leave server."""
         await self.bot.leave_server(ctx.message.server)
