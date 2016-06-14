@@ -40,7 +40,6 @@ cogs = [
 
 @bot.event
 async def on_ready():
-    log.info('Bot ready!')
     bot.uptime = datetime.datetime.utcnow()
     for cog in cogs:
         try:
@@ -48,7 +47,10 @@ async def on_ready():
         except Exception as e:
             print("Couldn't load cog {}\n{}: {}".format(
                 cog, type(e).__name__, e))
+    app_info = await bot.application_info()
+    bot.client_id = app_info.id
     await bot.change_status(game=discord.Game(name='Destroy All Humans!'))
+    log.info('Bot ready!')
 
 
 @bot.event

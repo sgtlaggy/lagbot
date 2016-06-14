@@ -95,8 +95,7 @@ class Meta:
         perm.send_messages = True
         perm.manage_messages = True
         perm.embed_links = True
-        app_info = await self.bot.application_info()
-        url = discord.utils.oauth_url(app_info.id, permissions=perm)
+        url = discord.utils.oauth_url(self.bot.client_id, permissions=perm)
         message = []
         message.append('Follow this link, login if necessary, then select a ' +
                        'server you own to add me to.')
