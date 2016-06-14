@@ -88,8 +88,6 @@ class Meta:
     @commands.command()
     async def join(self):
         """Add bot to one of your servers."""
-        if self.bot.client_id is None:
-            return
         perm = discord.Permissions()
         perm.kick_members = True
         perm.ban_members = True
@@ -97,8 +95,15 @@ class Meta:
         perm.send_messages = True
         perm.manage_messages = True
         perm.embed_links = True
-        url = discord.utils.oauth_url(self.bot.client_id, permissions=perm)
-        await self.bot.say(url)
+        app_info = await self.bot.application_info()
+        url = discord.utils.oauth_url(app_info.id, permissions=perm)
+        message = []
+        message.append('Follow this link, login if necessary, then select a ' +
+                       'server you own to add me to.')
+        message.append('The requested permissions are required for some of ' +
+                       'my commands to function.')
+        message.append(url)
+        await self.bot.say('\n'.join(message))
 
     @commands.command(pass_context=True)
     @checks.owner_or_permissions(kick_members=True)

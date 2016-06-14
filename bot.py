@@ -69,7 +69,6 @@ if __name__ == '__main__':
         bot.command_prefix = '%!'
     config = load_config()
     bot.owner_name = config.pop('owner_name', None)
-    bot.client_id = config.pop('client_id', None)
     token = config.pop('bot_token', None)
     try:
         bot.run(token)
