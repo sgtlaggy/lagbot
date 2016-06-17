@@ -15,7 +15,7 @@ class Meta:
 
     @commands.command(name='help')
     async def help_cmd(self, cmd=None):
-        """Print this help."""
+        """Display this help."""
         if cmd is None:
             coms = OrderedDict()
             com_list = [
@@ -44,7 +44,7 @@ class Meta:
 
     @commands.command()
     async def info(self):
-        """Print bot information."""
+        """Display bot information."""
         source_link = 'https://github.com/mikevb1/discordbot'
         message = 'The source code can be found at {}.'.format(source_link)
         if self.bot.owner_name:
@@ -65,7 +65,7 @@ class Meta:
             fmt = '{h} hour{hp}, {m} minute{mp}, {s} second{sp}'
         elif minutes:
             fmt = '{m} minute{mp}, {s} second{sp}'
-        elif seconds:
+        else:
             fmt = '{s} second{sp}'
 
         def plural(num):
@@ -87,7 +87,11 @@ class Meta:
 
     @commands.command()
     async def join(self):
-        """Add bot to one of your servers."""
+        """Add bot to one of your servers.
+
+        Bots can no longer accept instant invite links.
+        You can only invite/add bots to servers you create.
+        This command gives you a link to add this bot to your servers."""
         perm = discord.Permissions()
         perm.kick_members = True
         perm.ban_members = True
