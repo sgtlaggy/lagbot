@@ -30,11 +30,7 @@ log.addHandler(fhandler)
 bot = commands.Bot(command_prefix='!')
 bot.remove_command('help')
 
-cogs = [
-    'cogs.admin',
-    'cogs.misc',
-    'cogs.meta',
-    'cogs.stream']
+cogs = ['cogs.{}'.format(cog) for cog in ['admin', 'misc', 'meta']]
 
 
 @bot.event
