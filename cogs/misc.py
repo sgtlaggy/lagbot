@@ -1,7 +1,7 @@
-import requests
 import random
 
 from discord.ext import commands
+import aiohttp
 
 
 class Misc:
@@ -41,8 +41,11 @@ class Misc:
         if comic.isdigit():
             url += comic + '/'
         url += 'info.0.json'
-        req = requests.get(url)
-        data = req.json()
+        async with aiohttp.get(url) as resp:
+            if resp.status != 200:
+                await bot.say('Could not get comic.')
+                return
+            data = await resp.json()
         # this seemed to be the nicest-looking way to write this
         # without stupid indentation on multi-line string
         message = '\n'.join(['**Title**: {0[safe_title]}',
