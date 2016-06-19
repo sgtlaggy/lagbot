@@ -1,7 +1,7 @@
-from discord.ext import commands
-import asyncio
 import json
 import os
+
+from discord.ext import commands
 
 
 def is_url(text):

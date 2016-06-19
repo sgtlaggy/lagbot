@@ -4,7 +4,6 @@ import random
 
 from discord.ext import commands
 import discord
-import asyncio
 
 from .utils import checks
 
