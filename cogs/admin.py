@@ -1,4 +1,5 @@
 from discord.ext import commands
+import discord
 
 
 class Admin:
@@ -7,31 +8,37 @@ class Admin:
 
     @commands.command(pass_context=True)
     @commands.has_permissions(kick_members=True)
-    @commands.bot_has_permissions(kick_members=True)
-    async def kick(self, ctx):
+    async def kick(self, *, member):
         """Kick user from server if you have permission.
 
         Usage:
         {prefix}kick @user
         """
-        for m in ctx.message.mentions:
-            await self.bot.kick(m)
+        try:
+            await self.bot.kick(member)
+        except discord.Forbidden:
+            await self.bot.say("I don't have permission to kick.")
+        except discord.HTTPException:
+            await self.bot.say('Kicking failed.')
+        else:
+            await self.bot.say('\U0001f44c')
 
     @commands.command(pass_context=True)
     @commands.has_permissions(ban_members=True)
-    @commands.bot_has_permissions(ban_members=True)
-    async def ban(self, ctx, _, days=1):
+    async def ban(self, *, member):
         """Ban user from server if you have permission.
 
         Usage:
         {prefix}ban @user
         """
-        days = int(days)
-        if days > 7:
-            days = 7
-        elif days < 0:
-            days = 0
-        await self.bot.ban(ctx.message.mentions[0], days)
+        try:
+            await self.bot.ban(member)
+        except discord.Forbidden:
+            await self.bot.say("I don't have permission to ban.")
+        except discord.HTTPException:
+            await self.bot.say('Banning failed.')
+        else:
+            await self.bot.say('\U0001f44c')
 
 
 def setup(bot):
