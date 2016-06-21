@@ -43,7 +43,7 @@ class Misc:
         url += 'info.0.json'
         async with aiohttp.get(url) as resp:
             if resp.status != 200:
-                await bot.say('Could not get comic.')
+                await self.bot.say('Could not get comic.')
                 return
             data = await resp.json()
         # this seemed to be the nicest-looking way to write this
