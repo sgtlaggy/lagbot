@@ -49,6 +49,17 @@ async def on_ready():
 
 
 @bot.event
+async def on_server_join(server):
+    message = ['Hello, thanks for inviting me!',
+               'Say `{}help` to see my commands.'.format(bot.command_prefix)]
+    message = '\n'.join(message)
+    for ch in server.channels:
+        if ch.name == 'general' or ch.topic and 'general' in ch.topic:
+            await bot.send_message(ch, message)
+            return
+
+
+@bot.event
 async def on_message(msg):
     if msg.author.bot:
         return
