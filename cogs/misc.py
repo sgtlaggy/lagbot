@@ -29,6 +29,14 @@ class Misc:
         message = '\n'.join(message)
         await self.bot.say(message)
 
+    @staticmethod
+    def make_xkcd_url(num=''):
+        url = 'http://xkcd.com/'
+        if num:
+            url += str(num) + '/'
+        url += 'info.0.json'
+        return url
+
     @commands.command()
     async def xkcd(self, comic=''):
         """Get xkcd comics.
@@ -36,11 +44,18 @@ class Misc:
         Usage:
         {prefix}xkcd
         {prefix}xkcd 327
+        {prefix}xkcd r/rand/random
         """
-        url = 'http://xkcd.com/'
-        if comic.isdigit():
-            url += comic + '/'
-        url += 'info.0.json'
+        latest_url = self.make_xkcd_url()
+        if comic in ('r', 'rand', 'random'):
+            async with aiohttp.get(latest_url) as resp:
+                if resp.status != 200:
+                    await self.bot.say('Could not get comic.')
+                    return
+                data = await resp.json()
+                latest = data['num']
+                comic = str(random.randint(1, latest))
+        url = self.make_xkcd_url(comic) if comic.isdigit() else latest_url
         async with aiohttp.get(url) as resp:
             if resp.status != 200:
                 await self.bot.say('Could not get comic.')
