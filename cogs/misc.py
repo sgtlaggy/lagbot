@@ -29,8 +29,7 @@ class Misc:
         message = '\n'.join(message)
         await self.bot.say(message)
 
-    @staticmethod
-    def make_xkcd_url(num=''):
+    def make_xkcd_url(self, num=''):
         url = 'http://xkcd.com/'
         if num:
             url += str(num) + '/'
