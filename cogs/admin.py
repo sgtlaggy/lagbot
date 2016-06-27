@@ -6,9 +6,9 @@ class Admin:
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(pass_context=True)
+    @commands.command()
     @commands.has_permissions(kick_members=True)
-    async def kick(self, *, member):
+    async def kick(self, *, member: discord.Member):
         """Kick user from server if you have permission.
 
         Usage:
@@ -23,9 +23,9 @@ class Admin:
         else:
             await self.bot.say('\U0001f44c')
 
-    @commands.command(pass_context=True)
+    @commands.command()
     @commands.has_permissions(ban_members=True)
-    async def ban(self, *, member):
+    async def ban(self, *, member: discord.Member):
         """Ban user from server if you have permission.
 
         Usage:

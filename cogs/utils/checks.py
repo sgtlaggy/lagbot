@@ -1,6 +1,8 @@
 from discord.ext import commands
 
-owner_id = '103714384802480128'
+from .load_config import load_config
+
+owner_id = load_config()['owner_id']
 
 def is_owner_check(message):
     return message.author.id == owner_id

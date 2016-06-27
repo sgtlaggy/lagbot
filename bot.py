@@ -7,13 +7,11 @@ import os
 from discord.ext import commands
 import discord
 
+from cogs.utils.load_config import load_config
+
 # Files and Paths
 app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
-data_path = os.path.join(app_path, 'data')
-config_file = os.path.join(app_path, 'config.json')
 log_file = os.path.join(app_path, 'bot.log')
-if not os.path.isdir(data_path):
-    os.mkdir(data_path)
 
 # Logging Setup
 log = logging.getLogger('discord')
@@ -64,12 +62,6 @@ async def on_message(msg):
     if msg.author.bot:
         return
     await bot.process_commands(msg)
-
-
-def load_config():
-    with open(config_file, 'r') as fp:
-        config = json.load(fp)
-    return config
 
 
 if __name__ == '__main__':
