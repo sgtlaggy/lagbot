@@ -1,15 +1,33 @@
-"""This module/cog is taken from Rapptz/Danny's RoboDanny bot. Don't sue me."""
+"""The contents of this cog is taken entirely from Rapptz RoboDanny bot. Don't sue me."""
 
-from discord.ext import commands
-from .utils import checks
-import asyncio
-import traceback
-import discord
-import inspect
 from contextlib import redirect_stdout
+from datetime import datetime
+import traceback
+import inspect
 import io
 
-class REPL:
+from discord.ext import commands
+import discord
+
+from .utils import checks
+
+
+def date(argument):
+    formats = (
+        '%Y/%m/%d',
+        '%Y-%m-%d',
+    )
+
+    for fmt in formats:
+        try:
+            return datetime.strptime(argument, fmt)
+        except ValueError:
+            continue
+
+    raise commands.BadArgument('Cannot convert to date. Expected YYYY/MM/DD or YYYY-MM-DD.')
+
+
+class RDanny:
     def __init__(self, bot):
         self.bot = bot
         self.sessions = set()
@@ -136,6 +154,35 @@ class REPL:
 
         await self.bot.say(python.format(result))
 
+    @commands.command(pass_context=True)
+    @commands.has_permissions(manage_messages=True)
+    async def nostalgia(self, ctx, date: date = None, *, channel: discord.Channel = None):
+        """Pins an old message from a specific date.
+
+        If a channel is not given, then pins from the channel the
+        command was ran on.
+
+        The format of the date must be either YYYY-MM-DD or YYYY/MM/DD.
+        """
+
+        if channel is None:
+            channel = ctx.message.channel
+        if date is None:
+            date = channel.created_at
+
+        async for m in self.bot.logs_from(channel, after=date, limit=1):
+            try:
+                await self.bot.pin_message(m)
+            except:
+                await self.bot.say('\N{THUMBS DOWN SIGN} Could not pin message.')
+            else:
+                await self.bot.say('\N{THUMBS UP SIGN} Successfully pinned message.')
+
+    @nostalgia.error
+    async def nostalgia_error(self, error, ctx):
+        if type(error) is commands.BadArgument:
+            await self.bot.say(error)
+
 
 def setup(bot):
-    bot.add_cog(REPL(bot))
+    bot.add_cog(RDanny(bot))

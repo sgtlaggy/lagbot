@@ -28,7 +28,7 @@ log.addHandler(fhandler)
 bot = commands.Bot(command_prefix='!')
 bot.remove_command('help')
 
-cogs = ['cogs.{}'.format(cog) for cog in ['admin', 'misc', 'meta', 'repl']]
+cogs = ['cogs.{}'.format(cog) for cog in ['admin', 'misc', 'meta', 'rdanny']]
 
 
 @bot.event
