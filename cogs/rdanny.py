@@ -125,7 +125,7 @@ class RDanny:
             except discord.HTTPException as e:
                 await self.bot.send_message(msg.channel, 'Unexpected error: `{}`'.format(e))
 
-    @commands.command(pass_context=True, hidden=True, name='eval')
+    @commands.command(pass_context=True, hidden=True)
     @checks.is_owner()
     async def debug(self, ctx, *, code : str):
         """Evaluates code."""
