@@ -19,7 +19,7 @@ class Meta:
             coms = OrderedDict()
             com_list = [
                 'help', 'info', 'uptime', 'poke', 'roll',
-                'xkcd', 'join', 'leave', 'kick', 'ban']
+                'xkcd', 'nostalgia', 'join', 'leave', 'kick', 'ban']
             width = max(map(lambda t: len(t), com_list)) + 1
             for com in com_list:
                 coms[com] = self.bot.commands[com]

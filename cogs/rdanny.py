@@ -158,11 +158,17 @@ class RDanny:
     @commands.has_permissions(manage_messages=True)
     async def nostalgia(self, ctx, date: date = None, *, channel: discord.Channel = None):
         """Pins an old message from a specific date.
-
+        
+        If a date is not gives, then pins first message from the channel.
         If a channel is not given, then pins from the channel the
         command was ran on.
 
         The format of the date must be either YYYY-MM-DD or YYYY/MM/DD.
+
+        Usage:
+        {prefix}nostalgia
+        {prefix}nostalgia 2016-04-01
+        {prefix}nostalgia 2016-04-01 #channel
         """
 
         if channel is None:
