@@ -34,12 +34,6 @@ cogs = ['cogs.{}'.format(cog) for cog in ['admin', 'misc', 'meta', 'rdanny']]
 @bot.event
 async def on_ready():
     bot.uptime = datetime.datetime.utcnow()
-    for cog in cogs:
-        try:
-            bot.load_extension(cog)
-        except Exception as e:
-            print("Couldn't load cog {}\n{}: {}".format(
-                cog, type(e).__name__, e))
     app_info = await bot.application_info()
     bot.client_id = app_info.id
     await bot.change_status(game=discord.Game(name='Destroy All Humans!'))
@@ -70,6 +64,12 @@ if __name__ == '__main__':
     config = load_config()
     bot.owner_name = config.pop('owner_name', None)
     token = config.pop('bot_token', None)
+    for cog in cogs:
+        try:
+            bot.load_extension(cog)
+        except Exception as e:
+            print("Couldn't load cog {}\n{}: {}".format(
+                cog, type(e).__name__, e))
     try:
         bot.run(token)
     except Exception as e:

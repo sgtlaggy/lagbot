@@ -16,15 +16,15 @@ class Meta:
     async def help_cmd(self, cmd=None):
         """Display this help."""
         if cmd is None:
-            coms = OrderedDict()
             com_list = [
                 'help', 'info', 'uptime', 'poke', 'roll',
                 'xkcd', 'nostalgia', 'join', 'leave', 'kick', 'ban']
             width = max(map(lambda t: len(t), com_list)) + 1
-            for com in com_list:
-                coms[com] = self.bot.commands[com]
+            coms = OrderedDict([(com, self.bot.commands[com])
+                                for com in com_list
+                                if com in self.bot.commands])
             message = ['Available commands:', '```']
-            for i, com in enumerate(coms):
+            for com in coms:
                 message.append('{0:<{width}}: {1}'.format(
                     com, coms[com].help.splitlines()[0], width=width))
             message.append(
@@ -112,6 +112,34 @@ class Meta:
     async def leave(self, ctx):
         """Tell bot to leave server."""
         await self.bot.leave_server(ctx.message.server)
+
+    @commands.command(name='reload')
+    @checks.is_owner()
+    async def reload_cog(self, cog):
+        try:
+            self.bot.unload_extension('cogs.{}'.format(cog))
+            self.bot.load_extension('cogs.{}'.format(cog))
+        except Exception as e:
+            await self.bot.say("Couldn't reload cog.")
+            print(e)
+
+    @commands.command(name='load')
+    @checks.is_owner()
+    async def load_cog(self, cog):
+        try:
+            self.bot.load_extension('cogs.{}'.format(cog))
+        except Exception as e:
+            await self.bot.say("Couldn't load cog.")
+            print(e)
+
+    @commands.command(name='unload')
+    @checks.is_owner()
+    async def unload_cog(self, cog):
+        try:
+            self.bot.unload_extension('cogs.{}'.format(cog))
+        except Exception as e:
+            await self.bot.say("Couldn't unload cog.")
+            print(e)
 
 
 def setup(bot):
