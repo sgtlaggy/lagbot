@@ -113,6 +113,13 @@ class Meta:
         """Tell bot to leave server."""
         await self.bot.leave_server(ctx.message.server)
 
+    @commands.command(name='cogs')
+    @checks.is_owner()
+    async def list_cogs(self):
+        exts = sorted([e for e in self.bot.extensions.keys()])
+        message = '\n'.join(['```', 'Loaded extensions:', *exts, '```'])
+        await self.bot.say(message)
+
     @commands.command(name='reload')
     @checks.is_owner()
     async def reload_cog(self, cog):
