@@ -116,19 +116,30 @@ class Meta:
     @commands.command(name='cogs')
     @checks.is_owner()
     async def list_cogs(self):
-        exts = sorted([e for e in self.bot.extensions.keys()])
+        exts = sorted(self.bot.extensions.keys())
         message = '\n'.join(['```', 'Loaded extensions:', *exts, '```'])
         await self.bot.say(message)
 
-    @commands.command(name='reload')
+    def reload_cog_helper(self, cog):
+        self.bot.unload_extension('cogs.{}'.format(cog))
+        self.bot.load_extension('cogs.{}'.format(cog))
+
+    @commands.group(name='reload', invoke_without_command=True)
     @checks.is_owner()
     async def reload_cog(self, cog):
         try:
-            self.bot.unload_extension('cogs.{}'.format(cog))
-            self.bot.load_extension('cogs.{}'.format(cog))
+            self.reload_cog_helper(cog)
         except Exception as e:
             await self.bot.say("Couldn't reload cog.")
             print(e)
+
+    @reload_cog.command(name='all')
+    @checks.is_owner()
+    async def reload_all_cogs(self):
+        exts = [e.split('.')[1] for e in self.bot.extensions.keys()]
+        for ext in exts:
+            self.reload_cog_helper(ext)
+        await self.bot.say('Reloaded all cogs.')
 
     @commands.command(name='load')
     @checks.is_owner()
