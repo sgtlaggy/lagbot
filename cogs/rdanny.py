@@ -1,5 +1,4 @@
-"""The contents of this cog is taken entirely from Rapptz RoboDanny bot. Don't sue me."""
-
+"""The contents of this cog is taken entirely from Rapptz RoboDanny bot. Don't sue me.""" 
 from contextlib import redirect_stdout
 from datetime import datetime
 import traceback
@@ -125,7 +124,7 @@ class RDanny:
             except discord.HTTPException as e:
                 await self.bot.send_message(msg.channel, 'Unexpected error: `{}`'.format(e))
 
-    @commands.command(pass_context=True, hidden=True)
+    @commands.command(pass_context=True, hidden=True, aliases=['eval'])
     @checks.is_owner()
     async def debug(self, ctx, *, code : str):
         """Evaluates code."""
