@@ -7,6 +7,7 @@ from discord.ext import commands
 import discord
 
 from cogs.utils.load_config import load_config
+from cogs.utils import checks
 
 # Files and Paths
 app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
@@ -51,6 +52,76 @@ async def on_message(msg):
     if msg.author.bot:
         return
     await bot.process_commands(msg)
+
+
+async def reload_ext_helper(ext):
+    try:
+        bot.unload_extension('cogs.{}'.format(ext))
+        bot.load_extension('cogs.{}'.format(ext))
+    except:
+        await bot.say("Couldn't reload cog {}.".format(ext))
+
+
+@bot.command(name='cogs')
+@checks.is_owner()
+async def list_exts():
+    exts = sorted(bot.extensions.keys())
+    message = '\n'.join(['```', 'Loaded extensions:', *exts, '```'])
+    await bot.say(message)
+
+
+@bot.group(name='reload', invoke_without_command=True)
+@checks.is_owner()
+async def reload_ext(ext):
+    mod = 'cogs.' + ext
+    if mod not in bot.extensions:
+        await bot.say('Cog {} is not loaded.'.format(ext))
+        return
+    try:
+        await reload_ext_helper(ext)
+        await bot.say('Reloaded cog {}.'.format(ext))
+    except Exception as e:
+        await bot.say("Couldn't reload cog {}.".format(ext))
+        print(e)
+
+
+@reload_ext.command(name='all')
+@checks.is_owner()
+async def reload_all_exts():
+    exts = [e.split('.')[1] for e in bot.extensions.keys()]
+    for ext in exts:
+        await reload_ext_helper(ext)
+    await bot.say('Reloaded all cogs.')
+
+
+@bot.command(name='load')
+@checks.is_owner()
+async def load_ext(ext):
+    mod = 'cogs.' + ext
+    if mod in bot.extensions:
+        await bot.say('Cog {} is already loaded.'.format(ext))
+        return
+    try:
+        bot.load_extension(mod)
+        await bot.say('Loaded cog {}.'.format(ext))
+    except Exception as e:
+        await bot.say("Couldn't load cog {}.".format(ext))
+        print(e)
+
+
+@bot.command(name='unload')
+@checks.is_owner()
+async def unload_ext(ext):
+    mod = 'cogs.' + ext
+    if mod not in bot.extensions:
+        await bot.say('Cog {} is not loaded.'.format(ext))
+        return
+    try:
+        bot.unload_extension(mod)
+        await bot.say('Unloaded cog {}.'.format(ext))
+    except Exception as e:
+        await bot.say("Couldn't unload cog {}.".format(ext))
+        print(e)
 
 
 if __name__ == '__main__':
