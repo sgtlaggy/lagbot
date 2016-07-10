@@ -1,3 +1,4 @@
+import traceback
 import datetime
 import logging
 import sys
@@ -52,6 +53,20 @@ async def on_message(msg):
     if msg.author.bot:
         return
     await bot.process_commands(msg)
+
+
+@bot.event
+async def on_command_error(exc, ctx):
+    # emulate default on_command_error and add server + channel info
+    if hasattr(ctx.command, 'on_error'):
+        return
+    print('Ignoring exception in command {}'.format(ctx.command),
+          file=sys.stderr)
+    for e in (exc, exc.original):
+        traceback.print_exception(type(e), e, e.__traceback__,
+                                  file=sys.stderr)
+    print('Message was in "{0.channel}" on "{0.server}".'.format(ctx.message),
+          file=sys.stderr)
 
 
 async def reload_ext_helper(ext):
