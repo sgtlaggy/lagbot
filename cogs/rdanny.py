@@ -55,7 +55,8 @@ class RDanny:
             'server': msg.server,
             'channel': msg.channel,
             'author': msg.author,
-            'last': None,
+            'me': msg.author,
+            'last': None
         }
 
         if msg.channel.id in self.sessions:
@@ -128,6 +129,7 @@ class RDanny:
     @checks.is_owner()
     async def debug(self, ctx, *, code : str):
         """Evaluates code."""
+        msg = ctx.message
         code = code.strip('` ')
         python = '```py\n{}\n```'
         result = None
@@ -135,10 +137,11 @@ class RDanny:
         env = {
             'bot': self.bot,
             'ctx': ctx,
-            'message': ctx.message,
-            'server': ctx.message.server,
-            'channel': ctx.message.channel,
-            'author': ctx.message.author
+            'message': msg,
+            'server': msg.server,
+            'channel': msg.channel,
+            'author': msg.author,
+            'me': msg.author
         }
 
         env.update(globals())
