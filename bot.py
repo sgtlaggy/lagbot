@@ -27,7 +27,6 @@ log.addHandler(fhandler)
 
 # Discord Client/Bot
 bot = commands.Bot(command_prefix='!')
-bot.remove_command('help')
 
 cogs = ['cogs.{}'.format(cog) for cog in ['admin', 'misc', 'meta', 'rdanny']]
 
@@ -77,7 +76,7 @@ async def reload_ext_helper(ext):
         await bot.say("Couldn't reload cog {}.".format(ext))
 
 
-@bot.command(name='cogs')
+@bot.command(name='cogs', hidden=True)
 @checks.is_owner()
 async def list_exts():
     exts = sorted(bot.extensions.keys())
@@ -85,7 +84,7 @@ async def list_exts():
     await bot.say(message)
 
 
-@bot.group(name='reload', invoke_without_command=True)
+@bot.group(name='reload', hidden=True, invoke_without_command=True)
 @checks.is_owner()
 async def reload_ext(ext):
     mod = 'cogs.' + ext
@@ -109,7 +108,7 @@ async def reload_all_exts():
     await bot.say('Reloaded all cogs.')
 
 
-@bot.command(name='load')
+@bot.command(name='load', hidden=True)
 @checks.is_owner()
 async def load_ext(ext):
     mod = 'cogs.' + ext
@@ -124,7 +123,7 @@ async def load_ext(ext):
         print(e)
 
 
-@bot.command(name='unload')
+@bot.command(name='unload', hidden=True)
 @checks.is_owner()
 async def unload_ext(ext):
     mod = 'cogs.' + ext

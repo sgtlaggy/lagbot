@@ -12,35 +12,6 @@ class Meta:
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(name='help')
-    async def help_cmd(self, cmd=None):
-        """Display this help."""
-        if cmd is None:
-            com_list = [
-                'help', 'info', 'uptime', 'poke', 'roll',
-                'xkcd', 'nostalgia', 'join', 'leave', 'kick', 'ban']
-            width = max(map(lambda t: len(t), com_list)) + 1
-            coms = OrderedDict([(com, self.bot.commands[com])
-                                for com in com_list
-                                if com in self.bot.commands])
-            message = ['Available commands:', '```']
-            for com in coms:
-                message.append('{0:<{width}}: {1}'.format(
-                    com, coms[com].help.splitlines()[0], width=width))
-            message.append(
-                '\nTo see help for individual commands, '
-                'use {}help command'.format(self.bot.command_prefix))
-            message.append('```')
-            message = '\n'.join(message)
-            await self.bot.say(message)
-        else:
-            try:
-                message = self.bot.commands[cmd].help.format(
-                    prefix=self.bot.command_prefix)
-            except:
-                return
-            await self.bot.say('```' + message + '```')
-
     @commands.command()
     async def info(self):
         """Display bot information."""
@@ -90,7 +61,8 @@ class Meta:
 
         Bots can no longer accept instant invite links.
         You can only invite/add bots to servers you create.
-        This command gives you a link to add this bot to your servers."""
+        This command gives you a link to add this bot to your servers.
+        """
         perm = discord.Permissions()
         perm.kick_members = True
         perm.ban_members = True

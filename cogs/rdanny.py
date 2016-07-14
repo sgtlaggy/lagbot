@@ -166,11 +166,6 @@ class RDanny:
         command was ran on.
 
         The format of the date must be either YYYY-MM-DD or YYYY/MM/DD.
-
-        Usage:
-        {prefix}nostalgia
-        {prefix}nostalgia 2016-04-01
-        {prefix}nostalgia 2016-04-01 #channel
         """
 
         if channel is None:

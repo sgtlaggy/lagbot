@@ -9,11 +9,7 @@ class Admin:
     @commands.command()
     @commands.has_permissions(kick_members=True)
     async def kick(self, *, member: discord.Member):
-        """Kick user from server if you have permission.
-
-        Usage:
-        {prefix}kick @user
-        """
+        """Kick user from server if you have permission."""
         try:
             await self.bot.kick(member)
         except discord.Forbidden:
@@ -26,11 +22,7 @@ class Admin:
     @commands.command()
     @commands.has_permissions(ban_members=True)
     async def ban(self, *, member: discord.Member):
-        """Ban user from server if you have permission.
-
-        Usage:
-        {prefix}ban @user
-        """
+        """Ban user from server if you have permission."""
         try:
             await self.bot.ban(member)
         except discord.Forbidden:

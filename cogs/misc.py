@@ -10,12 +10,7 @@ class Misc:
 
     @commands.command()
     async def roll(self, dice='1d6'):
-        """In format XdY, rolls X dice each with Y sides. Default: 1d6
-
-        Usage:
-        {prefix}roll
-        {prefix}roll XdY
-        """
+        """In format XdY, rolls X dice each with Y sides. Default: 1d6"""
         try:
             count, sides = map(int, dice.split('d'))
         except:
@@ -40,10 +35,7 @@ class Misc:
     async def xkcd(self, comic=''):
         """Get xkcd comics.
 
-        Usage:
-        {prefix}xkcd
-        {prefix}xkcd 327
-        {prefix}xkcd r/rand/random
+        [comic] can be the number of a comic or one of 'r', 'rand', 'random'
         """
         latest_url = self.make_xkcd_url()
         if comic in ('r', 'rand', 'random'):
