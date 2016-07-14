@@ -10,7 +10,7 @@ class Misc:
 
     @commands.command()
     async def roll(self, dice='1d6'):
-        """In format XdY, rolls X dice each with Y sides. Default: 1d6"""
+        """In format XdY, rolls X dice each with Y sides."""
         try:
             count, sides = map(int, dice.split('d'))
         except:

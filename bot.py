@@ -26,7 +26,11 @@ fhandler.setFormatter(logging.Formatter(
 log.addHandler(fhandler)
 
 # Discord Client/Bot
-bot = commands.Bot(command_prefix='!')
+help_attrs = {
+    'hidden': True,
+    'aliases': ['commands']
+    }
+bot = commands.Bot(command_prefix='!', help_attrs=help_attrs)
 
 cogs = ['cogs.{}'.format(cog) for cog in ['admin', 'misc', 'meta', 'rdanny']]
 
