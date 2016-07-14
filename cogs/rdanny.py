@@ -26,7 +26,7 @@ def date(argument):
     raise commands.BadArgument('Cannot convert to date. Expected YYYY/MM/DD or YYYY-MM-DD.')
 
 
-class RDanny:
+class RoboDanny:
     def __init__(self, bot):
         self.bot = bot
         self.sessions = set()
@@ -188,4 +188,4 @@ class RDanny:
 
 
 def setup(bot):
-    bot.add_cog(RDanny(bot))
+    bot.add_cog(RoboDanny(bot))
