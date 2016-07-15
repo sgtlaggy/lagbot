@@ -29,7 +29,7 @@ log.addHandler(fhandler)
 help_attrs = {
     'hidden': True,
     'aliases': ['commands']
-    }
+}
 bot = commands.Bot(command_prefix='!', help_attrs=help_attrs)
 
 cogs = ['cogs.{}'.format(cog) for cog in ['admin', 'misc', 'meta', 'rdanny']]
@@ -65,9 +65,12 @@ async def on_command_error(exc, ctx):
         return
     print('Ignoring exception in command {}'.format(ctx.command),
           file=sys.stderr)
-    for e in (exc, exc.original):
-        traceback.print_exception(type(e), e, e.__traceback__,
-                                  file=sys.stderr)
+    traceback.print_exception(type(exc), exc, exc.__traceback__,
+                              file=sys.stderr)
+    if hasattr(exc, 'original'):
+        traceback.print_exception(type(exc.original), exc.original,
+                                  exc.original.__traceback__, file=sys.stderr)
+    print('Message was "{}"'.format(ctx.message.content))
     print('Message was in "{0.channel}" on "{0.server}".'.format(ctx.message),
           file=sys.stderr)
 
