@@ -1,6 +1,5 @@
 from collections import OrderedDict
 import datetime
-import random
 
 from discord.ext import commands
 import discord
@@ -46,12 +45,14 @@ class Meta:
             s=seconds, sp=plural(seconds))
         await self.bot.say('Uptime: **{}**'.format(up))
 
-    @commands.command()
-    async def poke(self):
+    @commands.command(pass_context=True, aliases=['ping'])
+    async def poke(self, ctx):
         """Make sure bot is working."""
-        replies = [
-            'Hey!', 'Ow!', 'Stop that!', "I'm here!", 'I need an adult!']
-        await self.bot.say(random.choice(replies))
+        if ctx.invoked_with == 'poke':
+            reply = 'I need an adult!'
+        else:
+            reply = 'Pong!'
+        await self.bot.say(reply)
 
 
 def setup(bot):
