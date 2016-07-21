@@ -31,6 +31,11 @@ class Misc:
         url += 'info.0.json'
         return url
 
+    async def fetch_xkcd(self, session, url):
+        with aiohttp.Timeout(10):
+            async with session.get(url) as resp:
+                return resp.status, await resp.json()
+
     @commands.command()
     async def xkcd(self, comic=''):
         """Get xkcd comics.
@@ -38,20 +43,23 @@ class Misc:
         [comic] can be the number of a comic or one of 'r', 'rand', 'random'
         """
         latest_url = self.make_xkcd_url()
-        if comic in ('r', 'rand', 'random'):
-            async with aiohttp.get(latest_url) as resp:
-                if resp.status != 200:
+
+        with aiohttp.ClientSession(loop=self.bot.loop) as session:
+            if comic in ('r', 'rand', 'random'):
+                status, data = await self.fetch_xkcd(session, latest_url)
+                if status != 200:
                     await self.bot.say('Could not get comic.')
                     return
-                data = await resp.json()
                 latest = data['num']
                 comic = str(random.randint(1, latest))
-        url = self.make_xkcd_url(comic) if comic.isdigit() else latest_url
-        async with aiohttp.get(url) as resp:
-            if resp.status != 200:
+
+            url = self.make_xkcd_url(comic) if comic.isdigit() else latest_url
+
+            status, data = await self.fetch_xkcd(session, url)
+            if status != 200:
                 await self.bot.say('Could not get comic.')
                 return
-            data = await resp.json()
+
         # this seemed to be the nicest-looking way to write this
         # without stupid indentation on multi-line string
         message = '\n'.join(['**Title**: {0[safe_title]}',
