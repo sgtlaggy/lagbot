@@ -1,18 +1,19 @@
 import traceback
 import datetime
 import logging
+import json
 import sys
 import os
 
 from discord.ext import commands
 import discord
 
-from cogs.utils.load_config import load_config
 from cogs.utils import checks
 
 # Files and Paths
 app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
 log_file = os.path.join(app_path, 'bot.log')
+config_file = os.path.join(app_path, 'config.json')
 
 # Logging Setup
 log = logging.getLogger('discord')
@@ -37,9 +38,10 @@ cogs = ['cogs.{}'.format(cog) for cog in ['admin', 'misc', 'meta', 'rdanny']]
 
 @bot.event
 async def on_ready():
-    bot.uptime = datetime.datetime.utcnow()
+    bot.start_time = datetime.datetime.utcnow()
     app_info = await bot.application_info()
     bot.client_id = app_info.id
+    bot.owner = app_info.owner
     await bot.change_status(game=discord.Game(name='Destroy All Humans!'))
     log.info('Bot ready!')
 
@@ -148,8 +150,8 @@ async def unload_ext(ext):
 if __name__ == '__main__':
     if any('debug' in arg.lower() for arg in sys.argv):
         bot.command_prefix = '%!'
-    config = load_config()
-    bot.owner_name = config.pop('owner_name', None)
+    with open(config_file) as fp:
+        config = json.load(fp)
     token = config.pop('bot_token', None)
     for cog in cogs:
         try:
