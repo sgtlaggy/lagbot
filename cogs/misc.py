@@ -24,6 +24,22 @@ class Misc:
         message = '\n'.join(message)
         await self.bot.say(message)
 
+    @commands.command()
+    async def flip(self, count=1):
+        flips = []
+        possible_flips = (['Heads'] * 500) + (['Tails'] * 500) + ['edge']
+        for _ in range(count):
+            flips.append(random.choice(possible_flips))
+        message = []
+        if count > 1:
+            for f in set(possible_flips):
+                if f in flips:
+                    message.append('{}: {}'.format(f, flips.count(f)))
+        else:
+            message = flips
+        message = '\n'.join(message)
+        await self.bot.say(message)
+
     def make_xkcd_url(self, num=''):
         url = 'http://xkcd.com/'
         if num:
