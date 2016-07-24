@@ -27,7 +27,7 @@ class Misc:
     @commands.command()
     async def flip(self, count=1):
         flips = []
-        possible_flips = (['Heads'] * 500) + (['Tails'] * 500) + ['edge']
+        possible_flips = (['Heads'] * 1000) + (['Tails'] * 1000) + ['edge']
         for _ in range(count):
             flips.append(random.choice(possible_flips))
         message = []
