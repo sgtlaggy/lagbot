@@ -152,6 +152,7 @@ if __name__ == '__main__':
         bot.command_prefix = '%!'
     with open(config_file) as fp:
         config = json.load(fp)
+    bot.source = config.pop('source', None)
     token = config.pop('bot_token', None)
     for cog in cogs:
         try:
