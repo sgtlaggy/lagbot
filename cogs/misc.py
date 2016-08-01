@@ -76,11 +76,9 @@ class Misc:
                 await self.bot.say('Could not get comic.')
                 return
 
-        # this seemed to be the nicest-looking way to write this
-        # without stupid indentation on multi-line string
-        message = '\n'.join(['**Title**: {0[safe_title]}',
-                             '**Alt Text**: {0[alt]}',
-                             '**Image**: {0[img]}']).format(data)
+        message = '**Title**: {0[safe_title]}' \
+                  '\n**Alt Text**: {0[alt]}' \
+                  '\n**Image**: {0[img]}'.format(data)
         await self.bot.say(message)
 
 

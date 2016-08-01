@@ -48,9 +48,9 @@ async def on_ready():
 
 @bot.event
 async def on_server_join(server):
-    message = ['Hello, thanks for inviting me!',
-               'Say `{}help` to see my commands.'.format(bot.command_prefix)]
-    await bot.send_message(server.default_channel, '\n'.join(message))
+    message = 'Hello, thanks for inviting me!' \
+              '\nSay `{0.command_prefix}help` to see my commands.'.format(bot)
+    await bot.send_message(server.default_channel, message)
 
 
 @bot.event
@@ -72,8 +72,8 @@ async def on_command_error(exc, ctx):
     if hasattr(exc, 'original'):
         traceback.print_exception(type(exc.original), exc.original,
                                   exc.original.__traceback__, file=sys.stderr)
-    print('Message was "{}"'.format(ctx.message.content))
-    print('Message was in "{0.channel}" on "{0.server}".'.format(ctx.message),
+    print('In "{0.channel}" on "{0.server}".'
+          'Message was "{0.content}"'.format(ctx.message),
           file=sys.stderr)
 
 

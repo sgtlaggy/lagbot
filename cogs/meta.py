@@ -13,8 +13,8 @@ class Meta:
     async def info(self):
         """Display bot information."""
         source_link = 'https://github.com/mikevb1/discordbot'
-        message = 'The source code can be found at {}.'.format(source_link)
-        message += '\nThe developer is {}.'.format(self.bot.owner)
+        message = 'The source code can be found at {0}.' \
+                  '\nThe developer is {1.owner}.'.format(source_link, self.bot)
         await self.bot.say(message)
 
     @commands.command()
