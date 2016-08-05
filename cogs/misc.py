@@ -1,3 +1,4 @@
+from collections import OrderedDict
 import random
 
 from discord.ext import commands
@@ -25,19 +26,27 @@ class Misc:
         await self.bot.say(message)
 
     @commands.command()
-    async def flip(self, coins=1):
+    async def flip(self, coins: int=1):
         """Flip a number of coins, with a small chance of landing on edge."""
-        flips = []
-        possible_flips = (['Heads'] * 1000) + (['Tails'] * 1000) + ['edge']
+        flips = OrderedDict([('Heads', 0),
+                             ('Tails', 0),
+                             ('Edge', 0)])
         for _ in range(coins):
-            flips.append(random.choice(possible_flips))
+            rand = random.randint(0, 6000)
+            if rand:
+                if rand % 2:
+                    flips['Heads'] += 1
+                else:
+                    flips['Tails'] += 1
+            else:  # 1/6001 chance of being edge
+                flips['Edge'] += 1
         message = []
-        if coins > 1:
-            for f in set(possible_flips):
-                if f in flips:
-                    message.append('{}: {}'.format(f, flips.count(f)))
-        else:
-            message = flips
+        for f, c in flips.items():
+            if c:
+                if coins == 1:
+                    message.append(f)
+                    break
+                message.append('{}: {}'.format(f, c))
         message = '\n'.join(message)
         await self.bot.say(message)
 
