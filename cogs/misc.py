@@ -25,13 +25,14 @@ class Misc:
         await self.bot.say(message)
 
     @commands.command()
-    async def flip(self, count=1):
+    async def flip(self, coins=1):
+        """Flip a number of coins, with a small chance of landing on edge."""
         flips = []
         possible_flips = (['Heads'] * 1000) + (['Tails'] * 1000) + ['edge']
-        for _ in range(count):
+        for _ in range(coins):
             flips.append(random.choice(possible_flips))
         message = []
-        if count > 1:
+        if coins > 1:
             for f in set(possible_flips):
                 if f in flips:
                     message.append('{}: {}'.format(f, flips.count(f)))
