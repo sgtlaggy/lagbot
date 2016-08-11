@@ -6,7 +6,7 @@ def is_owner_check(ctx):
 
 
 def is_owner():
-    return commands.check(lambda ctx: is_owner_check(ctx))
+    return commands.check(is_owner_check)
 
 
 def check_permissions(ctx, perms):
@@ -18,6 +18,4 @@ def check_permissions(ctx, perms):
 
 
 def owner_or_permissions(**perms):
-    def predicate(ctx):
-        return check_permissions(ctx, perms)
-    return commands.check(predicate)
+    return commands.check(lambda ctx: check_permissions(ctx, perms))
