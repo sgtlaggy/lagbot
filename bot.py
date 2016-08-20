@@ -150,16 +150,19 @@ async def unload_ext(ext):
 if __name__ == '__main__':
     if any('debug' in arg.lower() for arg in sys.argv):
         bot.command_prefix = '%!'
+
     with open(config_file) as fp:
         config = json.load(fp)
     bot.source = config.pop('source', None)
     token = config.pop('bot_token', None)
+
     for cog in cogs:
         try:
             bot.load_extension(cog)
         except Exception as e:
             print("Couldn't load cog {}\n{}: {}".format(
                 cog, type(e).__name__, e))
+
     try:
         bot.run(token)
     except Exception as e:

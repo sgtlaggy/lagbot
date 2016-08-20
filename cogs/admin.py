@@ -56,6 +56,7 @@ class Management:
         perm.manage_messages = True
         perm.embed_links = True
         url = discord.utils.oauth_url(self.bot.client_id, permissions=perm)
+
         message = []
         message.append('Follow this link, login if necessary, then select a '
                        'server you own to add me to.')

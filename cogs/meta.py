@@ -27,6 +27,7 @@ class Meta:
         hours, remainder = divmod(int(delta.total_seconds()), 3600)
         minutes, seconds = divmod(remainder, 60)
         days, hours = divmod(hours, 24)
+
         if days:
             fmt = '{d} day{dp}, {h} hour{hp}, {m} minute{mp}, {s} second{sp}'
         elif hours:

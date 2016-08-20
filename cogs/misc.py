@@ -44,6 +44,7 @@ class Misc:
         flips = OrderedDict([('Heads', 0),
                              ('Tails', 0),
                              ('Edge', 0)])
+
         for _ in range(coins):
             rand = random.randint(0, 6000)
             if rand:
@@ -53,6 +54,7 @@ class Misc:
                     flips['Tails'] += 1
             else:  # 1/6001 chance of being edge
                 flips['Edge'] += 1
+
         message = []
         for f, c in flips.items():
             if c:
