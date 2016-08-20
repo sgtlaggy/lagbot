@@ -27,7 +27,7 @@ class Misc:
 
     @commands.command()
     async def flip(self, coins: int=1):
-        """Flip a number of coins, with a small chance of landing on edge."""
+        """Flip any number of coins."""
         flips = OrderedDict([('Heads', 0),
                              ('Tails', 0),
                              ('Edge', 0)])
@@ -66,7 +66,7 @@ class Misc:
     async def xkcd(self, comic=''):
         """Get xkcd comics.
 
-        [comic] can be the number of a comic or one of 'r', 'rand', 'random'
+        [comic] can be the number of a comic or "random"
         """
         latest_url = self.make_xkcd_url()
 

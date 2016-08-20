@@ -62,7 +62,7 @@ async def on_message(msg):
 
 @bot.event
 async def on_command_error(exc, ctx):
-    # emulate default on_command_error and add server + channel info
+    """Emulate default on_command_error and add server + channel info."""
     if hasattr(ctx.command, 'on_error'):
         return
     print('Ignoring exception in command {}'.format(ctx.command),
