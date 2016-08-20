@@ -9,20 +9,33 @@ class Misc:
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
-    async def roll(self, dice='1d6'):
-        """In format XdY, rolls X dice each with Y sides."""
+    @commands.command(rest_is_raw=True)
+    async def roll(self, *, args):
+        """In format XdY, rolls X dice each with Y sides.
+
+        If X is neglected, it will be assumed to mean 1 die.
+        You can also specify a list of dice to roll. "1d6 2d20 d12"
+        """
+        args = args.split() or ['1d6']
+        dice = []
         try:
-            count, sides = map(int, dice.split('d'))
+            for arg in args:
+                die = arg.split('d')
+                die[0] = die[0] or 1
+                dice.append(tuple(map(int, die)))
         except:
             return
-        message = []
-        for i in range(1, count + 1):
-            value = random.randint(1, sides)
-            message.append('Roll{}: {}'.format(
-                ' ' + str(i) if count > 1 else '',
-                value))
-        message = '\n'.join(message)
+
+        sides = 0
+        rolls = []
+        for tup in dice:
+            count = tup[0]
+            if len(tup) != 1:
+                sides = tup[1]
+            for i in range(1, count + 1):
+                rolls.append(str(random.randint(1, sides or 6)))
+
+        message = ', '.join(rolls)
         await self.bot.say(message)
 
     @commands.command()
