@@ -8,6 +8,7 @@ import aiohttp
 class Misc:
     def __init__(self, bot):
         self.bot = bot
+        self.aiohsession = aiohttp.ClientSession(loop=bot.loop)
 
     @commands.command(rest_is_raw=True)
     async def roll(self, *, args):
@@ -72,34 +73,33 @@ class Misc:
         url += 'info.0.json'
         return url
 
-    async def fetch_xkcd(self, session, url):
+    async def fetch_xkcd(self, url):
         with aiohttp.Timeout(10):
-            async with session.get(url) as resp:
+            async with self.aiohsession.get(url) as resp:
                 return resp.status, await resp.json()
 
     @commands.command()
     async def xkcd(self, comic=''):
         """Get xkcd comics.
 
-        [comic] can be the number of a comic or "random"
+        [comic] can be the number of a comic or "r"/"rand"/"random"
         """
         latest_url = self.make_xkcd_url()
 
-        with aiohttp.ClientSession(loop=self.bot.loop) as session:
-            if comic in ('r', 'rand', 'random'):
-                status, data = await self.fetch_xkcd(session, latest_url)
-                if status != 200:
-                    await self.bot.say('Could not get comic.')
-                    return
-                latest = data['num']
-                comic = str(random.randint(1, latest))
-
-            url = self.make_xkcd_url(comic) if comic.isdigit() else latest_url
-
-            status, data = await self.fetch_xkcd(session, url)
+        if comic in ('r', 'rand', 'random'):
+            status, data = await self.fetch_xkcd(latest_url)
             if status != 200:
                 await self.bot.say('Could not get comic.')
                 return
+            latest = data['num']
+            comic = str(random.randint(1, latest))
+
+        url = self.make_xkcd_url(comic) if comic.isdigit() else latest_url
+
+        status, data = await self.fetch_xkcd(url)
+        if status != 200:
+            await self.bot.say('Could not get comic.')
+            return
 
         message = '**Title**: {0[safe_title]}' \
                   '\n**Alt Text**: {0[alt]}' \
