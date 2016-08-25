@@ -7,6 +7,7 @@ import os
 
 from discord.ext import commands
 import discord
+import aiohttp
 
 from cogs.utils import checks
 
@@ -39,6 +40,7 @@ cogs = ['cogs.{}'.format(cog) for cog in ['admin', 'misc', 'meta', 'rdanny']]
 @bot.event
 async def on_ready():
     bot.start_time = datetime.datetime.utcnow()
+    bot.aiohsession = aiohttp.ClientSession(loop=bot.loop)
     app_info = await bot.application_info()
     bot.client_id = app_info.id
     bot.owner = app_info.owner

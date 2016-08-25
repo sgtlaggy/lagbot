@@ -8,7 +8,6 @@ import aiohttp
 class Misc:
     def __init__(self, bot):
         self.bot = bot
-        self.aiohsession = aiohttp.ClientSession(loop=bot.loop)
 
     @commands.command(rest_is_raw=True)
     async def roll(self, *, args):
@@ -75,7 +74,7 @@ class Misc:
 
     async def fetch_xkcd(self, url):
         with aiohttp.Timeout(10):
-            async with self.aiohsession.get(url) as resp:
+            async with self.bot.aiohsession.get(url) as resp:
                 return resp.status, await resp.json()
 
     @commands.command()

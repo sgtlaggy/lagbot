@@ -1,13 +1,49 @@
-from collections import OrderedDict
 import datetime
 
 from discord.ext import commands
-import discord
+import aiohttp
+
+from .utils import checks
 
 
 class Meta:
     def __init__(self, bot):
         self.bot = bot
+
+    @commands.group()
+    @checks.is_owner()
+    async def manage(self):
+        """Manage bot user attributes."""
+        pass
+
+    @manage.command(rest_is_raw=True)
+    async def name(self, *, new_name):
+        """Rename bot."""
+        if new_name:
+            await self.bot.edit_profile(username=new_name)
+
+    async def set_avatar_by_url(self, url):
+        with aiohttp.Timeout(10):
+            async with self.bot.aiohsession.get(url) as resp:
+                if resp.status != 200:
+                    return
+                await self.bot.edit_profile(avatar=await resp.read())
+
+    @manage.command(pass_context=True)
+    async def avatar(self, ctx, new_avatar=None):
+        """Change bot's avatar.
+
+        new_avatar can be a link to an image,
+        left blank with an attached image,
+        or left blank with no attachment to remove image
+        """
+        if new_avatar is not None:
+            await self.set_avatar_by_url(new_avatar)
+        else:
+            if len(ctx.message.attachments):
+                await self.set_avatar_by_url(ctx.message.attachments[0]['url'])
+            else:
+                await self.bot.edit_profile(avatar=None)
 
     @commands.command()
     async def info(self):
