@@ -1,6 +1,7 @@
 import datetime
 
 from discord.ext import commands
+import discord
 import aiohttp
 
 from .utils import checks
@@ -46,13 +47,33 @@ class Meta:
                 await self.bot.edit_profile(avatar=None)
 
     @commands.command()
-    async def info(self):
+    async def info(self, member: discord.Member=None):
         """Display bot information."""
         message = []
-        if self.bot.source:
-            message.append('The source code can be found at {0.source}.')
-        message.append('The developer is {0.owner}.')
-        message = '\n'.join(message).format(self.bot)
+        if member is None:
+            if self.bot.source:
+                message.append('The source code can be found at {0.source}.')
+            message.append('The developer is {0.owner}.')
+            message = '\n'.join(message).format(self.bot)
+        else:
+            roles = [role.name.replace('@', '@\u200b')
+                     for role in member.roles]
+            roles.remove('@\u200beveryone')
+            message.append('```')
+            lines = [
+                ('Name', member.name),
+                ('Tag', member.discriminator),
+                ('ID', member.id),
+                ('Joined Server', member.joined_at),
+                ('Joined Discord', member.created_at),
+                ('Roles', ', '.join(roles)),
+                ('Avatar', member.avatar_url)]
+            width = max(len(k) for k, v in lines) + 1
+            for line in lines:
+                message.append('{0:<{width}}: {1}'.format(*line,
+                                                          width=width))
+            message.append('```')
+            message = '\n'.join(message)
         await self.bot.say(message)
 
     @commands.command()
