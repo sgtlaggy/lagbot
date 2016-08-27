@@ -82,26 +82,23 @@ class Management:
 
         You must have proper permissions to remove others' messages.
         """
-        author = ctx.message.author
-        channel = ctx.message.channel
-        removed = 0
+        message = ctx.message
+        author = message.author
+        channel = message.channel
         if member is None:
             member = author
-            count += 1  # account for command message
-            removed -= 1
 
         if member == author or channel.permissions_for(author).manage_messages:
             to_remove = []
             while len(to_remove) < count:
-                async for msg in self.bot.logs_from(channel):
+                async for msg in self.bot.logs_from(channel, before=message):
                     if msg.author == member:
                         to_remove.append(msg)
                     if len(to_remove) == count:
                         break
             await self.bot.delete_messages(to_remove)
-            removed += len(to_remove)
             msg = await self.bot.say('Removed {} messages by {}.'.format(
-                removed,
+                len(to_remove),
                 member.display_name))
             await asyncio.sleep(10)
             await self.bot.delete_message(msg)
