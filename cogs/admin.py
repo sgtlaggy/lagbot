@@ -84,11 +84,14 @@ class Management:
         """
         author = ctx.message.author
         channel = ctx.message.channel
+        removed = 0
         if member is None:
             member = author
             count += 1  # account for command message
-        to_remove = []
+            removed -= 1
+
         if member == author or channel.permissions_for(author).manage_messages:
+            to_remove = []
             while len(to_remove) < count:
                 async for msg in self.bot.logs_from(channel):
                     if msg.author == member:
@@ -96,8 +99,9 @@ class Management:
                     if len(to_remove) == count:
                         break
             await self.bot.delete_messages(to_remove)
+            removed += len(to_remove)
             msg = await self.bot.say('Removed {} messages by {}.'.format(
-                len(to_remove),
+                removed,
                 member.display_name))
             await asyncio.sleep(10)
             await self.bot.delete_message(msg)
