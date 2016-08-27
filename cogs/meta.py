@@ -11,13 +11,13 @@ class Meta:
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.group()
-    @checks.is_owner()
+    @commands.group(hidden=True)
     async def manage(self):
         """Manage bot user attributes."""
         pass
 
     @manage.command(rest_is_raw=True)
+    @checks.is_owner()
     async def name(self, *, new_name):
         """Rename bot."""
         if new_name:
@@ -31,6 +31,7 @@ class Meta:
                 await self.bot.edit_profile(avatar=await resp.read())
 
     @manage.command(pass_context=True)
+    @checks.is_owner()
     async def avatar(self, ctx, new_avatar=None):
         """Change bot's avatar.
 
@@ -45,6 +46,14 @@ class Meta:
                 await self.set_avatar_by_url(ctx.message.attachments[0]['url'])
             else:
                 await self.bot.edit_profile(avatar=None)
+
+    @manage.command(pass_context=True, rest_is_raw=True)
+    @commands.bot_has_permissions(change_nickname=True)
+    @checks.owner_or_permissions(manage_nicknames=True)
+    async def nick(self, ctx, *, new_nick):
+        """Change bot's nickname."""
+        bot_member = ctx.message.server.get_member(self.bot.user.id)
+        await self.bot.change_nickname(bot_member, new_nick or None)
 
     @commands.command()
     async def info(self, member: discord.Member=None):
