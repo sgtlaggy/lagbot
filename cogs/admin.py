@@ -1,5 +1,6 @@
 from discord.ext import commands
 import discord
+import asyncio
 
 from .utils import checks
 
@@ -73,6 +74,33 @@ class Management:
         You must have permission to kick members.
         """
         await self.bot.leave_server(ctx.message.server)
+
+    @commands.command(pass_context=True)
+    @commands.bot_has_permissions(manage_messages=True)
+    async def purge(self, ctx, count: int, *, member: discord.Member=None):
+        """Purge another member's or your own messages from the channel.
+
+        You must have proper permissions to remove others' messages.
+        """
+        author = ctx.message.author
+        channel = ctx.message.channel
+        if member is None:
+            member = author
+            count += 1  # account for command message
+        to_remove = []
+        if member == author or channel.permissions_for(author).manage_messages:
+            while len(to_remove) < count:
+                async for msg in self.bot.logs_from(channel):
+                    if msg.author == member:
+                        to_remove.append(msg)
+                    if len(to_remove) == count:
+                        break
+            await self.bot.delete_messages(to_remove)
+            msg = await self.bot.say('Removed {} messages by {}.'.format(
+                len(to_remove),
+                member.display_name))
+            await asyncio.sleep(10)
+            await self.bot.delete_message(msg)
 
 
 def setup(bot):
