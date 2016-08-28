@@ -56,33 +56,41 @@ class Meta:
         await self.bot.change_nickname(bot_member, new_nick or None)
 
     @commands.command()
-    async def info(self, member: discord.Member=None):
+    async def source(self):
         """Display bot information."""
         message = []
+        message.append('My developer is {0.owner}.')
+        if self.bot.source:
+            message.append('My source code can be found at {0.source}.')
+        message = '\n'.join(message).format(self.bot)
+        await self.bot.say(message)
+
+    @commands.command(pass_context=True)
+    async def info(self, ctx, *, member: discord.Member=None):
+        """Display information on the bot or a specific user."""
+        message = []
         if member is None:
-            if self.bot.source:
-                message.append('The source code can be found at {0.source}.')
-            message.append('The developer is {0.owner}.')
-            message = '\n'.join(message).format(self.bot)
-        else:
-            roles = [role.name.replace('@', '@\u200b')
-                     for role in member.roles]
-            roles.remove('@\u200beveryone')
-            message.append('```')
-            lines = [
-                ('Name', member.name),
-                ('Tag', member.discriminator),
-                ('ID', member.id),
-                ('Joined Server', member.joined_at),
-                ('Joined Discord', member.created_at),
-                ('Roles', ', '.join(roles)),
-                ('Avatar', member.avatar_url)]
-            width = max(len(k) for k, v in lines) + 1
-            for line in lines:
-                message.append('{0:<{width}}: {1}'.format(*line,
-                                                          width=width))
-            message.append('```')
-            message = '\n'.join(message)
+            member = ctx.message.server.get_member(self.bot.user.id)
+
+        roles = [role.name.replace('@', '@\u200b')
+                 for role in member.roles]
+        roles.remove('@\u200beveryone')
+
+        message.append('```')
+        lines = [
+            ('Name', member.name),
+            ('Tag', member.discriminator),
+            ('ID', member.id),
+            ('Joined Server', member.joined_at),
+            ('Joined Discord', member.created_at),
+            ('Roles', ', '.join(roles)),
+            ('Avatar', member.avatar_url)]
+        width = max(len(k) for k, v in lines) + 1
+        for line in lines:
+            message.append('{0:<{width}}: {1}'.format(*line,
+                                                      width=width))
+        message.append('```')
+        message = '\n'.join(message)
         await self.bot.say(message)
 
     @commands.command()
