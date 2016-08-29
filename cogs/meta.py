@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 
 from discord.ext import commands
 import discord
@@ -65,6 +65,15 @@ class Meta:
         message = '\n'.join(message).format(self.bot)
         await self.bot.say(message)
 
+    def fancy_time(self, orig_time):
+        diff = datetime.utcnow() - orig_time
+        nice = ''
+        if diff.days >= 365:
+            nice += str(diff.days // 365) + ' years, '
+        nice += str(diff.days % 365) + ' days ago'
+        nice += ' ({} UTC)'.format(orig_time)
+        return nice
+
     @commands.command(pass_context=True)
     async def info(self, ctx, *, member: discord.Member=None):
         """Display information on the bot or a specific user."""
@@ -81,8 +90,8 @@ class Meta:
             ('Name', member.name),
             ('Tag', member.discriminator),
             ('ID', member.id),
-            ('Joined Server', member.joined_at),
-            ('Joined Discord', member.created_at),
+            ('Joined Server', self.fancy_time(member.joined_at)),
+            ('Joined Discord', self.fancy_time(member.created_at)),
             ('Roles', ', '.join(roles)),
             ('Avatar', member.avatar_url)]
         width = max(len(k) for k, v in lines) + 1
@@ -96,7 +105,7 @@ class Meta:
     @commands.command()
     async def uptime(self):
         """Display bot uptime."""
-        now = datetime.datetime.utcnow()
+        now = datetime.utcnow()
         delta = now - self.bot.start_time
         hours, remainder = divmod(int(delta.total_seconds()), 3600)
         minutes, seconds = divmod(remainder, 60)
