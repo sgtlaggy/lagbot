@@ -76,7 +76,7 @@ class Meta:
                  for role in member.roles]
         roles.remove('@\u200beveryone')
 
-        message.append('```')
+        message.append('```xl')
         lines = [
             ('Name', member.name),
             ('Tag', member.discriminator),
