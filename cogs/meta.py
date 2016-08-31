@@ -52,7 +52,7 @@ class Meta:
     @checks.owner_or_permissions(manage_nicknames=True)
     async def nick(self, ctx, *, new_nick):
         """Change bot's nickname."""
-        bot_member = ctx.message.server.get_member(self.bot.user.id)
+        bot_member = ctx.message.server.me
         await self.bot.change_nickname(bot_member, new_nick or None)
 
     @commands.command()
@@ -78,8 +78,7 @@ class Meta:
     async def info(self, ctx, *, member: discord.Member=None):
         """Display information on the bot or a specific user."""
         message = []
-        if member is None:
-            member = ctx.message.server.get_member(self.bot.user.id)
+        member = member or ctx.message.server.me
 
         roles = [role.name.replace('@', '@\u200b')
                  for role in member.roles]
