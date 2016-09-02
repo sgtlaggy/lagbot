@@ -5,6 +5,8 @@ import re
 from discord.ext import commands
 import aiohttp
 
+from .utils import utils
+
 ow_storage = os.path.join(os.path.split(os.path.split(__file__)[0])[0],
                           'ow.dat')
 if not os.path.exists(ow_storage):
@@ -55,10 +57,6 @@ def most_played(hero_dict):
             return hero.title(), time_from_decimal(played)
 
 
-def plural(num):
-    return 's' if num != 1 else ''
-
-
 def time_str(tupdec):
     if isinstance(tupdec, tuple):
         hours, minutes = tupdec
@@ -70,8 +68,8 @@ def time_str(tupdec):
         fmt = '{m} minute{mp}'
     else:
         fmt = 'None'
-    return fmt.format(h=hours, hp=plural(hours),
-                      m=minutes, mp=plural(minutes))
+    return fmt.format(h=hours, hp=utils.plural(hours),
+                      m=minutes, mp=utils.plural(minutes))
 
 
 class Overwatch:

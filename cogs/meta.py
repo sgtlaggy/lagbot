@@ -4,7 +4,7 @@ from discord.ext import commands
 import discord
 import aiohttp
 
-from .utils import checks
+from .utils import checks, utils
 
 
 class Meta:
@@ -119,14 +119,11 @@ class Meta:
         else:
             fmt = '{s} second{sp}'
 
-        def plural(num):
-            return 's' if num != 1 else ''
-
         up = fmt.format(
-            d=days, dp=plural(days),
-            h=hours, hp=plural(hours),
-            m=minutes, mp=plural(minutes),
-            s=seconds, sp=plural(seconds))
+            d=days, dp=utils.plural(days),
+            h=hours, hp=utils.plural(hours),
+            m=minutes, mp=utils.plural(minutes),
+            s=seconds, sp=utils.plural(seconds))
         await self.bot.say('Uptime: **{}**'.format(up))
 
     @commands.command(pass_context=True, aliases=['ping'])
