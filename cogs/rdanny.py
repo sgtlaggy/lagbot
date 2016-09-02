@@ -161,7 +161,7 @@ class RoboDanny:
     async def nostalgia(self, ctx, date: date = None, *, channel: discord.Channel = None):
         """Pins an old message from a specific date.
         
-        If a date is not gives, then pins first message from the channel.
+        If a date is not given, then pins first message from the channel.
         If a channel is not given, then pins from the channel the
         command was ran on.
 
@@ -178,8 +178,6 @@ class RoboDanny:
                 await self.bot.pin_message(m)
             except:
                 await self.bot.say('\N{THUMBS DOWN SIGN} Could not pin message.')
-            else:
-                await self.bot.say('\N{THUMBS UP SIGN} Successfully pinned message.')
 
     @nostalgia.error
     async def nostalgia_error(self, error, ctx):

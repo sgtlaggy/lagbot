@@ -34,7 +34,8 @@ help_attrs = {
 }
 bot = commands.Bot(command_prefix='!', help_attrs=help_attrs)
 
-cogs = ['cogs.{}'.format(cog) for cog in ['admin', 'misc', 'meta', 'rdanny']]
+cogs = ['cogs.{}'.format(cog) for cog in ['admin', 'misc', 'meta',
+                                          'rdanny', 'overwatch']]
 
 
 @bot.event
