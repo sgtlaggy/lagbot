@@ -124,7 +124,7 @@ class Meta:
             h=hours, hp=utils.plural(hours),
             m=minutes, mp=utils.plural(minutes),
             s=seconds, sp=utils.plural(seconds))
-        await self.bot.say('Uptime: **{}**'.format(up))
+        await self.bot.say('```xl\nUptime: {}\n```'.format(up))
 
     @commands.command(pass_context=True, aliases=['ping'])
     async def poke(self, ctx):
