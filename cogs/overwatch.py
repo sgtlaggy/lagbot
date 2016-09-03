@@ -38,7 +38,7 @@ def ow_tier(arg):
 
 def ow_level(overall_stats):
     total = overall_stats['prestige'] * 100
-    total += 5
+    total += overall_stats['level']
     return total
 
 
