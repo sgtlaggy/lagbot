@@ -85,10 +85,13 @@ class Management:
         message = ctx.message
         author = message.author
         channel = message.channel
+        owner = ctx.message.server.get_member(self.bot.owner.id)
         if member is None:
             member = author
 
-        if member == author or channel.permissions_for(author).manage_messages:
+        if (member == author or
+                channel.permissions_for(author).manage_messages or
+                (member == ctx.message.server.me and author == owner)):
             to_remove = []
             while len(to_remove) < count:
                 async for msg in self.bot.logs_from(channel, before=message):
