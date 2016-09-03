@@ -25,9 +25,9 @@ class Not200(Exception):
 def player_tag(arg):
     match = re.match(r'<@!?([0-9]+)>$', arg)
     if match is not None:
-        return match.group(0)
+        return match.group(1)
     else:
-        return arg.replace('#', '-')
+        return arg[::-1].replace('#', '-', 1)[::-1]
 
 
 def ow_tier(arg):
@@ -146,10 +146,12 @@ class Overwatch:
             ('Games Played', stats['overall_stats']['games']),
             ('Games Won', stats['overall_stats']['wins']),
             ('Win Rate', '{}%'.format(stats['overall_stats']['win_rate'])),
-            ('Kill/death', round(stats['game_stats']['kpd'], 2)),
-            ('Environmental Deaths',
-             int(stats['game_stats']['environmental_deaths']))
-        ]
+            ('Kill/death', round(stats['game_stats']['kpd'], 2))]
+        try:
+            lines.append(('Environmental Deaths',
+                          int(stats['game_stats']['environmental_deaths'])))
+        except:
+            pass
         message.append('```xl')
         width = max(len(k) for k, v in lines)
         for line in lines:
