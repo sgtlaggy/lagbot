@@ -196,7 +196,7 @@ class Overwatch:
     async def ow_set(self, ctx, tag, tier='competitive'):
         """Set your battletag and default tier.
 
-        [tag] can be either BattleTag or a mention to someone in the db
+        <tag> can be either BattleTag or a mention to someone in the db
         [tier] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
         """
         tier = ow_tier(tier)
