@@ -196,7 +196,7 @@ class Overwatch:
         message.append('```')
         await self.bot.say('\n'.join(message))
 
-    @overwatch.command(name='set', pass_context=True)
+    @overwatch.command(name='set', aliases=['save'], pass_context=True)
     async def ow_set(self, ctx, tag, tier='competitive'):
         """Set your battletag and default tier."""
         tier = ow_tier(tier)
@@ -204,6 +204,7 @@ class Overwatch:
         self.idents[ctx.message.author.id] = {'btag': tag, 'tier': tier}
         with open(ow_storage, 'w') as fp:
             json.dump(self.idents, fp)
+        await self.bot.say('\N{OK_HAND_SIGN} Added to db.')
 
 
 def setup(bot):
