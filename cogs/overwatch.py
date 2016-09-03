@@ -36,14 +36,10 @@ def ow_tier(arg):
     return 'competitive'
 
 
-def ow_level(stats):
-    overall = stats['overall_stats']
-    level = ''
-    prestige = overall['prestige']
-    if prestige:
-        level += str(prestige) + '+'
-    level += str(overall['level'])
-    return level
+def ow_level(overall_stats):
+    total = overall_stats['prestige'] * 100
+    total += 5
+    return total
 
 
 def time_from_decimal(dec):
@@ -139,7 +135,7 @@ class Overwatch:
         lines = [
             ('Battletag', stats['battletag'][::-1].replace('-', '#', 1)[::-1]),
             ('Time played', time_str(stats['game_stats']['time_played'])),
-            ('Level', ow_level(stats)),
+            ('Level', ow_level(stats['overall_stats'])),
             ('Comp Rank', stats['overall_stats']['comprank'] or 'Unranked'),
             ('Most Played Hero', mp_hero),
             ('Hero Time', time_str(mp_time)),
@@ -198,7 +194,11 @@ class Overwatch:
 
     @overwatch.command(name='set', aliases=['save'], pass_context=True)
     async def ow_set(self, ctx, tag, tier='competitive'):
-        """Set your battletag and default tier."""
+        """Set your battletag and default tier.
+
+        [tag] can be either BattleTag or a mention to someone in the db
+        [tier] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
+        """
         tier = ow_tier(tier)
         tag = tag[::-1].replace('#', '-', 1)[::-1]
         self.idents[ctx.message.author.id] = {'btag': tag, 'tier': tier}
