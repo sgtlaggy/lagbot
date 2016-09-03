@@ -47,7 +47,7 @@ class Meta:
             else:
                 await self.bot.edit_profile(avatar=None)
 
-    @manage.command(pass_context=True, rest_is_raw=True)
+    @manage.command(pass_context=True, rest_is_raw=True, no_pm=True)
     @commands.bot_has_permissions(change_nickname=True)
     @checks.owner_or_permissions(manage_nicknames=True)
     async def nick(self, ctx, *, new_nick):
@@ -74,7 +74,7 @@ class Meta:
         nice += ' ({} UTC)'.format(orig_time)
         return nice
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, no_pm=True)
     async def info(self, ctx, *, member: discord.Member=None):
         """Display information on the bot or a specific user."""
         message = []

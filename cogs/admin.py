@@ -9,7 +9,7 @@ class Management:
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
+    @commands.command(no_pm=True)
     @commands.has_permissions(kick_members=True)
     async def kick(self, *, member: discord.Member):
         """Kick user from server if you have permission.
@@ -25,7 +25,7 @@ class Management:
         else:
             await self.bot.say('\U0001f44c')
 
-    @commands.command()
+    @commands.command(no_pm=True)
     @commands.has_permissions(ban_members=True)
     async def ban(self, *, member: discord.Member):
         """Ban user from server.
@@ -66,7 +66,7 @@ class Management:
         message.append(url)
         await self.bot.say('\n'.join(message))
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, no_pm=True)
     @checks.owner_or_permissions(kick_members=True)
     async def leave(self, ctx):
         """Tell bot to leave server.
@@ -75,7 +75,7 @@ class Management:
         """
         await self.bot.leave_server(ctx.message.server)
 
-    @commands.command(pass_context=True)
+    @commands.command(pass_context=True, no_pm=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def purge(self, ctx, count: int, *, member: discord.Member=None):
         """Purge another member's or your own messages from the channel.
