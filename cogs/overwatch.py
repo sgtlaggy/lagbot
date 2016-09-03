@@ -140,7 +140,7 @@ class Overwatch:
             ('Battletag', stats['battletag'][::-1].replace('-', '#', 1)[::-1]),
             ('Time played', time_str(stats['game_stats']['time_played'])),
             ('Level', ow_level(stats)),
-            ('Comp Rank', stats['overall_stats']['comprank'] or 'None'),
+            ('Comp Rank', stats['overall_stats']['comprank'] or 'Unranked'),
             ('Most Played Hero', mp_hero),
             ('Hero Time', time_str(mp_time)),
             ('Games Played', stats['overall_stats']['games']),
