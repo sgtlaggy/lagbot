@@ -204,7 +204,7 @@ class Overwatch:
         self.idents[ctx.message.author.id] = {'btag': tag, 'tier': tier}
         with open(ow_storage, 'w') as fp:
             json.dump(self.idents, fp)
-        await self.bot.say('\N{OK_HAND_SIGN} Added to db.')
+        await self.bot.say('\N{OK HAND SIGN} Added to db.')
 
 
 def setup(bot):
