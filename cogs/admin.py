@@ -56,6 +56,7 @@ class Management:
         perm.send_messages = True
         perm.manage_messages = True
         perm.embed_links = True
+        perm.change_nickname = True
         url = discord.utils.oauth_url(self.bot.client_id, permissions=perm)
 
         message = []
