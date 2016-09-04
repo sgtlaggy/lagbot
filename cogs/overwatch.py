@@ -140,12 +140,15 @@ class Overwatch:
                       'comp', 'competitive', 'ranked'
              * Defaults to competitive stats, falls back to quickplay.
 
-        Stats by Battletag       : !ow BattleTag#1234
-        Stats by Discord mention : !ow @DiscordName
-        Add yourself to database : !ow set BattleTag#1234
-        Hero Play Time           : !ow heroes BattleTag#1234
+        Stats by Battletag        : !ow BattleTag#1234
+        Stats by Discord mention  : !ow @DiscordName
+        Add yourself to database  : !ow set BattleTag#1234
+        Hero Play Time            : !ow heroes BattleTag#1234
+        Own Stats, Different Tier : !ow [optional-set/heroes] qp/comp
 
         Notes
+            * If you are in the DB you can replace your battletag to get/change
+                your own stats with a tier different than you have saved.
             * You can follow BattleTag/Discord mention with a tier of gameplay
                 to force getting quickplay/competitive stats.
             * BattleTags are case-sensitive.
