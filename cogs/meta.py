@@ -62,6 +62,9 @@ class Meta:
         message.append('My developer is {0.owner}.')
         if self.bot.source:
             message.append('My source code can be found at {0.source}.')
+        if self.bot.userdocs:
+            message.append('Documentation for my commands can be '
+                           'found with `!help` or at {0.userdocs}.')
         message = '\n'.join(message).format(self.bot)
         await self.bot.say(message)
 

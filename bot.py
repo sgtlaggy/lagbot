@@ -157,6 +157,7 @@ if __name__ == '__main__':
     with open(config_file) as fp:
         config = json.load(fp)
     bot.source = config.pop('source', None)
+    bot.userdocs = config.pop('userdocs', None)
     token = config.pop('bot_token', None)
 
     for cog in cogs:
