@@ -17,6 +17,9 @@ endpoint = "https://owapi.net/api/v2/u/{{tag}}/{cat}/{{tier}}"
 stat_endpoint = endpoint.format(cat='stats')
 hero_endpoint = endpoint.format(cat='heroes')
 
+tiers = ('quick', 'quickplay', 'qp', 'general', 'unranked',
+         'comp', 'competitive', 'ranked')
+
 
 class Not200(Exception):
     pass
@@ -31,7 +34,7 @@ def player_tag(arg):
 
 
 def ow_tier(arg):
-    if arg in ('quick', 'quickplay', 'qp', 'general'):
+    if arg in tiers[:5]:
         return 'general'
     return 'competitive'
 
@@ -95,6 +98,7 @@ class Overwatch:
 
     def get_tag(self, ctx, tag):
         member_id = None
+        tag = player_tag(tag)
         if tag == '' or '-' not in tag:
             member_id = tag or ctx.message.author.id
             tag = self.idents[member_id]['btag']
@@ -103,21 +107,27 @@ class Overwatch:
     def get_tier(self, member_id):
         return self.idents[member_id]['tier']
 
-    async def get_all(self, ctx, tag, tier):
-        tag, member_id = self.get_tag(ctx, tag)
-        if tier is not None:
-            tier = ow_tier(tier)
+    def get_tag_tier(self, ctx, tag, tier):
+        if tag in tiers:
+            tier = ow_tier(tag)
+            tag, member_id = self.get_tag(ctx, '')
         else:
-            try:
-                tier = self.get_tier(member_id)
-            except KeyError:
-                tier = 'competitive'
+            tag, member_id = self.get_tag(ctx, tag)
+            if tier is not None:
+                tier = ow_tier(tier)
+            else:
+                try:
+                    tier = self.get_tier(member_id)
+                except KeyError:
+                    tier = 'competitive'
+        return tag, tier, member_id
 
+    async def get_all(self, ctx, tag, tier):
+        tag, tier, member_id = self.get_tag_tier(ctx, tag, tier)
         stats, heroes, tier = await self.fetch_stats(tag, tier)
         heroes = heroes['heroes']
         if tier == 'general':
             tier = 'quickplay'
-
         return stats, heroes, tag, tier
 
     @commands.group(aliases=['ow'], pass_context=True,
@@ -126,7 +136,8 @@ class Overwatch:
         """See stats of yourself or another player.
 
         [tag] can be either BattleTag or a mention to someone in the db
-        [tier] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
+        [tier] can be 'quick', 'quickplay', 'qp', 'unranked',
+                      'comp', 'competitive', 'ranked'
              * Defaults to competitive stats, falls back to quickplay.
 
         Stats by Battletag       : !ow BattleTag#1234
@@ -202,15 +213,23 @@ class Overwatch:
         await self.bot.say('\n'.join(message))
 
     @overwatch.command(name='set', aliases=['save'], pass_context=True)
-    async def ow_set(self, ctx, tag, tier='competitive'):
+    async def ow_set(self, ctx, tag, tier=None):
         """Set your battletag and default tier.
 
         <tag> can be either BattleTag or a mention to someone in the db
         [tier] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
              * Defaults to competitive stats, falls back to quickplay.
         """
-        tier = ow_tier(tier)
-        tag = tag[::-1].replace('#', '-', 1)[::-1]
+        if tier is None and tag in tiers:
+            tag, tier, _ = self.get_tag_tier(ctx, tag, tier)
+            try:
+                tag = self.idents[ctx.message.author.id]['btag']
+            except:
+                await self.bot.say("You're not in the db.")
+                return
+        else:
+            tier = ow_tier(tier)
+            tag = tag[::-1].replace('#', '-', 1)[::-1]
         self.idents[ctx.message.author.id] = {'btag': tag, 'tier': tier}
         with open(ow_storage, 'w') as fp:
             json.dump(self.idents, fp)
