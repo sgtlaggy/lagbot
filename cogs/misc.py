@@ -100,7 +100,7 @@ class Misc:
             await self.bot.say('Could not get comic.')
             return
 
-        message = '**Title**: {0[safe_title]}' \
+        message = '**Title**: {0[num]}. {0[safe_title]}' \
                   '\n**Alt Text**: {0[alt]}' \
                   '\n**Image**: {0[img]}'.format(data)
         await self.bot.say(message)
