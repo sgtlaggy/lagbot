@@ -63,7 +63,7 @@ def time_str(tupdec):
     elif minutes:
         fmt = '{m} minute{mp}'
     else:
-        fmt = 'None'
+        fmt = '<1 minute'
     return fmt.format(h=hours, hp=utils.plural(hours),
                       m=minutes, mp=utils.plural(minutes))
 
@@ -136,7 +136,8 @@ class Overwatch:
             ('Battletag', stats['battletag'][::-1].replace('-', '#', 1)[::-1]),
             ('Time played', time_str(stats['game_stats']['time_played'])),
             ('Level', ow_level(stats['overall_stats'])),
-            ('Comp Rank', stats['overall_stats']['comprank'] or 'Unranked'),
+            ('Competitive Rank', stats['overall_stats']['comprank'] or
+             'Unranked'),
             ('Most Played Hero', mp_hero),
             ('Hero Time', time_str(mp_time)),
             ('Games Played', stats['overall_stats']['games']),
@@ -186,9 +187,11 @@ class Overwatch:
         message.append('```xl')
         for hero, time in sorted(heroes.items(), key=lambda kv: kv[1],
                                  reverse=True):
-            message.append('{0:<{width}} : {1}'.format(hero.title(),
-                                                       time_str(heroes[hero]),
-                                                       width=width))
+            if time:
+                message.append('{0:<{width}} : {1}'.format(
+                    hero.title(),
+                    time_str(heroes[hero]),
+                    width=width))
         message.append('```')
         await self.bot.say('\n'.join(message))
 
