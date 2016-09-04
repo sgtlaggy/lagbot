@@ -127,6 +127,18 @@ class Overwatch:
 
         [tag] can be either BattleTag or a mention to someone in the db
         [tier] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
+             * Defaults to competitive stats, falls back to quickplay.
+
+        Stats by Battletag       : !ow BattleTag#1234
+        Stats by Discord mention : !ow @DiscordName
+        Add yourself to database : !ow set BattleTag#1234
+        Hero Play Time           : !ow heroes BattleTag#1234
+
+        Notes
+            * You can follow BattleTag/Discord mention with a tier of gameplay
+                to force getting quickplay/competitive stats.
+            * BattleTags are case-sensitive.
+            * To get stats by Discord mention, the person must be in the DB.
         """
         try:
             stats, heroes, tag, tier = await self.get_all(ctx, tag, tier)
@@ -168,6 +180,7 @@ class Overwatch:
 
         [tag] can be either BattleTag or a mention to someone in the db
         [tier] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
+             * Defaults to competitive stats, falls back to quickplay.
         """
         try:
             stats, heroes, tag, tier = await self.get_all(ctx, tag, tier)
@@ -194,6 +207,7 @@ class Overwatch:
 
         <tag> can be either BattleTag or a mention to someone in the db
         [tier] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
+             * Defaults to competitive stats, falls back to quickplay.
         """
         tier = ow_tier(tier)
         tag = tag[::-1].replace('#', '-', 1)[::-1]
