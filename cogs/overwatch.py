@@ -103,19 +103,8 @@ class Overwatch:
     def get_tier(self, member_id):
         return self.idents[member_id]['tier']
 
-    @commands.group(aliases=['ow'], pass_context=True,
-                    invoke_without_command=True)
-    async def overwatch(self, ctx, tag: player_tag = '', tier=None):
-        """See stats of yourself or another player.
-
-        [tag] can be either BattleTag or a mention to someone in the db
-        [tier] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
-        """
-        try:
-            tag, member_id = self.get_tag(ctx, tag)
-        except KeyError:
-            await self.bot.say("Not in the db.")
-            return
+    async def get_all(self, ctx, tag, tier):
+        tag, member_id = self.get_tag(ctx, tag)
         if tier is not None:
             tier = ow_tier(tier)
         else:
@@ -128,6 +117,22 @@ class Overwatch:
         heroes = heroes['heroes']
         if tier == 'general':
             tier = 'quickplay'
+
+        return stats, heroes, tag, tier
+
+    @commands.group(aliases=['ow'], pass_context=True,
+                    invoke_without_command=True)
+    async def overwatch(self, ctx, tag: player_tag = '', tier=None):
+        """See stats of yourself or another player.
+
+        [tag] can be either BattleTag or a mention to someone in the db
+        [tier] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
+        """
+        try:
+            stats, heroes, tag, tier = await self.get_all(ctx, tag, tier)
+        except KeyError:
+            await self.bot.say("Not in the db.")
+            return
 
         mp_hero, mp_time = most_played(heroes)
 
@@ -165,22 +170,10 @@ class Overwatch:
         [tier] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
         """
         try:
-            tag, member_id = self.get_tag(ctx, tag)
+            stats, heroes, tag, tier = await self.get_all(ctx, tag, tier)
         except KeyError:
             await self.bot.say("Not in the db.")
             return
-        if tier is not None:
-            tier = ow_tier(tier)
-        else:
-            try:
-                tier = self.get_tier(member_id)
-            except KeyError:
-                tier = 'competitive'
-
-        stats, heroes, tier = await self.fetch_stats(tag, tier)
-        heroes = heroes['heroes']
-        if tier == 'general':
-            tier = 'quickplay'
 
         message = ['{} hero stats:'.format(tier.title())]
         width = max(len(k) for k in heroes.keys())
