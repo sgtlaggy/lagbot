@@ -5,6 +5,7 @@ import re
 from discord.ext import commands
 import aiohttp
 
+from .utils.utils import Not200
 from .utils import utils
 
 ow_storage = os.path.join(os.path.split(os.path.split(__file__)[0])[0],
@@ -19,10 +20,6 @@ hero_endpoint = endpoint.format(cat='heroes')
 
 tiers = ('quick', 'quickplay', 'qp', 'general', 'unranked',
          'comp', 'competitive', 'ranked')
-
-
-class Not200(Exception):
-    pass
 
 
 def player_tag(arg):

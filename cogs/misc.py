@@ -4,6 +4,8 @@ import random
 from discord.ext import commands
 import aiohttp
 
+from .utils.utils import Not200
+
 
 class Misc:
     def __init__(self, bot):
@@ -75,7 +77,9 @@ class Misc:
     async def fetch_xkcd(self, url):
         with aiohttp.Timeout(10):
             async with self.bot.aiohsession.get(url) as resp:
-                return resp.status, await resp.json()
+                if resp.status != 200:
+                    raise Not200
+                return await resp.json()
 
     @commands.command()
     async def xkcd(self, comic=''):
@@ -86,8 +90,9 @@ class Misc:
         latest_url = self.make_xkcd_url()
 
         if comic in ('r', 'rand', 'random'):
-            status, data = await self.fetch_xkcd(latest_url)
-            if status != 200:
+            try:
+                data = await self.fetch_xkcd(latest_url)
+            except Not200:
                 await self.bot.say('Could not get comic.')
                 return
             latest = data['num']
@@ -95,8 +100,9 @@ class Misc:
 
         url = self.make_xkcd_url(comic) if comic.isdigit() else latest_url
 
-        status, data = await self.fetch_xkcd(url)
-        if status != 200:
+        try:
+            data = await self.fetch_xkcd(url)
+        except Not200:
             await self.bot.say('Could not get comic.')
             return
 
