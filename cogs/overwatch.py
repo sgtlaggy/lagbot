@@ -1,9 +1,7 @@
-import os
 import re
 
 from discord.ext import commands
 import aiohttp
-import asyncpg
 
 from .utils.utils import Not200, NotInDB
 from .utils import utils
@@ -90,8 +88,9 @@ class Overwatch:
         tag = player_tag(tag)
         if tag == '' or '-' not in tag:
             member_id = tag or ctx.message.author.id
-            tag = await self.bot.db.fetchval(
-                'SELECT btag FROM overwatch WHERE id = $1', member_id)
+            tag = await self.bot.db.fetchval('''
+                SELECT btag FROM overwatch WHERE id = $1
+                ''', member_id)
         if tag is None:
             raise NotInDB
         return tag, member_id
@@ -99,11 +98,13 @@ class Overwatch:
     async def get_tier(self, member_id):
         tier = None
         if '-' in member_id:
-            tier = await self.bot.db.fetchval(
-                'SELECT tier FROM overwatch WHERE btag = $1', member_id)
+            tier = await self.bot.db.fetchval('''
+                SELECT tier FROM overwatch WHERE btag = $1
+                ''', member_id)
         else:
-            tier = await self.bot.db.fetchval(
-                'SELECT tier FROM overwatch WHERE id = $1', member_id)
+            tier = await self.bot.db.fetchval('''
+                SELECT tier FROM overwatch WHERE id = $1
+                ''', member_id)
         if tier is None:
             raise NotInDB
         return tier
@@ -228,8 +229,9 @@ class Overwatch:
              * Defaults to competitive stats, falls back to quickplay.
         """
         author_id = ctx.message.author.id
-        in_db = bool(await self.bot.db.fetchval(
-            'SELECT id FROM overwatch WHERE id = $1', author_id))
+        in_db = bool(await self.bot.db.fetchval('''
+            SELECT id FROM overwatch WHERE id = $1
+            ''', author_id))
         if in_db and tier is None and tag in TIERS:
             tag, tier, _ = await self.get_tag_tier(ctx, tag, tier)
         else:
@@ -237,14 +239,14 @@ class Overwatch:
             tier = ow_tier(tier)
         async with self.bot.db.transaction():
             if in_db:
-                await self.bot.db.execute(
-                    'UPDATE overwatch SET tier = $1 WHERE id = $2',
-                    tier, author_id)
+                await self.bot.db.execute('''
+                    UPDATE overwatch SET tier = $1 WHERE id = $2
+                    ''', tier, author_id)
                 message = '\N{THUMBS UP SIGN} Updated preference.'
             else:
-                await self.bot.db.execute(
-                    'INSERT INTO overwatch (id, btag, tier) VALUES ($1, $2, $3)',
-                    author_id, tag, tier)
+                await self.bot.db.execute('''
+                    INSERT INTO overwatch (id, btag, tier) VALUES ($1, $2, $3)
+                    ''', author_id, tag, tier)
                 message = '\N{THUMBS UP SIGN} Added to db.'
         await self.bot.say(message)
 
