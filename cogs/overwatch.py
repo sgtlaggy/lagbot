@@ -1,24 +1,18 @@
-import json
 import os
 import re
 
 from discord.ext import commands
 import aiohttp
+import asyncpg
 
-from .utils.utils import Not200
+from .utils.utils import Not200, NotInDB
 from .utils import utils
-
-ow_storage = os.path.join(os.path.split(os.path.split(__file__)[0])[0],
-                          'ow.dat')
-if not os.path.exists(ow_storage):
-    with open(ow_storage, 'w') as fp:
-        fp.write('{}')
 
 endpoint = "https://owapi.net/api/v2/u/{{tag}}/{cat}/{{tier}}"
 stat_endpoint = endpoint.format(cat='stats')
 hero_endpoint = endpoint.format(cat='heroes')
 
-tiers = ('quick', 'quickplay', 'qp', 'general', 'unranked',
+TIERS = ('quick', 'quickplay', 'qp', 'general', 'unranked',
          'comp', 'competitive', 'ranked')
 
 
@@ -31,7 +25,7 @@ def player_tag(arg):
 
 
 def ow_tier(arg):
-    if arg in tiers[:5]:
+    if arg in TIERS[:5]:
         return 'general'
     return 'competitive'
 
@@ -71,8 +65,6 @@ def time_str(tupdec):
 class Overwatch:
     def __init__(self, bot):
         self.bot = bot
-        with open(ow_storage) as fp:
-            self.idents = json.load(fp)
 
     async def fetch_stats(self, tag, tier, it=0):
         if it == 2:
@@ -93,34 +85,49 @@ class Overwatch:
                 j1, j2, tier = await self.fetch_stats(tag, 'general', it + 1)
         return j1, j2, tier
 
-    def get_tag(self, ctx, tag):
+    async def get_tag(self, ctx, tag):
         member_id = None
         tag = player_tag(tag)
         if tag == '' or '-' not in tag:
             member_id = tag or ctx.message.author.id
-            tag = self.idents[member_id]['btag']
+            tag = await self.bot.db.fetchval(
+                'SELECT btag FROM overwatch WHERE id = $1', member_id)
+        if tag is None:
+            raise NotInDB
         return tag, member_id
 
-    def get_tier(self, member_id):
-        return self.idents[member_id]['tier']
-
-    def get_tag_tier(self, ctx, tag, tier):
-        if tag in tiers:
-            tier = ow_tier(tag)
-            tag, member_id = self.get_tag(ctx, '')
+    async def get_tier(self, member_id):
+        tier = None
+        if '-' in member_id:
+            tier = await self.bot.db.fetchval(
+                'SELECT tier FROM overwatch WHERE btag = $1', member_id)
         else:
-            tag, member_id = self.get_tag(ctx, tag)
+            tier = await self.bot.db.fetchval(
+                'SELECT tier FROM overwatch WHERE id = $1', member_id)
+        if tier is None:
+            raise NotInDB
+        return tier
+
+    async def get_tag_tier(self, ctx, tag, tier):
+        if tag in TIERS:
+            tier = ow_tier(tag)
+            tag, member_id = await self.get_tag(ctx, '')
+        else:
+            tag, member_id = await self.get_tag(ctx, tag)
             if tier is not None:
                 tier = ow_tier(tier)
             else:
                 try:
-                    tier = self.get_tier(member_id)
-                except KeyError:
+                    try:
+                        tier = await self.get_tier(tag)
+                    except NotInDB:
+                        tier = await self.get_tier(member_id)
+                except NotInDB:
                     tier = 'competitive'
         return tag, tier, member_id
 
     async def get_all(self, ctx, tag, tier):
-        tag, tier, member_id = self.get_tag_tier(ctx, tag, tier)
+        tag, tier, member_id = await self.get_tag_tier(ctx, tag, tier)
         stats, heroes, tier = await self.fetch_stats(tag, tier)
         heroes = heroes['heroes']
         if tier == 'general':
@@ -153,7 +160,7 @@ class Overwatch:
         """
         try:
             stats, heroes, tag, tier = await self.get_all(ctx, tag, tier)
-        except KeyError:
+        except NotInDB:
             await self.bot.say("Not in the db.")
             return
 
@@ -195,7 +202,7 @@ class Overwatch:
         """
         try:
             stats, heroes, tag, tier = await self.get_all(ctx, tag, tier)
-        except KeyError:
+        except NotInDB:
             await self.bot.say("Not in the db.")
             return
 
@@ -220,20 +227,26 @@ class Overwatch:
         [tier] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
              * Defaults to competitive stats, falls back to quickplay.
         """
-        if tier is None and tag in tiers:
-            tag, tier, _ = self.get_tag_tier(ctx, tag, tier)
-            try:
-                tag = self.idents[ctx.message.author.id]['btag']
-            except:
-                await self.bot.say("You're not in the db.")
-                return
+        author_id = ctx.message.author.id
+        in_db = bool(await self.bot.db.fetchval(
+            'SELECT id FROM overwatch WHERE id = $1', author_id))
+        if in_db and tier is None and tag in TIERS:
+            tag, tier, _ = await self.get_tag_tier(ctx, tag, tier)
         else:
-            tier = ow_tier(tier)
             tag = tag[::-1].replace('#', '-', 1)[::-1]
-        self.idents[ctx.message.author.id] = {'btag': tag, 'tier': tier}
-        with open(ow_storage, 'w') as fp:
-            json.dump(self.idents, fp)
-        await self.bot.say('\N{OK HAND SIGN} Added to db.')
+            tier = ow_tier(tier)
+        async with self.bot.db.transaction():
+            if in_db:
+                await self.bot.db.execute(
+                    'UPDATE overwatch SET tier = $1 WHERE id = $2',
+                    tier, author_id)
+                message = '\N{THUMBS UP SIGN} Updated preference.'
+            else:
+                await self.bot.db.execute(
+                    'INSERT INTO overwatch (id, btag, tier) VALUES ($1, $2, $3)',
+                    author_id, tag, tier)
+                message = '\N{THUMBS UP SIGN} Added to db.'
+        await self.bot.say(message)
 
 
 def setup(bot):

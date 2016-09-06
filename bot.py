@@ -8,6 +8,7 @@ import os
 from discord.ext import commands
 import discord
 import aiohttp
+import asyncpg
 
 from cogs.utils import checks
 
@@ -156,9 +157,11 @@ if __name__ == '__main__':
 
     with open(config_file) as fp:
         config = json.load(fp)
+    token = config.pop('bot_token', None)
     bot.source = config.pop('source', None)
     bot.userdocs = config.pop('userdocs', None)
-    token = config.pop('bot_token', None)
+    bot.db = bot.loop.run_until_complete(asyncpg.connect(database='lagbot',
+                                                         loop=bot.loop))
 
     for cog in cogs:
         try:
