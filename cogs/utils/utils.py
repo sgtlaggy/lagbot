@@ -1,4 +1,4 @@
-class Not200(Exception):
+class NotFound(Exception):
     pass
 
 

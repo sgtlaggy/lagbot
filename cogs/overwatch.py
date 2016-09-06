@@ -3,7 +3,7 @@ import re
 from discord.ext import commands
 import aiohttp
 
-from .utils.utils import Not200, NotInDB
+from .utils.utils import NotFound, NotInDB
 from .utils import utils
 
 endpoint = "https://owapi.net/api/v2/u/{{tag}}/{cat}/{{tier}}"
@@ -78,7 +78,7 @@ class Overwatch:
             try:
                 j1['msg']
             except:
-                raise Not200
+                raise NotFound
             else:
                 j1, j2, tier = await self.fetch_stats(tag, 'general', it + 1)
         return j1, j2, tier

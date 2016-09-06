@@ -4,7 +4,7 @@ import random
 from discord.ext import commands
 import aiohttp
 
-from .utils.utils import Not200
+from .utils.utils import NotFound
 
 
 class Misc:
@@ -78,7 +78,7 @@ class Misc:
         with aiohttp.Timeout(10):
             async with self.bot.aiohsession.get(url) as resp:
                 if resp.status != 200:
-                    raise Not200
+                    raise NotFound
                 return await resp.json()
 
     @commands.command()
@@ -92,7 +92,7 @@ class Misc:
         if comic in ('r', 'rand', 'random'):
             try:
                 data = await self.fetch_xkcd(latest_url)
-            except Not200:
+            except NotFound:
                 await self.bot.say('Could not get comic.')
                 return
             latest = data['num']
@@ -102,7 +102,7 @@ class Misc:
 
         try:
             data = await self.fetch_xkcd(url)
-        except Not200:
+        except NotFound:
             await self.bot.say('Could not get comic.')
             return
 
