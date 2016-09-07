@@ -56,15 +56,15 @@ class Meta:
         await self.bot.change_nickname(bot_member, new_nick or None)
 
     @commands.command()
-    async def source(self):
+    async def about(self):
         """Display bot information."""
         message = []
-        message.append('My developer is {0.owner}.')
-        if self.bot.source:
-            message.append('My source code can be found at {0.source}.')
         if self.bot.userdocs:
             message.append('Documentation for my commands can be '
                            'found with `!help` or at {0.userdocs}.')
+        message.append('My developer is {0.owner}.')
+        if self.bot.source:
+            message.append('My source code can be found at {0.source}.')
         message = '\n'.join(message).format(self.bot)
         await self.bot.say(message)
 
