@@ -42,7 +42,6 @@ cogs = ['cogs.{}'.format(cog) for cog in ['admin', 'misc', 'meta',
 @bot.event
 async def on_ready():
     bot.start_time = datetime.datetime.utcnow()
-    bot.aiohsession = aiohttp.ClientSession(loop=bot.loop)
     app_info = await bot.application_info()
     bot.client_id = app_info.id
     bot.owner = app_info.owner
@@ -162,6 +161,8 @@ if __name__ == '__main__':
     bot.userdocs = config.pop('userdocs', None)
     bot.db = bot.loop.run_until_complete(asyncpg.connect(database='lagbot',
                                                          loop=bot.loop))
+    bot.aiohsession = aiohttp.ClientSession(loop=bot.loop, headers={
+        'User-Agent': "sgtlaggy's Discord Bot v69"})
 
     for cog in cogs:
         try:
