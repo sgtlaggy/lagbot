@@ -5,30 +5,23 @@ import random
 from discord.ext import commands
 import aiohttp
 
-from .utils.utils import NotFound
+from .utils.utils import NotFound, init_db
 
 
 class MostRecent(Exception):
     pass
 
 
-async def init_db(bot):
-    async with bot.db.transaction():
-        await bot.db.execute('''
-            CREATE TABLE IF NOT EXISTS xkcd (
-                num        integer PRIMARY KEY,
-                safe_title text,
-                alt        text,
-                img        text,
-                date       date
-            )
-            ''')
-
-
 class Misc:
     def __init__(self, bot):
         self.bot = bot
-        bot.loop.run_until_complete(init_db(bot))
+        bot.loop.run_until_complete(init_db(
+            bot, 'xkcd',
+            'num        integer PRIMARY KEY',
+            'safe_title text',
+            'alt        text',
+            'img        text',
+            'date       date'))
 
     @commands.command(rest_is_raw=True)
     async def roll(self, *, args):

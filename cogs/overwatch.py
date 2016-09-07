@@ -3,7 +3,7 @@ import re
 from discord.ext import commands
 import aiohttp
 
-from .utils.utils import NotFound, NotInDB
+from .utils.utils import NotFound, NotInDB, init_db
 from .utils import utils
 
 endpoint = "https://owapi.net/api/v2/u/{{tag}}/{cat}/{{tier}}"
@@ -60,21 +60,14 @@ def time_str(tupdec):
                       m=minutes, mp=utils.plural(minutes))
 
 
-async def init_db(bot):
-    async with bot.db.transaction():
-        await bot.db.execute('''
-            CREATE TABLE IF NOT EXISTS overwatch (
-                id   text PRIMARY KEY,
-                btag text,
-                tier text
-            )
-            ''')
-
-
 class Overwatch:
     def __init__(self, bot):
         self.bot = bot
-        bot.loop.run_until_compete(init_db(bot))
+        bot.loop.run_until_compete(init_db(
+            bot, 'overwatch',
+            'id   text PRIMARY KEY',
+            'btag text',
+            'tier text'))
 
     async def fetch_stats(self, tag, tier, it=0):
         if it == 2:
