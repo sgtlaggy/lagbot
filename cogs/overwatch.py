@@ -60,16 +60,21 @@ def time_str(tupdec):
                       m=minutes, mp=utils.plural(minutes))
 
 
-class Overwatch:
-    def __init__(self, bot):
-        self.bot = bot
-        bot.loop.run_until_complete(bot.db.execute('''
+async def init_db(bot):
+    async with bot.db.transaction():
+        await bot.db.execute('''
             CREATE TABLE IF NOT EXISTS overwatch (
                 id   text PRIMARY KEY,
                 btag text,
                 tier text
             )
-            '''))
+            ''')
+
+
+class Overwatch:
+    def __init__(self, bot):
+        self.bot = bot
+        bot.loop.run_until_compete(init_db(bot))
 
     async def fetch_stats(self, tag, tier, it=0):
         if it == 2:

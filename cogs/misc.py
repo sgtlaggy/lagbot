@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import datetime
 import random
 
 from discord.ext import commands
@@ -7,9 +8,27 @@ import aiohttp
 from .utils.utils import NotFound
 
 
+class MostRecent(Exception):
+    pass
+
+
+async def init_db(bot):
+    async with bot.db.transaction():
+        await bot.db.execute('''
+            CREATE TABLE IF NOT EXISTS xkcd (
+                num        integer PRIMARY KEY,
+                safe_title text,
+                alt        text,
+                img        text,
+                date       date
+            )
+            ''')
+
+
 class Misc:
     def __init__(self, bot):
         self.bot = bot
+        bot.loop.run_until_complete(init_db(bot))
 
     @commands.command(rest_is_raw=True)
     async def roll(self, *, args):
@@ -74,12 +93,25 @@ class Misc:
         url += 'info.0.json'
         return url
 
-    async def fetch_xkcd(self, url):
+    async def fetch_xkcd(self, num=''):
+        url = self.make_xkcd_url(num)
         with aiohttp.Timeout(10):
             async with self.bot.aiohsession.get(url) as resp:
                 if resp.status != 200:
                     raise NotFound
                 return await resp.json()
+
+    def date(self, data):
+        return datetime.date(*map(int, (data['year'],
+                                        data['month'],
+                                        data['day'])))
+
+    async def xkcd_insert(self, data):
+        with self.bot.db.transaction():
+            return await self.bot.db.execute('''
+                INSERT INTO xkcd VALUES ($1, $2, $3, $4, $5)
+                ''', data['num'], data['safe_title'],
+                data['alt'], data['img'], self.date(data))
 
     @commands.command()
     async def xkcd(self, comic=''):
@@ -87,24 +119,33 @@ class Misc:
 
         [comic] can be the number of a comic or "r"/"rand"/"random"
         """
-        latest_url = self.make_xkcd_url()
-
-        if comic in ('r', 'rand', 'random'):
-            try:
-                data = await self.fetch_xkcd(latest_url)
-            except NotFound:
-                await self.bot.say('Could not get comic.')
-                return
-            latest = data['num']
-            comic = str(random.randint(1, latest))
-
-        url = self.make_xkcd_url(comic) if comic.isdigit() else latest_url
-
+        data = None
         try:
-            data = await self.fetch_xkcd(url)
-        except NotFound:
-            await self.bot.say('Could not get comic.')
+            if comic in ('r', 'rand', 'random') or not comic:
+                data = await self.fetch_xkcd()
+                await self.bot.db.fetchrow('''
+                    SELECT * FROM xkcd WHERE num = $1
+                    ''', data['num']) or await self.xkcd_insert(data)
+                if not comic:
+                    raise MostRecent
+                while True:
+                    comic = random.randint(1, data['num'])
+                    if comic != 404:
+                        break
+            else:
+                if not comic.isdigit():
+                    return
+                comic = int(comic)
+            data = await self.bot.db.fetchrow('''
+                SELECT * FROM xkcd WHERE num = $1
+                ''', comic) or await self.fetch_xkcd(comic)
+            if isinstance(data, dict):
+                await self.xkcd_insert(data)
+        except NotFound as e:
+            await self.bot.say(e)
             return
+        except MostRecent:
+            pass
 
         message = '**Title**: {0[num]}. {0[safe_title]}' \
                   '\n**Alt Text**: {0[alt]}' \
