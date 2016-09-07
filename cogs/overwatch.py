@@ -101,7 +101,6 @@ class Overwatch:
         return tag, member_id
 
     async def get_tier(self, member_id):
-        tier = None
         if '-' in member_id:
             tier = await self.bot.db.fetchval('''
                 SELECT tier FROM overwatch WHERE btag = $1
@@ -110,8 +109,6 @@ class Overwatch:
             tier = await self.bot.db.fetchval('''
                 SELECT tier FROM overwatch WHERE id = $1
                 ''', member_id)
-        if tier is None:
-            raise NotInDB
         return tier
 
     async def get_tag_tier(self, ctx, tag, tier):
@@ -123,13 +120,9 @@ class Overwatch:
             if tier is not None:
                 tier = ow_tier(tier)
             else:
-                try:
-                    try:
-                        tier = await self.get_tier(tag)
-                    except NotInDB:
-                        tier = await self.get_tier(member_id)
-                except NotInDB:
-                    tier = 'competitive'
+                tier = await self.get_tier(tag) or \
+                    await self.get_tier(member_id) or \
+                    'competitive'
         return tag, tier, member_id
 
     async def get_all(self, ctx, tag, tier):
