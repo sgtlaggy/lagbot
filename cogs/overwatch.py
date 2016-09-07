@@ -176,20 +176,27 @@ class Overwatch:
         lines = [
             ('Battletag', stats['battletag'][::-1].replace('-', '#', 1)[::-1]),
             ('Time played', time_str(stats['game_stats']['time_played'])),
-            ('Level', ow_level(stats['overall_stats'])),
-            ('Competitive Rank', stats['overall_stats']['comprank'] or
-             'Unranked'),
-            ('Most Played Hero', mp_hero),
-            ('Hero Time', time_str(mp_time)),
-            ('Games Played', stats['overall_stats']['games']),
-            ('Games Won', stats['overall_stats']['wins']),
-            ('Win Rate', '{}%'.format(stats['overall_stats']['win_rate'])),
-            ('Kill/death', round(stats['game_stats']['kpd'], 2))]
-        try:
-            lines.append(('Environmental Deaths',
-                          int(stats['game_stats']['environmental_deaths'])))
-        except:
-            pass
+            ('Level', ow_level(stats['overall_stats']))
+        ]
+        if tier == 'competitive':
+            lines.extend([
+                ('Competitive Rank', stats['overall_stats']['comprank'] or
+                 'Unranked'),
+                ('Most Played Hero', mp_hero),
+                ('Hero Time', time_str(mp_time)),
+                ('Games Played', stats['overall_stats']['games']),
+                ('Games Won', stats['overall_stats']['wins']),
+                ('Win Rate', '{}%'.format(stats['overall_stats']['win_rate']))
+            ])
+        else:
+            lines.extend([
+                ('Most Played Hero', mp_hero),
+                ('Hero Time', time_str(mp_time)),
+                ('Games Won', stats['overall_stats']['wins'])
+            ])
+        lines.append(('Kill/death', round(stats['game_stats']['kpd'], 2)))
+        lines.append(('Environmental Deaths',
+                      int(stats['game_stats'].get('environmental_deaths'), 0)))
         message.append('```xl')
         width = max(len(k) for k, v in lines)
         for line in lines:
