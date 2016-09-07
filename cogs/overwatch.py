@@ -63,7 +63,7 @@ def time_str(tupdec):
 class Overwatch:
     def __init__(self, bot):
         self.bot = bot
-        bot.loop.run_until_compete(init_db(
+        bot.loop.run_until_complete(init_db(
             bot, 'overwatch',
             'id   text PRIMARY KEY',
             'btag text',

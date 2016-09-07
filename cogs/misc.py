@@ -91,7 +91,7 @@ class Misc:
         with aiohttp.Timeout(10):
             async with self.bot.aiohsession.get(url) as resp:
                 if resp.status != 200:
-                    raise NotFound
+                    raise NotFound('Could not get comic.')
                 return await resp.json()
 
     def date(self, data):
@@ -100,7 +100,7 @@ class Misc:
                                         data['day'])))
 
     async def xkcd_insert(self, data):
-        with self.bot.db.transaction():
+        async with self.bot.db.transaction():
             return await self.bot.db.execute('''
                 INSERT INTO xkcd VALUES ($1, $2, $3, $4, $5)
                 ''', data['num'], data['safe_title'],
