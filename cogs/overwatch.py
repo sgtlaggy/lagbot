@@ -89,10 +89,10 @@ class Overwatch:
         return j1, j2, tier
 
     async def get_tag(self, ctx, tag):
-        member_id = None
+        member_id = ctx.message.author.id
         tag = player_tag(tag)
         if tag == '' or '-' not in tag:
-            member_id = tag or ctx.message.author.id
+            member_id = tag or member_id
             tag = await self.bot.db.fetchval('''
                 SELECT btag FROM overwatch WHERE id = $1
                 ''', member_id)
