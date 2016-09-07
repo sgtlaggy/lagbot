@@ -196,7 +196,7 @@ class Overwatch:
             ])
         lines.append(('Kill/death', round(stats['game_stats']['kpd'], 2)))
         lines.append(('Environmental Deaths',
-                      int(stats['game_stats'].get('environmental_deaths'), 0)))
+                      int(stats['game_stats'].get('environmental_deaths', 0))))
         message.append('```xl')
         width = max(len(k) for k, v in lines)
         for line in lines:
