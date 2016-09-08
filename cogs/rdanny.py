@@ -181,7 +181,7 @@ class RoboDanny:
 
     @nostalgia.error
     async def nostalgia_error(self, error, ctx):
-        if type(error) is commands.BadArgument:
+        if isinstance(error, commands.BadArgument):
             await self.bot.say(error)
 
 
