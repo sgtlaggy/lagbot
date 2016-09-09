@@ -162,7 +162,7 @@ if __name__ == '__main__':
     bot.db = bot.loop.run_until_complete(asyncpg.connect(database='lagbot',
                                                          loop=bot.loop))
     bot.aiohsession = aiohttp.ClientSession(loop=bot.loop, headers={
-        'User-Agent': "sgtlaggy's Discord Bot v69"})
+        'User-Agent': "sgtlaggy Discord Bot/6.9"})
 
     for cog in cogs:
         try:
