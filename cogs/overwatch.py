@@ -171,7 +171,7 @@ class Overwatch:
             ('Time played', time_str(stats['game_stats']['time_played'])),
             ('Level', ow_level(stats['overall_stats']))
         ]
-        if tier == 'competitive':
+        if stats['overall_stats']['games']:
             lines.extend([
                 ('Competitive Rank', stats['overall_stats']['comprank'] or
                  'Unranked'),
