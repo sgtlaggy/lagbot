@@ -14,19 +14,7 @@ from cogs.utils import checks
 
 # Files and Paths
 app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
-log_file = os.path.join(app_path, 'bot.log')
 config_file = os.path.join(app_path, 'config.json')
-
-# Logging Setup
-log = logging.getLogger('discord')
-log.setLevel(logging.INFO)
-fhandler = logging.FileHandler(
-    filename=log_file,
-    encoding='utf-8',
-    mode='w')
-fhandler.setFormatter(logging.Formatter(
-    '%(asctime)s:%(levelname)s:%(name)s: %(message)s'))
-log.addHandler(fhandler)
 
 # Discord Client/Bot
 help_attrs = {
@@ -46,7 +34,6 @@ async def on_ready():
     bot.client_id = app_info.id
     bot.owner = app_info.owner
     await bot.change_status(game=discord.Game(name='Destroy All Humans!'))
-    log.info('Bot ready!')
 
 
 @bot.event
@@ -174,5 +161,8 @@ if __name__ == '__main__':
     try:
         bot.run(token)
     except Exception as e:
+        print("""
+        ******************************
+        ***BOT CRASHED OR SOMETHING***
+        ******************************""")
         print(e)
-        log.error(e)
