@@ -49,6 +49,7 @@ class RoboDanny:
         msg = ctx.message
 
         variables = {
+            'discord': discord,
             'ctx': ctx,
             'bot': self.bot,
             'message': msg,
@@ -56,7 +57,6 @@ class RoboDanny:
             'channel': msg.channel,
             'author': msg.author,
             'me': msg.author,
-            'last': None
         }
 
         if msg.channel.id in self.sessions:
@@ -135,8 +135,9 @@ class RoboDanny:
         result = None
 
         env = {
-            'bot': self.bot,
+            'discord': discord,
             'ctx': ctx,
+            'bot': self.bot,
             'message': msg,
             'server': msg.server,
             'channel': msg.channel,
