@@ -1,49 +1,12 @@
 from discord.ext import commands
 import discord
 
-from .utils.utils import init_db
 from .utils import checks
 
 
 class Management:
     def __init__(self, bot):
         self.bot = bot
-        bot.loop.run_until_complete(init_db(
-            bot, 'announce',
-            'id text PRIMARY KEY'))
-
-    @commands.command(pass_context=True)
-    @checks.owner_or_permissions(manage_server=True)
-    async def announce(self, ctx, *, message: str):
-        """Announce a message to all servers.
-
-        Anyone with "Manage Server" permission can
-        allow/disallow announcements on that server.
-        """
-        if not message:
-            return
-        if checks.is_owner_check(ctx):
-            for server in self.bot.servers:
-                in_db = bool(await self.bot.db.fetchval('''
-                    SELECT id FROM announce WHERE id = $1
-                    ''', server.id))
-                if not in_db:
-                    self.bot.send_message(server, message)
-        else:
-            sid = ctx.message.server.id
-            in_db = bool(await self.bot.db.fetchval('''
-                SELECT id FROM announce WHERE id = $1
-                ''', sid))
-            if message == 'disallow' and in_db:
-                await self.bot.db.execute('''
-                    DELETE FROM announce WHERE id = $1
-                    ''', sid)
-                await self.bot.say('Removed from announcement blacklist.')
-            elif message == 'allow' and not in_db:
-                await self.bot.db.execute('''
-                    INSERT INTO announce VALUES ($1)
-                    ''', sid)
-                await self.bot.say('Added to announcement blacklist.')
 
     @commands.command(no_pm=True)
     @commands.has_permissions(kick_members=True)
