@@ -127,7 +127,7 @@ class Overwatch:
     async def get_all(self, ctx, tag, tier, end=BLOB):
         tag, tier, _ = await self.get_tag_tier(ctx, tag, tier)
         data = await self.fetch_stats(tag, tier, end)
-        if tier == 'competitive' and not data['stats'][tier]:
+        if tier == 'competitive' and not data['stats'].get(tier, {}):
             tier = 'quickplay'
         return data['stats'].get(tier, {}), \
             data['heroes']['playtime'][tier], tag, tier
