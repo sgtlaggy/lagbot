@@ -6,11 +6,15 @@ import aiohttp
 from .utils.utils import NotFound, NotInDB, init_db
 from .utils import utils
 
-endpoint = "https://owapi.net/api/v2/u/{{tag}}/{cat}/{{tier}}"
-stat_endpoint = endpoint.format(cat='stats')
-hero_endpoint = endpoint.format(cat='heroes')
+# self-hosting OWAPI until Fuyu updates
+endpoint = "http://127.0.0.1:4444/api/v3/u/{btag}/"
+BLOB = endpoint + "blob"
+STATS = endpoint + "stats"
+HEROES = endpoint + "heroes"
+HEROES_QP = HEROES + "/quickplay"
+HEROES_COMP = HEROES + "/competitive"
 
-TIERS = ('quick', 'quickplay', 'qp', 'general', 'unranked',
+TIERS = ('quick', 'quickplay', 'qp', 'unranked',
          'comp', 'competitive', 'ranked')
 
 
@@ -23,8 +27,8 @@ def player_tag(arg):
 
 
 def ow_tier(arg):
-    if arg in TIERS[:5]:
-        return 'general'
+    if arg in TIERS[:4]:
+        return 'quickplay'
     return 'competitive'
 
 
@@ -34,15 +38,21 @@ def ow_level(overall_stats):
     return total
 
 
+def ow_region(data):
+    for region in ('us', 'kr', 'eu', 'any'):
+        if data[region] is not None:
+            return region
+
+
 def time_from_decimal(dec):
     return divmod(round(dec * 60), 60)
 
 
 def most_played(hero_dict):
-    mp_time = max(hero_dict.values())
-    for hero, played in hero_dict.items():
-        if played == mp_time:
-            return hero.title(), time_from_decimal(played)
+    for hero, played in sorted(hero_dict.items(),
+                               key=lambda kv: kv[1],
+                               reverse=True):
+        return hero.title(), time_from_decimal(played)
 
 
 def time_str(tupdec):
@@ -69,24 +79,13 @@ class Overwatch:
             'btag text',
             'tier text'))
 
-    async def fetch_stats(self, tag, tier, it=0):
-        if it == 2:
-            raise RecursionError
+    async def fetch_stats(self, tag, tier, end=BLOB):
         with aiohttp.Timeout(10):
-            async with self.bot.aiohsession.get(
-                    stat_endpoint.format(tag=tag, tier=tier)) as resp:
-                s1, j1 = resp.status, await resp.json()
-            async with self.bot.aiohsession.get(
-                    hero_endpoint.format(tag=tag, tier=tier)) as resp:
-                s2, j2 = resp.status, await resp.json()
-        if tier == 'competitive' and (s1 != 200 or s2 != 200):
-            try:
-                j1['msg']
-            except:
-                raise NotFound
-            else:
-                j1, j2, tier = await self.fetch_stats(tag, 'general', it + 1)
-        return j1, j2, tier
+            async with self.bot.aiohsession.get(end.format(btag=tag)) as resp:
+                status, data = resp.status, await resp.json()
+        if status == 404:
+            raise NotFound
+        return data[ow_region(data)]
 
     async def get_tag(self, ctx, tag):
         member_id = ctx.message.author.id
@@ -125,13 +124,13 @@ class Overwatch:
                     'competitive'
         return tag, tier, member_id
 
-    async def get_all(self, ctx, tag, tier):
-        tag, tier, member_id = await self.get_tag_tier(ctx, tag, tier)
-        stats, heroes, tier = await self.fetch_stats(tag, tier)
-        heroes = heroes['heroes']
-        if tier == 'general':
+    async def get_all(self, ctx, tag, tier, end=BLOB):
+        tag, tier, _ = await self.get_tag_tier(ctx, tag, tier)
+        data = await self.fetch_stats(tag, tier, end)
+        if tier == 'competitive' and not data['stats'][tier]:
             tier = 'quickplay'
-        return stats, heroes, tag, tier
+        return data['stats'].get(tier, {}), \
+            data['heroes']['playtime'][tier], tag, tier
 
     @commands.group(aliases=['ow'], pass_context=True,
                     invoke_without_command=True)
@@ -167,26 +166,23 @@ class Overwatch:
 
         message = ['{} stats:'.format(tier.title())]
         lines = [
-            ('Battletag', stats['battletag'][::-1].replace('-', '#', 1)[::-1]),
+            ('Battletag', tag[::-1].replace('-', '#', 1)[::-1]),
             ('Time played', time_str(stats['game_stats']['time_played'])),
             ('Level', ow_level(stats['overall_stats']))
         ]
+        if tier == 'competitive':
+            lines.append(('Competitive Rank',
+                          stats['overall_stats']['comprank'] or 'Unranked'))
+        lines.append(('Most Played Hero', mp_hero))
+        lines.append(('Hero Time', time_str(mp_time)))
         if stats['overall_stats']['games']:
             lines.extend([
-                ('Competitive Rank', stats['overall_stats']['comprank'] or
-                 'Unranked'),
-                ('Most Played Hero', mp_hero),
-                ('Hero Time', time_str(mp_time)),
                 ('Games Played', stats['overall_stats']['games']),
                 ('Games Won', stats['overall_stats']['wins']),
                 ('Win Rate', '{}%'.format(stats['overall_stats']['win_rate']))
             ])
         else:
-            lines.extend([
-                ('Most Played Hero', mp_hero),
-                ('Hero Time', time_str(mp_time)),
-                ('Games Won', stats['overall_stats']['wins'])
-            ])
+            lines.append(('Games Won', stats['overall_stats']['wins']))
         lines.append(('Kill/death', round(stats['game_stats']['kpd'], 2)))
         lines.append(('Environmental Deaths',
                       int(stats['game_stats'].get('environmental_deaths', 0))))
@@ -207,7 +203,7 @@ class Overwatch:
              * Defaults to competitive stats, falls back to quickplay.
         """
         try:
-            stats, heroes, tag, tier = await self.get_all(ctx, tag, tier)
+            _, heroes, tag, tier = await self.get_all(ctx, tag, tier, HEROES)
         except NotInDB:
             await self.bot.say("Not in the db.")
             return
