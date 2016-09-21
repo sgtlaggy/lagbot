@@ -73,7 +73,7 @@ class LagBot(commands.Bot):
               file=sys.stderr)
 
 
-class CogManagement():
+class CogManagement:
     def __init__(self, bot):
         self.bot = bot
 
