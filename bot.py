@@ -37,7 +37,7 @@ class LagBot(commands.Bot):
             loop=self.loop))
 
     def run(self, *args, **kwargs):
-        super().__init__(self._token, *args, **kwargs)
+        super().run(self._token, *args, **kwargs)
 
     async def on_ready(self):
         self.start_time = datetime.datetime.utcnow()
