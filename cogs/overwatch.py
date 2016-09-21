@@ -14,7 +14,7 @@ HEROES = endpoint + "heroes"
 HEROES_QP = HEROES + "/quickplay"
 HEROES_COMP = HEROES + "/competitive"
 
-TIERS = ('quick', 'quickplay', 'qp', 'unranked',
+MODES = ('quick', 'quickplay', 'qp', 'unranked',
          'comp', 'competitive', 'ranked')
 
 
@@ -26,8 +26,8 @@ def player_tag(arg):
         return arg[::-1].replace('#', '-', 1)[::-1]
 
 
-def ow_tier(arg):
-    if arg in TIERS[:4]:
+def ow_mode(arg):
+    if arg in MODES[:4]:
         return 'quickplay'
     return 'competitive'
 
@@ -77,9 +77,9 @@ class Overwatch:
             bot, 'overwatch',
             'id   text PRIMARY KEY',
             'btag text',
-            'tier text'))
+            'mode text'))
 
-    async def fetch_stats(self, tag, tier, end=BLOB):
+    async def fetch_stats(self, tag, end=BLOB):
         with aiohttp.Timeout(10):
             async with self.bot.aiohsession.get(end.format(btag=tag)) as resp:
                 status, data = resp.status, await resp.json()
@@ -99,47 +99,47 @@ class Overwatch:
             raise NotInDB
         return tag, member_id
 
-    async def get_tier(self, member_id):
+    async def get_mode(self, member_id):
         if '-' in member_id:
-            tier = await self.bot.db.fetchval('''
-                SELECT tier FROM overwatch WHERE btag = $1
+            mode = await self.bot.db.fetchval('''
+                SELECT mode FROM overwatch WHERE btag = $1
                 ''', member_id)
         else:
-            tier = await self.bot.db.fetchval('''
-                SELECT tier FROM overwatch WHERE id = $1
+            mode = await self.bot.db.fetchval('''
+                SELECT mode FROM overwatch WHERE id = $1
                 ''', member_id)
-        return tier
+        return mode
 
-    async def get_tag_tier(self, ctx, tag, tier):
-        if tag in TIERS:
-            tier = ow_tier(tag)
+    async def get_tag_mode(self, ctx, tag, mode):
+        if tag in MODES:
+            mode = ow_mode(tag)
             tag, member_id = await self.get_tag(ctx, '')
         else:
             tag, member_id = await self.get_tag(ctx, tag)
-            if tier is not None:
-                tier = ow_tier(tier)
+            if mode is not None:
+                mode = ow_mode(mode)
             else:
-                tier = await self.get_tier(tag) or \
-                    await self.get_tier(member_id) or \
+                mode = await self.get_mode(tag) or \
+                    await self.get_mode(member_id) or \
                     'competitive'
-        return tag, tier, member_id
+        return tag, mode, member_id
 
-    async def get_all(self, ctx, tag, tier, end=BLOB):
-        tag, tier, _ = await self.get_tag_tier(ctx, tag, tier)
-        data = await self.fetch_stats(tag, tier, end)
-        if tier == 'competitive' and not data['stats'].get(tier, {}) and \
-                not data['heroes']['stats'][tier]:
-            tier = 'quickplay'
-        return data['stats'].get(tier, {}), \
-            data['heroes']['playtime'][tier], tag, tier
+    async def get_all(self, ctx, tag, mode, end=BLOB):
+        tag, mode, _ = await self.get_tag_mode(ctx, tag, mode)
+        data = await self.fetch_stats(tag, end)
+        if mode == 'competitive' and not data['stats'].get(mode, {}) and \
+                not data['heroes']['stats'][mode]:
+            mode = 'quickplay'
+        return data['stats'].get(mode, {}), \
+            data['heroes']['playtime'][mode], tag, mode
 
     @commands.group(aliases=['ow'], pass_context=True,
                     invoke_without_command=True)
-    async def overwatch(self, ctx, tag: player_tag = '', tier=None):
+    async def overwatch(self, ctx, tag: player_tag = '', mode=None):
         """See stats of yourself or another player.
 
         [tag] can be either BattleTag or a mention to someone in the db
-        [tier] can be 'quick', 'quickplay', 'qp', 'unranked',
+        [mode] can be 'quick', 'quickplay', 'qp', 'unranked',
                       'comp', 'competitive', 'ranked'
              * Defaults to competitive stats, falls back to quickplay.
 
@@ -147,31 +147,31 @@ class Overwatch:
         Stats by Discord mention  : !ow @DiscordName
         Add yourself to database  : !ow set BattleTag#1234
         Hero Play Time            : !ow heroes BattleTag#1234
-        Own Stats, Different Tier : !ow [optional-set/heroes] qp/comp
+        Own Stats, Different mode : !ow [optional-set/heroes] qp/comp
 
         Notes
             * If you are in the DB you can replace your battletag to get/change
-                your own stats with a tier different than you have saved.
-            * You can follow BattleTag/Discord mention with a tier of gameplay
+                your own stats with a mode different than you have saved.
+            * You can follow BattleTag/Discord mention with a mode of gameplay
                 to force getting quickplay/competitive stats.
             * BattleTags are case-sensitive.
             * To get stats by Discord mention, the person must be in the DB.
         """
         try:
-            stats, heroes, tag, tier = await self.get_all(ctx, tag, tier)
+            stats, heroes, tag, mode = await self.get_all(ctx, tag, mode)
         except NotInDB:
             await self.bot.say("Not in the db.")
             return
 
         mp_hero, mp_time = most_played(heroes)
 
-        message = ['{} stats:'.format(tier.title())]
+        message = ['{} stats:'.format(mode.title())]
         lines = [
             ('Battletag', tag[::-1].replace('-', '#', 1)[::-1]),
             ('Time played', time_str(stats['game_stats']['time_played'])),
             ('Level', ow_level(stats['overall_stats']))
         ]
-        if tier == 'competitive':
+        if mode == 'competitive':
             lines.append(('Competitive Rank',
                           stats['overall_stats']['comprank'] or 'Unranked'))
         lines.append(('Most Played Hero', mp_hero))
@@ -196,20 +196,20 @@ class Overwatch:
         await self.bot.say('\n'.join(message))
 
     @overwatch.command(pass_context=True)
-    async def heroes(self, ctx, tag: player_tag = '', tier=None):
-        """Get stats for each played hero.
+    async def heroes(self, ctx, tag: player_tag = '', mode=None):
+        """Get playtime for each played hero.
 
         [tag] can be either BattleTag or a mention to someone in the db
-        [tier] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
+        [mode] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
              * Defaults to competitive stats, falls back to quickplay.
         """
         try:
-            _, heroes, tag, tier = await self.get_all(ctx, tag, tier, HEROES)
+            _, heroes, tag, mode = await self.get_all(ctx, tag, mode, HEROES)
         except NotInDB:
             await self.bot.say("Not in the db.")
             return
 
-        message = ['{} hero stats:'.format(tier.title())]
+        message = ['{} hero stats:'.format(mode.title())]
         width = max(len(k) for k in heroes.keys())
         message.append('```xl')
         for hero, time in sorted(heroes.items(), key=lambda kv: kv[1],
@@ -223,32 +223,32 @@ class Overwatch:
         await self.bot.say('\n'.join(message))
 
     @overwatch.command(name='set', aliases=['save'], pass_context=True)
-    async def ow_set(self, ctx, tag, tier=None):
-        """Set your battletag and default tier.
+    async def ow_set(self, ctx, tag, mode=None):
+        """Set your battletag and default gamemode.
 
         <tag> can be either BattleTag or a mention to someone in the db
-        [tier] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
+        [mode] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
              * Defaults to competitive stats, falls back to quickplay.
         """
         author_id = ctx.message.author.id
         in_db = bool(await self.bot.db.fetchval('''
             SELECT id FROM overwatch WHERE id = $1
             ''', author_id))
-        if in_db and tier is None and tag in TIERS:
-            tag, tier, _ = await self.get_tag_tier(ctx, tag, tier)
+        if in_db and mode is None and tag in MODES:
+            tag, mode, _ = await self.get_tag_mode(ctx, tag, mode)
         else:
             tag = tag[::-1].replace('#', '-', 1)[::-1]
-            tier = ow_tier(tier)
+            mode = ow_mode(mode)
         async with self.bot.db.transaction():
             if in_db:
                 await self.bot.db.execute('''
-                    UPDATE overwatch SET tier = $1 WHERE id = $2
-                    ''', tier, author_id)
+                    UPDATE overwatch SET mode = $1 WHERE id = $2
+                    ''', mode, author_id)
                 message = '\N{THUMBS UP SIGN} Updated preference.'
             else:
                 await self.bot.db.execute('''
-                    INSERT INTO overwatch (id, btag, tier) VALUES ($1, $2, $3)
-                    ''', author_id, tag, tier)
+                    INSERT INTO overwatch (id, btag, mode) VALUES ($1, $2, $3)
+                    ''', author_id, tag, mode)
                 message = '\N{THUMBS UP SIGN} Added to db.'
         await self.bot.say(message)
 
