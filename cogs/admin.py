@@ -78,7 +78,7 @@ class Management:
     @commands.command(pass_context=True, no_pm=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def purge(self, ctx, count: int, *, member: discord.Member=None):
-        """Purge another member's or your own messages from the channel.
+        """Purge messages from the current channel.
 
         You must have proper permissions to remove others' messages.
         """
