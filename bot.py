@@ -18,7 +18,7 @@ config_file = os.path.join(app_path, 'config.json')
 # Discord Client/Bot
 command_prefix = '!'
 help_attrs = {'hidden': True}
-cogs = ['cogs.{}'.format(cog) for cog in ['admin', 'misc', 'meta',
+initial_cogs = ['cogs.{}'.format(cog) for cog in ['admin', 'misc', 'meta',
                                           'rdanny', 'overwatch']]
 
 
@@ -150,7 +150,7 @@ if __name__ == '__main__':
                  **config)
     bot.add_cog(CogManagement(bot))
 
-    for cog in cogs:
+    for cog in inital_cogs:
         try:
             bot.load_extension(cog)
         except Exception as e:
