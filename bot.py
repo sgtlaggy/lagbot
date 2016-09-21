@@ -16,139 +16,139 @@ app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
 config_file = os.path.join(app_path, 'config.json')
 
 # Discord Client/Bot
-help_attrs = {
-    'hidden': True,
-    'aliases': ['commands']
-}
-bot = commands.Bot(command_prefix='!', help_attrs=help_attrs)
-
+command_prefix = '!'
+help_attrs = {'hidden': True}
 cogs = ['cogs.{}'.format(cog) for cog in ['admin', 'misc', 'meta',
                                           'rdanny', 'overwatch']]
 
 
-@bot.event
-async def on_ready():
-    bot.start_time = datetime.datetime.utcnow()
-    app_info = await bot.application_info()
-    bot.client_id = app_info.id
-    bot.owner = app_info.owner
-    await bot.change_status(game=discord.Game(name='Destroy All Humans!'))
+class LagBot(commands.Bot):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._token = kwargs.pop('bot_token', None)
+        self.source = kwargs.pop('source', None)
+        self.userdocs = kwargs.pop('userdocs', None)
+        if any('debug' in arg.lower() for arg in sys.argv):
+            self.command_prefix = '%!'
+        self.aiohsession = aiohttp.ClientSession(loop=self.loop, headers={
+            'User-Agent': "sgtlaggy Discord Bot/6.9"})
+        self.db = self.loop.run_until_complete(asyncpg.connect(
+            database='lagbot',
+            loop=self.loop))
+
+    def run(self, *args, **kwargs):
+        super().__init__(self._token, *args, **kwargs)
+
+    async def on_ready(self):
+        self.start_time = datetime.datetime.utcnow()
+        app_info = await self.application_info()
+        self.client_id = app_info.id
+        self.owner = app_info.owner
+        await self.change_status(game=discord.Game(name='Destroy All Humans!'))
+
+    async def on_server_join(self, server):
+        message = 'Hello, thanks for inviting me!' \
+                  '\nSay `{0.command_prefix}help` to see my commands.'
+        await self.send_message(server.default_channel, message.format(bot))
+
+    async def on_message(self, msg):
+        if msg.author.bot:
+            return
+        await self.process_commands(msg)
+
+    async def on_command_error(self, exc, ctx):
+        """Emulate default on_command_error and add server + channel info."""
+        if hasattr(ctx.command, 'on_error'):
+            return
+        print('Ignoring exception in command {}'.format(ctx.command),
+              file=sys.stderr)
+        traceback.print_exception(type(exc), exc, exc.__traceback__,
+                                  file=sys.stderr)
+        if hasattr(exc, 'original'):
+            traceback.print_exception(type(exc.original), exc.original,
+                                      exc.original.__traceback__,
+                                      file=sys.stderr)
+        print('In "{0.channel}" on "{0.server}".'
+              'Message was "{0.content}"'.format(ctx.message),
+              file=sys.stderr)
 
 
-@bot.event
-async def on_server_join(server):
-    message = 'Hello, thanks for inviting me!' \
-              '\nSay `{0.command_prefix}help` to see my commands.'.format(bot)
-    await bot.send_message(server.default_channel, message)
+class CogManagement():
+    def __init__(self, bot):
+        self.bot = bot
 
+    async def reload_ext_helper(self, ext):
+        try:
+            self.bot.unload_extension('cogs.{}'.format(ext))
+            self.bot.load_extension('cogs.{}'.format(ext))
+        except:
+            await self.bot.say("Couldn't reload cog {}.".format(ext))
 
-@bot.event
-async def on_message(msg):
-    if msg.author.bot:
-        return
-    await bot.process_commands(msg)
+    @commands.command(name='cogs', hidden=True)
+    @checks.is_owner()
+    async def list_exts(self):
+        exts = sorted(self.bot.extensions.keys())
+        message = '\n'.join(['```', 'Loaded extensions:', *exts, '```'])
+        await self.bot.say(message)
 
+    @commands.group(name='reload', hidden=True, invoke_without_command=True)
+    @checks.is_owner()
+    async def reload_ext(self, ext):
+        mod = 'cogs.' + ext
+        if mod not in self.bot.extensions:
+            await self.bot.say('Cog {} is not loaded.'.format(ext))
+            return
+        try:
+            await self.reload_ext_helper(ext)
+            await self.bot.say('Reloaded cog {}.'.format(ext))
+        except Exception as e:
+            await self.bot.say("Couldn't reload cog {}.".format(ext))
+            print(e)
 
-@bot.event
-async def on_command_error(exc, ctx):
-    """Emulate default on_command_error and add server + channel info."""
-    if hasattr(ctx.command, 'on_error'):
-        return
-    print('Ignoring exception in command {}'.format(ctx.command),
-          file=sys.stderr)
-    traceback.print_exception(type(exc), exc, exc.__traceback__,
-                              file=sys.stderr)
-    if hasattr(exc, 'original'):
-        traceback.print_exception(type(exc.original), exc.original,
-                                  exc.original.__traceback__, file=sys.stderr)
-    print('In "{0.channel}" on "{0.server}".'
-          'Message was "{0.content}"'.format(ctx.message),
-          file=sys.stderr)
+    @reload_ext.command(name='all')
+    @checks.is_owner()
+    async def reload_all_exts(self):
+        exts = [e.split('.')[1] for e in self.bot.extensions.keys()]
+        for ext in exts:
+            await self.reload_ext_helper(ext)
+        await self.bot.say('Reloaded all cogs.')
 
+    @commands.command(name='load', hidden=True)
+    @checks.is_owner()
+    async def load_ext(self, ext):
+        mod = 'cogs.' + ext
+        if mod in self.bot.extensions:
+            await self.bot.say('Cog {} is already loaded.'.format(ext))
+            return
+        try:
+            self.bot.load_extension(mod)
+            await self.bot.say('Loaded cog {}.'.format(ext))
+        except Exception as e:
+            await self.bot.say("Couldn't load cog {}.".format(ext))
+            print(e)
 
-async def reload_ext_helper(ext):
-    try:
-        bot.unload_extension('cogs.{}'.format(ext))
-        bot.load_extension('cogs.{}'.format(ext))
-    except:
-        await bot.say("Couldn't reload cog {}.".format(ext))
-
-
-@bot.command(name='cogs', hidden=True)
-@checks.is_owner()
-async def list_exts():
-    exts = sorted(bot.extensions.keys())
-    message = '\n'.join(['```', 'Loaded extensions:', *exts, '```'])
-    await bot.say(message)
-
-
-@bot.group(name='reload', hidden=True, invoke_without_command=True)
-@checks.is_owner()
-async def reload_ext(ext):
-    mod = 'cogs.' + ext
-    if mod not in bot.extensions:
-        await bot.say('Cog {} is not loaded.'.format(ext))
-        return
-    try:
-        await reload_ext_helper(ext)
-        await bot.say('Reloaded cog {}.'.format(ext))
-    except Exception as e:
-        await bot.say("Couldn't reload cog {}.".format(ext))
-        print(e)
-
-
-@reload_ext.command(name='all')
-@checks.is_owner()
-async def reload_all_exts():
-    exts = [e.split('.')[1] for e in bot.extensions.keys()]
-    for ext in exts:
-        await reload_ext_helper(ext)
-    await bot.say('Reloaded all cogs.')
-
-
-@bot.command(name='load', hidden=True)
-@checks.is_owner()
-async def load_ext(ext):
-    mod = 'cogs.' + ext
-    if mod in bot.extensions:
-        await bot.say('Cog {} is already loaded.'.format(ext))
-        return
-    try:
-        bot.load_extension(mod)
-        await bot.say('Loaded cog {}.'.format(ext))
-    except Exception as e:
-        await bot.say("Couldn't load cog {}.".format(ext))
-        print(e)
-
-
-@bot.command(name='unload', hidden=True)
-@checks.is_owner()
-async def unload_ext(ext):
-    mod = 'cogs.' + ext
-    if mod not in bot.extensions:
-        await bot.say('Cog {} is not loaded.'.format(ext))
-        return
-    try:
-        bot.unload_extension(mod)
-        await bot.say('Unloaded cog {}.'.format(ext))
-    except Exception as e:
-        await bot.say("Couldn't unload cog {}.".format(ext))
-        print(e)
+    @commands.command(name='unload', hidden=True)
+    @checks.is_owner()
+    async def unload_ext(self, ext):
+        mod = 'cogs.' + ext
+        if mod not in self.bot.extensions:
+            await self.bot.say('Cog {} is not loaded.'.format(ext))
+            return
+        try:
+            self.bot.unload_extension(mod)
+            await self.bot.say('Unloaded cog {}.'.format(ext))
+        except Exception as e:
+            await self.bot.say("Couldn't unload cog {}.".format(ext))
+            print(e)
 
 
 if __name__ == '__main__':
-    if any('debug' in arg.lower() for arg in sys.argv):
-        bot.command_prefix = '%!'
-
     with open(config_file) as fp:
         config = json.load(fp)
-    token = config.pop('bot_token', None)
-    bot.source = config.pop('source', None)
-    bot.userdocs = config.pop('userdocs', None)
-    bot.db = bot.loop.run_until_complete(asyncpg.connect(database='lagbot',
-                                                         loop=bot.loop))
-    bot.aiohsession = aiohttp.ClientSession(loop=bot.loop, headers={
-        'User-Agent': "sgtlaggy Discord Bot/6.9"})
+    bot = LagBot(command_prefix=command_prefix,
+                 help_attrs=help_attrs,
+                 **config)
+    bot.add_cog(CogManagement(bot))
 
     for cog in cogs:
         try:
@@ -158,7 +158,7 @@ if __name__ == '__main__':
                 cog, type(e).__name__, e))
 
     try:
-        bot.run(token)
+        bot.run()
     except Exception as e:
         print("""
         ******************************
