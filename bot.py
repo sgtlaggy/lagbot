@@ -150,7 +150,7 @@ if __name__ == '__main__':
                  **config)
     bot.add_cog(CogManagement(bot))
 
-    for cog in inital_cogs:
+    for cog in initial_cogs:
         try:
             bot.load_extension(cog)
         except Exception as e:
