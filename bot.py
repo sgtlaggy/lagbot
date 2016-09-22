@@ -1,5 +1,6 @@
 import traceback
 import datetime
+import asyncio
 import json
 import sys
 import os
@@ -109,8 +110,7 @@ class CogManagement:
     @checks.is_owner()
     async def reload_all_exts(self):
         exts = [e.split('.')[1] for e in self.bot.extensions.keys()]
-        for ext in exts:
-            await self.reload_ext_helper(ext)
+        await asyncio.gather(*[self.reload_ext_helper(ext) for ext in exts])
         await self.bot.say('Reloaded all cogs.')
 
     @commands.command(name='load', hidden=True)
