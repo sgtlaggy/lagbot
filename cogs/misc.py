@@ -5,7 +5,7 @@ import random
 from discord.ext import commands
 import aiohttp
 
-from .utils.utils import NotFound, init_db
+from .utils.utils import NotFound
 
 
 class MostRecent(Exception):
