@@ -73,11 +73,6 @@ def time_str(tupdec):
 class Overwatch:
     def __init__(self, bot):
         self.bot = bot
-        bot.loop.run_until_complete(init_db(
-            bot, 'overwatch',
-            'id   text PRIMARY KEY',
-            'btag text',
-            'mode text'))
 
     async def fetch_stats(self, tag, end=BLOB):
         with aiohttp.Timeout(10):

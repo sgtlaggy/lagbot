@@ -15,13 +15,6 @@ class MostRecent(Exception):
 class Misc:
     def __init__(self, bot):
         self.bot = bot
-        bot.loop.run_until_complete(init_db(
-            bot, 'xkcd',
-            'num        integer PRIMARY KEY',
-            'safe_title text',
-            'alt        text',
-            'img        text',
-            'date       date'))
 
     @commands.command(rest_is_raw=True)
     async def roll(self, *, args):

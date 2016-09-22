@@ -1,10 +1,3 @@
-async def init_db(bot, table, *cols):
-    async with bot.db.transaction():
-        await bot.db.execute('''
-            CREATE TABLE IF NOT EXISTS {} ({})
-            '''.format(table, ', '.join(cols)))
-
-
 class NotFound(Exception):
     pass
 
