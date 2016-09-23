@@ -63,7 +63,7 @@ class Meta:
         message = []
         message.append('Documentation for my commands can be found with `{0.command_prefix}help`')
         if userdocs:
-            message[0] += 'or at {userdocs}'
+            message[0] += ' or at {userdocs}'
         message[0] += '.'
         message.append('My developer is {0.owner}.')
         if source:
