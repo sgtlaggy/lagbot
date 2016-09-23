@@ -87,7 +87,7 @@ class Misc:
                     raise NotFound('Could not get comic.')
                 return await resp.json()
 
-    def date(self, data):
+    def xkcd_date(self, data):
         return datetime.date(*map(int, (data['year'],
                                         data['month'],
                                         data['day'])))
@@ -97,7 +97,7 @@ class Misc:
             return await self.bot.db.execute('''
                 INSERT INTO xkcd VALUES ($1, $2, $3, $4, $5)
                 ''', data['num'], data['safe_title'],
-                data['alt'], data['img'], self.date(data))
+                data['alt'], data['img'], self.xkcd_date(data))
 
     @commands.command()
     async def xkcd(self, comic=''):
