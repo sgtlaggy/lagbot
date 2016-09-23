@@ -60,8 +60,8 @@ class Meta:
         """Display bot information."""
         message = []
         if self.bot.userdocs:
-            message.append('Documentation for my commands can be '
-                           'found with `!help` or at {0.userdocs}.')
+            message.append('Documentation for my commands can be found with '
+                           '`{0.command_prefix}help` or at {0.userdocs}.')
         message.append('My developer is {0.owner}.')
         if self.bot.source:
             message.append('My source code can be found at {0.source}.')
@@ -98,8 +98,7 @@ class Meta:
             ('Avatar', member.avatar_url)]
         width = max(len(k) for k, v in lines) + 1
         for line in lines:
-            message.append('{0:<{width}}: {1}'.format(*line,
-                                                      width=width))
+            message.append('{0:<{width}}: {1}'.format(*line, width=width))
         message.append('```')
         message = '\n'.join(message)
         await self.bot.say(message)

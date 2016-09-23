@@ -19,8 +19,8 @@ config_file = os.path.join(app_path, 'config.json')
 # Discord Client/Bot
 command_prefix = '!'
 help_attrs = {'hidden': True}
-initial_cogs = ['cogs.{}'.format(cog) for cog in ['admin', 'misc', 'meta',
-                                          'rdanny', 'overwatch']]
+initial_cogs = ['cogs.{}'.format(cog) for cog in [
+    'admin', 'misc', 'meta', 'rdanny', 'overwatch']]
 
 
 class LagBot(commands.Bot):
@@ -31,11 +31,13 @@ class LagBot(commands.Bot):
         self.userdocs = kwargs.pop('userdocs', None)
         if any('debug' in arg.lower() for arg in sys.argv):
             self.command_prefix = '%!'
-        self.aiohsession = aiohttp.ClientSession(loop=self.loop, headers={
-            'User-Agent': "sgtlaggy Discord Bot/6.9"})
-        self.db = self.loop.run_until_complete(asyncpg.connect(
-            database='lagbot',
-            loop=self.loop))
+        self.aiohsession = aiohttp.ClientSession(
+            loop=self.loop,
+            headers={'User-Agent': "sgtlaggy Discord Bot/6.9"})
+        self.db = self.loop.run_until_complete(
+            asyncpg.connect(
+                database='lagbot',
+                loop=self.loop))
 
     def run(self, *args, **kwargs):
         super().run(self._token, *args, **kwargs)
@@ -70,7 +72,7 @@ class LagBot(commands.Bot):
                                       exc.original.__traceback__,
                                       file=sys.stderr)
         print('In "{0.channel}" on "{0.server}".'
-              'Message was "{0.content}"'.format(ctx.message),
+              '\nMessage was "{0.content}"'.format(ctx.message),
               file=sys.stderr)
 
 

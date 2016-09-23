@@ -59,10 +59,8 @@ class Management:
         url = discord.utils.oauth_url(self.bot.client_id, permissions=perm)
 
         message = []
-        message.append('Follow this link, login if necessary, then select a '
-                       'server you own to add me to.')
-        message.append('The requested permissions are required for some of '
-                       'my commands to function.')
+        message.append('Follow this link, login if necessary, then select a server you own to add me to.')
+        message.append('The requested permissions are required for some of my commands to function.')
         message.append(url)
         await self.bot.say('\n'.join(message))
 
@@ -89,9 +87,9 @@ class Management:
         if member is None:
             member = author
 
-        if (member == author or
-                channel.permissions_for(author).manage_messages or
-                (member == ctx.message.server.me and author == owner)):
+        if member == author or \
+                channel.permissions_for(author).manage_messages or \
+                (member == ctx.message.server.me and author == owner):
             to_remove = []
             while len(to_remove) < count:
                 async for msg in self.bot.logs_from(channel, before=message):
@@ -101,8 +99,7 @@ class Management:
                         break
             await self.bot.delete_messages(to_remove)
             await self.bot.say('Removed {} messages by {}.'.format(
-                len(to_remove),
-                member.display_name),
+                len(to_remove), member.display_name),
                 delete_after=10)
 
 

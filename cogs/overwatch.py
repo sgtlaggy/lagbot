@@ -128,8 +128,7 @@ class Overwatch:
         return data['stats'].get(mode, {}), \
             data['heroes']['playtime'][mode], tag, mode
 
-    @commands.group(aliases=['ow'], pass_context=True,
-                    invoke_without_command=True)
+    @commands.group(aliases=['ow'], pass_context=True, invoke_without_command=True)
     async def overwatch(self, ctx, tag: player_tag = '', mode=None):
         """See stats of yourself or another player.
 
@@ -207,7 +206,8 @@ class Overwatch:
         message = ['{} hero stats:'.format(mode.title())]
         width = max(len(k) for k in heroes.keys())
         message.append('```xl')
-        for hero, time in sorted(heroes.items(), key=lambda kv: kv[1],
+        for hero, time in sorted(heroes.items(),
+                                 key=lambda kv: kv[1],
                                  reverse=True):
             if time:
                 message.append('{0:<{width}} : {1}'.format(
