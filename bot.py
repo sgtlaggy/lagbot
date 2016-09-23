@@ -26,9 +26,7 @@ initial_cogs = ['cogs.{}'.format(cog) for cog in [
 class LagBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self._token = kwargs.pop('bot_token', None)
-        self.source = kwargs.pop('source', None)
-        self.userdocs = kwargs.pop('userdocs', None)
+        self.config = kwargs.pop('config', None)
         if any('debug' in arg.lower() for arg in sys.argv):
             self.command_prefix = '%!'
         self.aiohsession = aiohttp.ClientSession(
@@ -40,7 +38,7 @@ class LagBot(commands.Bot):
                 loop=self.loop))
 
     def run(self, *args, **kwargs):
-        super().run(self._token, *args, **kwargs)
+        super().run(self.config.pop('bot_token'), *args, **kwargs)
 
     async def on_ready(self):
         self.start_time = datetime.datetime.utcnow()
@@ -149,7 +147,7 @@ if __name__ == '__main__':
         config = json.load(fp)
     bot = LagBot(command_prefix=command_prefix,
                  help_attrs=help_attrs,
-                 **config)
+                 config=config)
     bot.add_cog(CogManagement(bot))
 
     for cog in initial_cogs:

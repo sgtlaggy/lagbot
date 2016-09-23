@@ -58,14 +58,18 @@ class Meta:
     @commands.command()
     async def about(self):
         """Display bot information."""
+        source = self.bot.config.get('source', None)
+        userdocs = self.bot.config.get('userdocs', None)
         message = []
-        if self.bot.userdocs:
-            message.append('Documentation for my commands can be found with '
-                           '`{0.command_prefix}help` or at {0.userdocs}.')
+        message.append('Documentation for my commands can be found with `{0.command_prefix}help`')
+        if userdocs:
+            message[0] += 'or at {userdocs}'
+        message[0] += '.'
         message.append('My developer is {0.owner}.')
-        if self.bot.source:
-            message.append('My source code can be found at {0.source}.')
-        message = '\n'.join(message).format(self.bot)
+        if source:
+            message.append('My source code can be found at {source}.')
+        message = '\n'.join(message).format(self.bot, source=source,
+                                            userdocs=userdocs)
         await self.bot.say(message)
 
     def fancy_time(self, orig_time):
