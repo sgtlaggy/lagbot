@@ -44,22 +44,8 @@ def ow_region(data):
             return region
 
 
-def time_from_decimal(dec):
-    return divmod(round(dec * 60), 60)
-
-
-def most_played(hero_dict):
-    for hero, played in sorted(hero_dict.items(),
-                               key=lambda kv: kv[1],
-                               reverse=True):
-        return hero.title(), time_from_decimal(played)
-
-
-def time_str(tupdec):
-    if isinstance(tupdec, tuple):
-        hours, minutes = tupdec
-    else:
-        hours, minutes = time_from_decimal(tupdec)
+def time_str(decimal):
+    hours, minutes = divmod(round(decimal * 60), 60)
     if hours:
         fmt = '{h} hour{hp}, {m} minute{mp}'
     elif minutes:
@@ -68,6 +54,16 @@ def time_str(tupdec):
         fmt = '<1 minute'
     return fmt.format(h=hours, hp=utils.plural(hours),
                       m=minutes, mp=utils.plural(minutes))
+
+
+def most_played(hero_dict, get_all=False):
+    for hero, played in sorted(hero_dict.items(),
+                               key=lambda kv: kv[1],
+                               reverse=True):
+        data = (hero.title(), time_str(played))
+        if not get_all:
+            return data
+        yield data
 
 
 class Overwatch:
@@ -169,7 +165,7 @@ class Overwatch:
             lines.append(('Competitive Rank',
                           stats['overall_stats']['comprank'] or 'Unranked'))
         lines.append(('Most Played Hero', mp_hero))
-        lines.append(('Hero Time', time_str(mp_time)))
+        lines.append(('Hero Time', mp_time))
         if stats['overall_stats']['games']:
             lines.extend([
                 ('Games Played', stats['overall_stats']['games']),
@@ -206,13 +202,11 @@ class Overwatch:
         message = ['{} hero stats:'.format(mode.title())]
         width = max(len(k) for k in heroes.keys())
         message.append('```xl')
-        for hero, time in sorted(heroes.items(),
-                                 key=lambda kv: kv[1],
-                                 reverse=True):
-            if time:
+        for hero, played in most_played(heroes, get_all=True):
+            if played:
                 message.append('{0:<{width}} : {1}'.format(
-                    hero.title(),
-                    time_str(heroes[hero]),
+                    hero,
+                    played,
                     width=width))
         message.append('```')
         await self.bot.say('\n'.join(message))
