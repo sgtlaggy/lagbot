@@ -57,21 +57,31 @@ class LagBot(commands.Bot):
             return
         await self.process_commands(msg)
 
+    def tb_args(self, exc):
+        return (type(exc), exc, exc.__traceback__)
+
     async def on_command_error(self, exc, ctx):
         """Emulate default on_command_error and add server + channel info."""
         if hasattr(ctx.command, 'on_error'):
             return
         print('Ignoring exception in command {}'.format(ctx.command),
               file=sys.stderr)
-        traceback.print_exception(type(exc), exc, exc.__traceback__,
-                                  file=sys.stderr)
-        if hasattr(exc, 'original'):
-            traceback.print_exception(type(exc.original), exc.original,
-                                      exc.original.__traceback__,
-                                      file=sys.stderr)
-        print('In "{0.channel}" on "{0.server}".'
-              '\nMessage was "{0.content}"'.format(ctx.message),
-              file=sys.stderr)
+        traceback.print_exception(*self.tb_args(exc), file=sys.stderr)
+        if isinstance(ctx.message.channel, discord.PrivateChannel):
+            if str(ctx.message.channel.type) == 'group':
+                msg = 'Message was "{0.content}" by {0.author} in {0.channel}.'
+            else:
+                msg = 'Message was "{0.content}" in {0.channel}.'
+        else:
+            msg = 'Message was "{0.content}" by {0.author} in "{0.channel}" on "{0.server}".'
+        msg = msg.format(ctx.message)
+        print(msg, file=sys.stderr)
+        tb = traceback.format_exception(*self.tb_args(getattr(exc, 'original', exc)))
+        tb = ''.join(tb)
+        try:
+            await self.send_message(self.owner, '{}\n```py\n{}\n```'.format(msg, tb))
+        except:
+            pass
 
 
 class CogManagement:
