@@ -22,12 +22,16 @@ class NotPlayed(Exception):
     pass
 
 
-def player_tag(arg):
+def api_player_tag(arg):
     match = re.match(r'<@!?([0-9]+)>$', arg)
     if match is not None:
         return match.group(1)
     else:
         return arg[::-1].replace('#', '-', 1)[::-1]
+
+
+def api_to_btag(tag):
+    return tag[::-1].replace('-', '#', 1)[::-1]
 
 
 def ow_mode(arg):
@@ -83,7 +87,7 @@ class Overwatch:
 
     async def get_tag(self, ctx, tag):
         member_id = ctx.message.author.id
-        tag = player_tag(tag)
+        tag = api_player_tag(tag)
         if tag == '' or '-' not in tag:
             member_id = tag or member_id
             tag = await self.bot.db.fetchval('''
@@ -128,7 +132,7 @@ class Overwatch:
             data['heroes']['playtime'][mode], tag, mode
 
     @commands.group(aliases=['ow'], pass_context=True, invoke_without_command=True)
-    async def overwatch(self, ctx, tag: player_tag = '', mode=None):
+    async def overwatch(self, ctx, tag: api_player_tag = '', mode=None):
         """See stats of yourself or another player.
 
         [tag] can be either BattleTag or a mention to someone in the db
@@ -156,6 +160,7 @@ class Overwatch:
             await self.bot.say("Not in the db.")
             return
         except NotPlayed:
+            tag = api_to_btag(tag)
             await self.bot.say('{} does not exist or has not played Overwatch.'.format(tag))
             return
 
@@ -163,7 +168,7 @@ class Overwatch:
 
         message = ['{} stats:'.format(mode.title())]
         lines = [
-            ('Battletag', tag[::-1].replace('-', '#', 1)[::-1]),
+            ('Battletag', api_to_btag(tag)),
             ('Time played', time_str(stats['game_stats']['time_played'])),
             ('Level', ow_level(stats['overall_stats']))
         ]
@@ -192,7 +197,7 @@ class Overwatch:
         await self.bot.say('\n'.join(message))
 
     @overwatch.command(pass_context=True)
-    async def heroes(self, ctx, tag: player_tag = '', mode=None):
+    async def heroes(self, ctx, tag: api_player_tag = '', mode=None):
         """Get playtime for each played hero.
 
         [tag] can be either BattleTag or a mention to someone in the db
@@ -205,6 +210,7 @@ class Overwatch:
             await self.bot.say("Not in the db.")
             return
         except NotPlayed:
+            tag = api_to_btag(tag)
             await self.bot.say('{} does not exist or has not played Overwatch.'.format(tag))
             return
 
@@ -235,7 +241,7 @@ class Overwatch:
         if in_db and mode is None and tag in MODES:
             tag, mode, _ = await self.get_tag_mode(ctx, tag, mode)
         else:
-            tag = tag[::-1].replace('#', '-', 1)[::-1]
+            tag = api_player_tag(tag)
             mode = ow_mode(mode)
         async with self.bot.db.transaction():
             if in_db:
