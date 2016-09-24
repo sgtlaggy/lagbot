@@ -56,14 +56,10 @@ def time_str(decimal):
                       m=minutes, mp=utils.plural(minutes))
 
 
-def most_played(hero_dict, get_all=False):
-    for hero, played in sorted(hero_dict.items(),
-                               key=lambda kv: kv[1],
-                               reverse=True):
-        data = (hero.title(), time_str(played))
-        if not get_all:
-            return data
-        yield data
+def most_played(hero_dict):
+    sort = sorted(hero_dict.items(), key=lambda kv: kv[1], reverse=True)
+    for hero, played in sort:
+        yield (hero.title(), time_str(played))
 
 
 class Overwatch:
@@ -153,7 +149,7 @@ class Overwatch:
             await self.bot.say("Not in the db.")
             return
 
-        mp_hero, mp_time = most_played(heroes)
+        mp_hero, mp_time = next(most_played(heroes))
 
         message = ['{} stats:'.format(mode.title())]
         lines = [
