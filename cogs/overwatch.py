@@ -18,6 +18,10 @@ MODES = ('quick', 'quickplay', 'qp', 'unranked',
          'comp', 'competitive', 'ranked')
 
 
+class NotPlayed(Exception):
+    pass
+
+
 def player_tag(arg):
     match = re.match(r'<@!?([0-9]+)>$', arg)
     if match is not None:
@@ -72,7 +76,10 @@ class Overwatch:
                 status, data = resp.status, await resp.json()
         if status == 404:
             raise NotFound
-        return data[ow_region(data)]
+        region = ow_region(data)
+        if region is None:
+            return NotPlayed
+        return data[region]
 
     async def get_tag(self, ctx, tag):
         member_id = ctx.message.author.id
@@ -148,6 +155,9 @@ class Overwatch:
         except NotInDB:
             await self.bot.say("Not in the db.")
             return
+        except NotPlayed:
+            await self.bot.say('{} does not exist or has not played Overwatch.'.format(tag))
+            return
 
         mp_hero, mp_time = next(most_played(heroes))
 
@@ -194,11 +204,14 @@ class Overwatch:
         except NotInDB:
             await self.bot.say("Not in the db.")
             return
+        except NotPlayed:
+            await self.bot.say('{} does not exist or has not played Overwatch.'.format(tag))
+            return
 
         message = ['{} hero stats:'.format(mode.title())]
         width = max(len(k) for k in heroes.keys())
         message.append('```xl')
-        for hero, played in most_played(heroes, get_all=True):
+        for hero, played in most_played(heroes):
             if played:
                 message.append('{0:<{width}} : {1}'.format(
                     hero,
