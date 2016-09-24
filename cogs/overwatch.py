@@ -78,7 +78,7 @@ class Overwatch:
             raise NotFound
         region = ow_region(data)
         if region is None:
-            return NotPlayed
+            raise NotPlayed
         return data[region]
 
     async def get_tag(self, ctx, tag):
