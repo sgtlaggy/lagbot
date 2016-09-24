@@ -7,6 +7,16 @@ import aiohttp
 from .utils import checks, utils
 
 
+def fancy_time(orig_time):
+    diff = datetime.utcnow() - orig_time
+    nice = ''
+    if diff.days >= 365:
+        nice += str(diff.days // 365) + ' years, '
+    nice += str(diff.days % 365) + ' days ago'
+    nice += ' ({} UTC)'.format(orig_time)
+    return nice
+
+
 class Meta:
     def __init__(self, bot):
         self.bot = bot
@@ -72,15 +82,6 @@ class Meta:
                                             userdocs=userdocs)
         await self.bot.say(message)
 
-    def fancy_time(self, orig_time):
-        diff = datetime.utcnow() - orig_time
-        nice = ''
-        if diff.days >= 365:
-            nice += str(diff.days // 365) + ' years, '
-        nice += str(diff.days % 365) + ' days ago'
-        nice += ' ({} UTC)'.format(orig_time)
-        return nice
-
     @commands.command(pass_context=True, no_pm=True)
     async def info(self, ctx, *, member: discord.Member=None):
         """Display information on the bot or a specific user."""
@@ -96,8 +97,8 @@ class Meta:
             ('Name', member.name),
             ('Tag', member.discriminator),
             ('ID', member.id),
-            ('Joined Server', self.fancy_time(member.joined_at)),
-            ('Joined Discord', self.fancy_time(member.created_at)),
+            ('Joined Server', fancy_time(member.joined_at)),
+            ('Joined Discord', fancy_time(member.created_at)),
             ('Roles', ', '.join(roles)),
             ('Avatar', member.avatar_url)]
         width = max(len(k) for k, v in lines) + 1
