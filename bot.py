@@ -62,7 +62,7 @@ class LagBot(commands.Bot):
 
     async def on_command_error(self, exc, ctx):
         """Emulate default on_command_error and add server + channel info."""
-        if hasattr(ctx.command, 'on_error'):
+        if hasattr(ctx.command, 'on_error') or isinstance(exc, commands.CommandNotFound):
             return
         print('Ignoring exception in command {}'.format(ctx.command),
               file=sys.stderr)
