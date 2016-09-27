@@ -169,7 +169,7 @@ class Overwatch:
         message = ['{} stats:'.format(mode.title())]
         lines = [
             ('Battletag', api_to_btag(tag)),
-            ('Time played', time_str(stats['game_stats']['time_played'])),
+            ('Time Played', time_str(stats['game_stats']['time_played'])),
             ('Level', ow_level(stats['overall_stats']))
         ]
         if mode == 'competitive':
@@ -185,10 +185,10 @@ class Overwatch:
             ])
         else:
             lines.append(('Games Won', stats['overall_stats']['wins']))
-        lines.append(('Kill/death', round(stats['game_stats']['kpd'], 2)))
+        lines.append(('Kill/Death', round(stats['game_stats']['kpd'], 2)))
         lines.append(('Environmental Deaths',
                       int(stats['game_stats'].get('environmental_deaths', 0))))
-        message.append('```xl')
+        message.append('```ocaml')
         width = max(len(k) for k, v in lines)
         for line in lines:
             message.append('{0:<{width}} : {1}'.format(*line, width=width))
@@ -216,7 +216,7 @@ class Overwatch:
 
         message = ['{} hero stats:'.format(mode.title())]
         width = max(len(k) for k in heroes.keys())
-        message.append('```xl')
+        message.append('```ocaml')
         for hero, played in most_played(heroes):
             if played:
                 message.append('{0:<{width}} : {1}'.format(
