@@ -55,7 +55,9 @@ def ow_region(data):
 def time_str(decimal):
     hours, minutes = divmod(round(decimal * 60), 60)
     if hours:
-        fmt = '{h} hour{hp}, {m} minute{mp}'
+        fmt = '{h} hour{hp}'
+        if minutes:
+            fmt += ', {m} minute{mp}'
     elif minutes:
         fmt = '{m} minute{mp}'
     else:
