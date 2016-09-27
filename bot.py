@@ -13,7 +13,7 @@ config_file = os.path.join(app_path, 'config.json')
 command_prefix = '!'
 help_attrs = {'hidden': True}
 initial_cogs = ['cogs.{}'.format(cog) for cog in [
-    'cog', 'admin', 'misc', 'meta', 'rdanny', 'overwatch']]
+    'cog', 'management', 'misc', 'meta', 'rdanny', 'overwatch']]
 
 if __name__ == '__main__':
     with open(config_file) as fp:
