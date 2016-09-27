@@ -24,10 +24,11 @@ initial_cogs = ['cogs.{}'.format(cog) for cog in [
 
 
 class LagBot(commands.Bot):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, config, debug=False, **kwargs):
+        self._debug = debug
+        self.config = config
         super().__init__(*args, **kwargs)
-        self.config = kwargs.pop('config', None)
-        if any('debug' in arg.lower() for arg in sys.argv):
+        if self._debug:
             self.command_prefix = '%!'
         self.aiohsession = aiohttp.ClientSession(
             loop=self.loop,
@@ -45,9 +46,15 @@ class LagBot(commands.Bot):
         app_info = await self.application_info()
         self.client_id = app_info.id
         self.owner = app_info.owner
-        await self.change_status(game=discord.Game(name='Destroy All Humans!'))
+        if self._debug:
+            game = 'Probe All Humans!'
+        else:
+            game = 'Destroy All Humans!'
+        await self.change_status(game=discord.Game(name=game))
 
     async def on_server_join(self, server):
+        if self._debug:
+            return
         message = 'Hello, thanks for inviting me!' \
                   '\nSay `{0.command_prefix}help` to see my commands.'
         await self.send_message(server.default_channel, message.format(bot))
@@ -157,7 +164,8 @@ if __name__ == '__main__':
         config = json.load(fp)
     bot = LagBot(command_prefix=command_prefix,
                  help_attrs=help_attrs,
-                 config=config)
+                 config=config,
+                 debug=any('debug' in arg.lower() for arg in sys.argv))
     bot.add_cog(CogManagement(bot))
 
     for cog in initial_cogs:
