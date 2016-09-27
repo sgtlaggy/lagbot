@@ -31,11 +31,7 @@ class LagBot(commands.Bot):
         app_info = await self.application_info()
         self.client_id = app_info.id
         self.owner = app_info.owner
-        if self._debug:
-            game = 'Probe All Humans!'
-        else:
-            game = 'Destroy All Humans!'
-        await self.change_status(game=discord.Game(name=game))
+        await self.change_presence(game=discord.Game(name='Destroy All Humans!'))
 
     async def on_server_join(self, server):
         if self._debug:
