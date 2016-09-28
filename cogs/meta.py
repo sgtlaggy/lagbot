@@ -41,7 +41,6 @@ class Meta:
             bot_member = s.get_member(self.bot.user.id)
             break
 
-        bot_member = self.bot.servers[0].get_member(self.bot.user.id)
         if ctx.invoked_with == 'game':
             await self.bot.change_presence(
                 game=discord.Game(name=new_status),
@@ -49,7 +48,7 @@ class Meta:
         else:
             await self.bot.change_presence(
                 game=bot_member.game,
-                status=getattr(discord.Status, new_status, 'online'))
+                status=getattr(discord.Status, new_status or '', 'online'))
 
     async def set_avatar_by_url(self, url):
         with aiohttp.Timeout(10):
