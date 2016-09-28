@@ -26,12 +26,25 @@ class Meta:
         """Manage bot user attributes."""
         pass
 
-    @manage.command(rest_is_raw=True)
+    @manage.command()
     @checks.is_owner()
-    async def name(self, *, new_name):
+    async def name(self, *, new_name=None):
         """Rename bot."""
         if new_name:
             await self.bot.edit_profile(username=new_name)
+
+    @manage.command(pass_context=True, aliases=['game'])
+    @checks.is_owner()
+    async def status(self, ctx, *, new_status=None):
+        bot_member = self.bot.servers[0].get_member(self.bot.user.id)
+        if ctx.invoked_with == 'game':
+            await self.bot.change_presence(
+                game=discord.Game(name=new_status),
+                status=bot_member.status)
+        else:
+            await self.bot.change_presence(
+                game=bot_member.game,
+                status=getattr(discord.Status, new_status, 'online'))
 
     async def set_avatar_by_url(self, url):
         with aiohttp.Timeout(10):
@@ -57,10 +70,10 @@ class Meta:
             else:
                 await self.bot.edit_profile(avatar=None)
 
-    @manage.command(pass_context=True, rest_is_raw=True, no_pm=True)
+    @manage.command(pass_context=True, no_pm=True)
     @commands.bot_has_permissions(change_nickname=True)
     @checks.owner_or_permissions(manage_nicknames=True)
-    async def nick(self, ctx, *, new_nick):
+    async def nick(self, ctx, *, new_nick=None):
         """Change bot's nickname."""
         bot_member = ctx.message.server.me
         await self.bot.change_nickname(bot_member, new_nick or None)
