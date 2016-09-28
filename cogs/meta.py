@@ -37,6 +37,10 @@ class Meta:
     @checks.is_owner()
     async def status(self, ctx, *, new_status=None):
         """Change bot's online status or game name."""
+        for s in self.bot.servers:
+            bot_member = s.get_member(self.bot.user.id)
+            break
+
         bot_member = self.bot.servers[0].get_member(self.bot.user.id)
         if ctx.invoked_with == 'game':
             await self.bot.change_presence(
