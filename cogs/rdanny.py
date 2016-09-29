@@ -30,6 +30,7 @@ class RoboDanny:
     def __init__(self, bot):
         self.bot = bot
         self.sessions = set()
+        self.last_eval = None
 
     def cleanup_code(self, content):
         """Automatically removes code blocks from the code."""
@@ -57,6 +58,7 @@ class RoboDanny:
             'channel': msg.channel,
             'author': msg.author,
             'me': msg.author,
+            '__': None
         }
 
         if msg.channel.id in self.sessions:
@@ -108,6 +110,7 @@ class RoboDanny:
                 fmt = '```py\n{}{}\n```'.format(value, traceback.format_exc())
             else:
                 value = stdout.getvalue()
+                variables['__'] = result
                 if result is not None:
                     fmt = '```py\n{}{}\n```'.format(value, result)
                     variables['last'] = result
@@ -142,7 +145,8 @@ class RoboDanny:
             'server': msg.server,
             'channel': msg.channel,
             'author': msg.author,
-            'me': msg.author
+            'me': msg.author,
+            '__': self.last_eval
         }
 
         env.update(globals())
@@ -154,14 +158,14 @@ class RoboDanny:
         except Exception as e:
             await self.bot.say(python.format(type(e).__name__ + ': ' + str(e)))
             return
-
+        self.last_eval = result
         await self.bot.say(python.format(result))
 
     @commands.command(pass_context=True)
     @commands.has_permissions(manage_messages=True)
     async def nostalgia(self, ctx, date: date = None, *, channel: discord.Channel = None):
         """Pins an old message from a specific date.
-        
+
         If a date is not given, then pins first message from the channel.
         If a channel is not given, then pins from the channel the
         command was ran on.
