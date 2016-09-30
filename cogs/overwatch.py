@@ -264,9 +264,15 @@ class Overwatch:
     async def ow_set(self, ctx, tag, mode=None):
         """Set your battletag and default gamemode.
 
-        <tag> can be either BattleTag or a mention to someone in the db
+        <tag> is your BattleTag
         [mode] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
              * Defaults to competitive stats, falls back to quickplay.
+
+        Note:
+        If you're already in the db, you can use this command again as follows:
+            set [mode] - change preferred mode
+            set <tag>  - change battletag
+            set <tag> [mode] - change BattleTag and preferred mode
         """
         author_id = ctx.message.author.id
         in_db = bool(await self.bot.db.fetchval('''
