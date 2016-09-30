@@ -302,6 +302,23 @@ class Overwatch:
                 message = '\N{THUMBS UP SIGN} Added to db.'
         await self.bot.say(message)
 
+    @overwatch.command(name='unset', aliases=['delete', 'remove'], pass_context=True)
+    async def ow_unset(self, ctx):
+        """Remove your battletag from the DB."""
+        author_id = ctx.message.author.id
+        in_db = bool(await self.bot.db.fetchval('''
+            SELECT id FROM overwatch WHERE id = $1
+            ''', author_id))
+        if in_db:
+            async with self.bot.db.transaction():
+                await self.bot.db.execute('''
+                    DELETE FROM overwatch WHERE id = $1
+                    ''', author_id)
+            message = '\N{THUMBS UP SIGN} Removed from db.'
+        else:
+            message = '\N{THUMBS DOWN SIGN} Not in db.'
+        await self.bot.say(message)
+
 
 def setup(bot):
     bot.add_cog(Overwatch(bot))
