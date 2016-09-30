@@ -273,22 +273,32 @@ class Overwatch:
             SELECT id FROM overwatch WHERE id = $1
             ''', author_id))
         if in_db and mode is None and tag in MODES:
-            tag, mode, _ = await self.get_tag_mode(ctx, tag, mode)
+            new_tag, new_mode, _ = await self.get_tag_mode(ctx, tag, mode)
         else:
-            tag = api_player_tag(tag)
-            if tag is None:
+            new_tag = validate_btag(tag)
+            if new_tag is None:
                 await self.bot.say('Invalid Battletag')
-            mode = ow_mode(mode)
+            new_mode = ow_mode(mode)
         async with self.bot.db.transaction():
-            if in_db:
+            if in_db and mode is None and tag in MODES:
                 await self.bot.db.execute('''
                     UPDATE overwatch SET mode = $1 WHERE id = $2
-                    ''', mode, author_id)
-                message = '\N{THUMBS UP SIGN} Updated preference.'
+                    ''', new_mode, author_id)
+                message = '\N{THUMBS UP SIGN} Updated preferred mode.'
+            elif in_db and mode is None and tag not in MODES:
+                await self.bot.db.execute('''
+                    UPDATE overwatch SET btag = $1 WHERE id = $2
+                    ''', new_tag, author_id)
+                message = '\N{THUMBS UP SIGN} Updated Battletag.'
+            elif in_db:
+                await self.bot.db.execute('''
+                    UPDATE overwatch SET (btag, mode) = ($1, $2) WHERE id = $3
+                    ''', new_tag, new_mode, author_id)
+                message = '\N{THUMBS UP SIGN} Updated Battletag and preferred mode.'
             else:
                 await self.bot.db.execute('''
                     INSERT INTO overwatch (id, btag, mode) VALUES ($1, $2, $3)
-                    ''', author_id, tag, mode)
+                    ''', author_id, new_tag, new_mode)
                 message = '\N{THUMBS UP SIGN} Added to db.'
         await self.bot.say(message)
 
