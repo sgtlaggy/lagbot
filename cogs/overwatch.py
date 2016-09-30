@@ -1,3 +1,4 @@
+import string
 import re
 
 from discord.ext import commands
@@ -22,12 +23,35 @@ class NotPlayed(Exception):
     pass
 
 
+class InvalidBTag(Exception):
+    pass
+
+
+SYMBOLS = string.punctuation + ' '
+
+
+def validate_btag(btag):
+    if btag == '' or '-' in btag:
+        return btag
+    split = btag.split('#')
+    if len(split) != 2:
+        return None
+    tag, disc = split
+    if 3 <= len(tag) <= 12 and \
+            not any(s in tag for s in SYMBOLS) and \
+            not tag[0].isdigit() and \
+            disc.isdigit():
+        return '-'.join([tag, disc])
+    else:
+        return None
+
+
 def api_player_tag(arg):
     match = re.match(r'<@!?([0-9]+)>$', arg)
     if match is not None:
         return match.group(1)
     else:
-        return arg[::-1].replace('#', '-', 1)[::-1]
+        return validate_btag(arg)
 
 
 def api_to_btag(tag):
@@ -90,6 +114,8 @@ class Overwatch:
     async def get_tag(self, ctx, tag):
         member_id = ctx.message.author.id
         tag = api_player_tag(tag)
+        if tag is None:
+            raise InvalidBTag
         if tag == '' or '-' not in tag:
             member_id = tag or member_id
             tag = await self.bot.db.fetchval('''
@@ -165,6 +191,9 @@ class Overwatch:
             tag = api_to_btag(tag)
             await self.bot.say('{} does not exist or has not played Overwatch.'.format(tag))
             return
+        except InvalidBTag:
+            await self.bot.say('Invalid Battletag')
+            return
 
         mp_hero, mp_time = next(most_played(heroes))
 
@@ -215,6 +244,9 @@ class Overwatch:
             tag = api_to_btag(tag)
             await self.bot.say('{} does not exist or has not played Overwatch.'.format(tag))
             return
+        except InvalidBTag:
+            await self.bot.say('Invalid Battletag')
+            return
 
         message = ['{} hero stats:'.format(mode.title())]
         width = max(len(k) for k in heroes.keys())
@@ -244,6 +276,8 @@ class Overwatch:
             tag, mode, _ = await self.get_tag_mode(ctx, tag, mode)
         else:
             tag = api_player_tag(tag)
+            if tag is None:
+                await self.bot.say('Invalid Battletag')
             mode = ow_mode(mode)
         async with self.bot.db.transaction():
             if in_db:
