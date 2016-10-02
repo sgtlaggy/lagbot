@@ -15,6 +15,7 @@ If the user you're getting stats for is in the db, their stats will be in whatev
 * [Overwatch](#overwatchow)
 * [Heroes](#heroes)
 * [Set](#set)
+* [Unset](#unset)
 
 ---
 
@@ -63,8 +64,15 @@ Usage:
     !ow set [BattleTag/Mention] [tier]
 
     If you're added to the DB:
+        !ow set BattleTag#1234         : Change your BattleTag in the DB
         !ow set qp/comp                : Change the tier your have saved in the DB
 
     If person is not in DB/same discord server:
         !ow set BattleTag#1234         : Set your BattleTag in the DB
         !ow set Battletag#1234 qp/comp : Set your BattleTag and preferred tier
+
+### Unset
+#### Remove your BattleTag from the DB.
+Usage:
+
+    !ow unset

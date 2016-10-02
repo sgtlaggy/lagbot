@@ -3,7 +3,7 @@
 
 * [Manage](#manage)
 * [Manage Nick](#nick)
-* [Source](#source)
+* [About](#About)
 * [Info](#info)
 * [Uptime](#uptime)
 * [Poke](#poke)
@@ -25,11 +25,11 @@ Usage:
 
 ---
 
-### Source
+### About
 #### Get information about the bot and its source code.
 Usage:
 
-    !source
+    !about
 
 ---
 
