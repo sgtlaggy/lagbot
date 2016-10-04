@@ -109,7 +109,7 @@ class Meta:
                  for role in member.roles]
         roles.remove('@\u200beveryone')
 
-        message.append('```xl')
+        message.append('```ocaml')
         lines = [
             ('Name', member.name),
             ('Tag', member.discriminator),
@@ -148,7 +148,7 @@ class Meta:
             h=hours, hp=utils.plural(hours),
             m=minutes, mp=utils.plural(minutes),
             s=seconds, sp=utils.plural(seconds))
-        await self.bot.say('```xl\nUptime: {}\n```'.format(up))
+        await self.bot.say('```ocaml\nUptime: {}\n```'.format(up))
 
     @commands.command(pass_context=True, aliases=['ping'])
     async def poke(self, ctx):
