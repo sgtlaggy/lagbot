@@ -88,9 +88,13 @@ class Misc:
                 return await resp.json()
 
     def xkcd_date(self, data):
-        return datetime.date(*map(int, (data['year'],
-                                        data['month'],
-                                        data['day'])))
+        if 'date' in data:
+            date = data['date']
+        else:
+            date = datetime.date(*map(int, (data['year'],
+                                            data['month'],
+                                            data['day'])))
+        return date
 
     async def xkcd_insert(self, data):
         async with self.bot.db.transaction():
@@ -133,9 +137,10 @@ class Misc:
         except MostRecent:
             pass
 
-        message = '**Title**: {0[num]}. {0[safe_title]}' \
+        message = '**Date**: {1:%m/%d/%Y}' \
+                  '\n**Title**: {0[num]}. {0[safe_title]}' \
                   '\n**Alt Text**: {0[alt]}' \
-                  '\n**Image**: {0[img]}'.format(data)
+                  '\n**Image**: {0[img]}'.format(data, self.xkcd_date(data))
         await self.bot.say(message)
 
 
