@@ -50,6 +50,8 @@ def api_player_tag(arg):
     match = re.match(r'<@!?([0-9]+)>$', arg)
     if match is not None:
         return match.group(1)
+    elif arg in MODES:
+        return arg
     else:
         return validate_btag(arg)
 
@@ -72,7 +74,7 @@ def ow_level(overall_stats):
 
 def ow_region(data):
     for region in ('us', 'kr', 'eu', 'any'):
-        if data[region] is not None:
+        if data.get(region, None) is not None:
             return region
 
 
