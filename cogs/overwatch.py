@@ -103,7 +103,7 @@ class Overwatch:
         self.bot = bot
 
     async def fetch_stats(self, tag, end=BLOB):
-        with aiohttp.Timeout(10):
+        with aiohttp.Timeout(15):
             async with self.bot.aiohsession.get(end.format(btag=tag)) as resp:
                 status, data = resp.status, await resp.json()
         if status == 404:
