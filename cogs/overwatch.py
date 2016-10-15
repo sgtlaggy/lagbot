@@ -74,7 +74,7 @@ def ow_level(overall_stats):
 
 def ow_region(data):
     for region in ('us', 'kr', 'eu', 'any'):
-        if data.get(region, None) is not None:
+        if data.get(region) is not None:
             return region
 
 
@@ -155,10 +155,10 @@ class Overwatch:
     async def get_all(self, ctx, tag, mode, end=BLOB):
         tag, mode, _ = await self.get_tag_mode(ctx, tag, mode)
         data = await self.fetch_stats(tag, end)
-        if mode == 'competitive' and not data['stats'].get(mode, {}) and \
+        if mode == 'competitive' and not data['stats'].get(mode) and \
                 not data['heroes']['stats'][mode]:
             mode = 'quickplay'
-        return data['stats'].get(mode, {}), \
+        return data['stats'].get(mode), \
             data['heroes']['playtime'][mode], tag, mode
 
     @commands.group(aliases=['ow'], pass_context=True, invoke_without_command=True)
@@ -211,7 +211,7 @@ class Overwatch:
                           stats['overall_stats']['comprank'] or 'Unranked'))
         lines.append(('Most Played Hero', mp_hero))
         lines.append(('Hero Time', mp_time))
-        if stats['overall_stats']['games']:
+        if stats['overall_stats'].get('games'):
             lines.extend([
                 ('Games Played', stats['overall_stats']['games']),
                 ('Games Won', stats['overall_stats']['wins']),
