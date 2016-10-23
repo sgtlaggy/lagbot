@@ -1,6 +1,7 @@
 from discord.ext import commands
 import discord
 
+from .utils.utils import plural
 from .utils import checks
 
 
@@ -79,6 +80,7 @@ class Management:
         """Purge messages from the current channel.
 
         You must have proper permissions to remove others' messages.
+        Note this only goes back through the last 1000 messages.
         """
         message = ctx.message
         author = message.author
@@ -91,15 +93,20 @@ class Management:
                 channel.permissions_for(author).manage_messages or \
                 (member == ctx.message.server.me and author == owner):
             to_remove = []
-            while len(to_remove) < count:
+            iterations = 0
+            while len(to_remove) < count and iterations < 10:
                 async for msg in self.bot.logs_from(channel, before=message):
                     if msg.author == member:
                         to_remove.append(msg)
                     if len(to_remove) == count:
                         break
-            await self.bot.delete_messages(to_remove)
-            await self.bot.say('Removed {} messages by {}.'.format(
-                len(to_remove), member.display_name),
+                iterations += 1
+            if len(to_remove) == 1:
+                await self.bot.delete_message(to_remove[0])
+            else:
+                await self.bot.delete_messages(to_remove)
+            await self.bot.say('Removed {} message{} by {}.'.format(
+                len(to_remove), plural(len(to_remove)), member.display_name),
                 delete_after=10)
 
 
