@@ -14,6 +14,8 @@ from .utils.utils import NotFound
 
 GET = 'http://thecatapi.com/api/images/get?api_key={api_key}&format=xml{category}&sub_id={sub_id}'
 VOTE = 'http://thecatapi.com/api/images/vote?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&score={score}'
+FAV = 'http://thecatapi.com/api/images/favourite?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&action={act}'
+GET_FAVS = 'http://thecatapi.com/api/images/getfavourites?api_key={api_key}&sub_id={sub_id}'
 CATEGORIES = ('hats', 'space', 'funny', 'sunglasses', 'boxes',
               'caturday', 'ties', 'dream', 'sinks', 'clothes')
 
@@ -160,7 +162,7 @@ class Misc:
                     raise NotFound('Could not get cat.')
                 return await resp.text()
 
-    @commands.command(pass_context=True)
+    @commands.group(pass_context=True, invoke_without_command=True)
     @bot_config_attr('cat_api')
     async def cat(self, ctx, category=''):
         """Get a random cat image.
@@ -170,7 +172,9 @@ class Misc:
             boxes, caturday, ties, dream,
             sinks, clothes
 
-        Up to 10 users can rate the image by saying "X/10" within 15 seconds.
+        Within 15 seconds of the image being posted anyone can:
+            * Say "X/10" (1-10) to rate the image.
+            * Say "fav"/"favorite"/"favourite" to favorite the image.
         """
         if category and category in CATEGORIES:
             category = '&category=' + category
@@ -184,37 +188,78 @@ class Misc:
             await self.bot.say(str(e))
             return
 
-        image_root = XMLTree.fromstring(x)[0][0][0]  # [response][data][images][image]
-        image_url = image_root[0].text
-        image_id = image_root[1].text
+        image_root = XMLTree.fromstring(x)
+        image_url = image_root.find('url').text
+        image_id = image_root.find('id').text
         image_msg = await self.bot.say(
-            '{image}\nReply with X/10 to rate this image.'.format(image=image_url))
+            '{image}\nReply with "X/10" to rate this image or "fav" to favorite it.'.format(image=image_url))
 
-        votes = []
+        actions = []
         voted = []
+        faved = []
 
         def vote_check(msg):
-            if msg.channel != ctx.message.channel or msg.author.id in voted:
-                return False
-            match = re.match(r'-?[0-9]*/10', msg.content)
-            if match is None:
+            if msg.channel != ctx.message.channel:
                 return False
             sub_id = msg.author.id
-            voted.append(sub_id)
-            score = int(msg.content.split('/')[0])
-            if score > 10:
-                score = 10
-            elif score < 1:
-                score = 1
-            votes.append(self.fetch_cat(VOTE.format(api_key=self.bot.config['cat_api'],
-                                                    sub_id=sub_id, score=score,
-                                                    image_id=image_id)))
-            if len(votes) == 10:
+            score_match = re.match(r'(-?[0-9]*)/10', msg.content)
+            if score_match is not None:
+                if sub_id in voted:
+                    return False
+                voted.append(sub_id)
+                score = int(score_match.group(1))
+                if score > 10:
+                    score = 10
+                elif score < 1:
+                    score = 1
+                actions.append(self.fetch_cat(VOTE.format(api_key=self.bot.config['cat_api'],
+                                                          sub_id=sub_id, score=score,
+                                                          image_id=image_id)))
+            else:
+                if sub_id in faved:
+                    return False
+                fav_match = any(msg.content == f for f in ('fav', 'favorite', 'favourite'))
+                if not fav_match:
+                    return False
+                faved.append(sub_id)
+                actions.append(self.fetch_cat(FAV.format(api_key=self.bot.config['cat_api'],
+                                                         sub_id=sub_id, image_id=image_id,
+                                                         act='add')))
+            if len(actions) == 20:
                 return True
 
         await self.bot.wait_for_message(timeout=15, check=vote_check)
         await self.bot.edit_message(image_msg, image_url)
-        await asyncio.gather(*votes)
+        await asyncio.gather(*actions)
+
+    @cat.command(pass_context=True, aliases=['favs', 'favourites'])
+    async def favorites(self, ctx, to_remove=None):
+        """Get a list of your favorited images.
+
+        Images are posted in format "ID: url".
+        [to_remove] is the ID of the image you want to unfavorite.
+        """
+        sub_id = ctx.message.author.id
+        root = XMLTree.fromstring(await self.fetch_cat(GET_FAVS.format(api_key=self.bot.config['cat_api'],
+                                                                       sub_id=sub_id)))
+        ids = [i.text for i in root.iter('id')]
+        urls = [u.text for u in root.iter('url')]
+
+        if to_remove is not None:
+            if to_remove not in ids:
+                await self.bot.say("That's not in your favorites.")
+                return
+            await self.fetch_cat(FAV.format(api_key=self.bot.config['cat_api'],
+                                            sub_id=sub_id, image_id=to_remove,
+                                            act='remove'))
+            await self.bot.say('\N{THUMBS UP SIGN} Removed favorite.')
+            return
+
+        msg = ['{id}: {url}'.format(id=i, url=u) for i, u in zip(ids, urls)]
+        if len(msg):
+            await self.bot.say('\n'.join(msg))
+        else:
+            await self.bot.say('You have no favorites!')
 
 
 def setup(bot):
