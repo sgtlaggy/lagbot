@@ -49,3 +49,63 @@ Usage:
     !xkcd               : Get latest xkcd comic
     !xkcd #             : Get comic #
     !xkcd r/rand/random : Get a random comic
+
+---
+
+## Cat
+#### Get a random cat image.
+Available categories:
+
+* hats
+* space
+* funny
+* sunglasses
+* boxes
+* caturday
+* ties
+* dream
+* sinks
+* clothes
+
+Usage:
+
+    !cat [category]     : Get random image, optionally with a category.
+
+After the bot replies with an image, for the next 15 seconds, anyone can rate the image or favorite it.
+
+To rate the image, reply "X/10" where X is any number 1-10. Any number less than 1 will be changed to 1 and any number greater than 10 will be changed to 10.
+To favorite the image, reply "fave", "favorite", or "favourite".
+
+---
+
+### Ratings
+#### Get a list of images you've rated.
+Note this is in a code block to avoid image spam.
+
+Usage:
+
+    !cat ratings
+
+---
+
+### Rerate
+#### Re-rate an image you've previously rated.
+Usage:
+
+    !cat rerate <image_id> <new_score>
+
+    !cat rerate bC24 7
+    !cat rerate bC24 7/10
+
+---
+
+### Faves
+#### See all the images you've favorited.
+This can be called with `!cat faves`, `!cat favorites`, or `!cat favourites`.
+
+Usage:
+
+    !cat faves [to_remove]
+
+    !cat faves              : List favorited images.
+    !cat faves bC24         : Unfavorite image "bC24"

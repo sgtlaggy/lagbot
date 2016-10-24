@@ -201,7 +201,7 @@ class Misc:
         image_url = image_root.find('url').text
         image_id = image_root.find('id').text
         image_msg = await self.bot.say(
-            '{id}: {url}\nReply with "X/10" to rate this image or "fav" to favorite it.'.format(id=image_id, url=image_url))
+            '{id}: {url}\nReply with "X/10" to rate this image or "fave" to favorite it.'.format(id=image_id, url=image_url))
 
         actions = []
         voted = []
@@ -223,7 +223,7 @@ class Misc:
             else:
                 if sub_id in faved:
                     return False
-                fav_match = any(msg.content == f for f in ('fav', 'favorite', 'favourite'))
+                fav_match = any(msg.content == f for f in ('fave', 'favorite', 'favourite'))
                 if not fav_match:
                     return False
                 faved.append(sub_id)
@@ -280,7 +280,7 @@ class Misc:
         await self.fetch_cat(VOTE, sub_id=sub_id, image_id=image_id, score=score)
         await self.bot.say('\N{THUMBS UP SIGN} Changed your rating.')
 
-    @cat.command(pass_context=True, aliases=['favs', 'favourites'])
+    @cat.command(pass_context=True, aliases=['faves', 'favourites'])
     async def favorites(self, ctx, to_remove=None):
         """Get a list of your favorited images.
 
