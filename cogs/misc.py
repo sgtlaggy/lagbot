@@ -15,8 +15,8 @@ from .utils.utils import NotFound
 GET = 'http://thecatapi.com/api/images/get?api_key={api_key}&format=xml{category}&sub_id={sub_id}'
 VOTE = 'http://thecatapi.com/api/images/vote?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&score={score}'
 GET_VOTES = 'http://thecatapi.com/api/images/getvotes?api_key={api_key}&sub_id={sub_id}'
-FAV = 'http://thecatapi.com/api/images/favourite?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&action={act}'
-GET_FAVS = 'http://thecatapi.com/api/images/getfavourites?api_key={api_key}&sub_id={sub_id}'
+FAVE = 'http://thecatapi.com/api/images/favourite?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&action={act}'
+GET_FAVES = 'http://thecatapi.com/api/images/getfavourites?api_key={api_key}&sub_id={sub_id}'
 CATEGORIES = ('hats', 'space', 'funny', 'sunglasses', 'boxes',
               'caturday', 'ties', 'dream', 'sinks', 'clothes')
 
@@ -184,7 +184,7 @@ class Misc:
 
         Within 15 seconds of the image being posted anyone can:
             * Say "X/10" (1-10) to rate the image.
-            * Say "fav"/"favorite"/"favourite" to favorite the image.
+            * Say "fave"/"favorite"/"favourite" to favorite the image.
         """
         if category and category in CATEGORIES:
             category = '&category=' + category
@@ -227,7 +227,7 @@ class Misc:
                 if not fav_match:
                     return False
                 faved.append(sub_id)
-                actions.append(self.fetch_cat(FAV, sub_id=sub_id,
+                actions.append(self.fetch_cat(FAVE, sub_id=sub_id,
                                               image_id=image_id,
                                               act='add'))
             if len(actions) == 20:
@@ -288,7 +288,7 @@ class Misc:
         [to_remove] is an ID of the image you want to unfavorite.
         """
         sub_id = ctx.message.author.id
-        root = XMLTree.fromstring(await self.fetch_cat(GET_FAVS, sub_id=sub_id))
+        root = XMLTree.fromstring(await self.fetch_cat(GET_FAVES, sub_id=sub_id))
         ids = [i.text for i in root.iter('id')]
         urls = [u.text for u in root.iter('url')]
 
@@ -296,7 +296,7 @@ class Misc:
             if to_remove not in ids:
                 await self.bot.say("That's not in your favorites.")
                 return
-            await self.fetch_cat(FAV, sub_id=sub_id,
+            await self.fetch_cat(FAVE, sub_id=sub_id,
                                  image_id=to_remove,
                                  act='remove')
             await self.bot.say('\N{THUMBS UP SIGN} Removed favorite.')
