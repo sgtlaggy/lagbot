@@ -153,14 +153,6 @@ class Misc:
                   '\n**Image**: {0[img]}'.format(data, self.xkcd_date(data))
         await self.bot.say(message)
 
-    def score_predicate(ctx):
-        def predicate(message):
-            if message.channel == ctx.message.channel and \
-                    re.match(r'-?[0-9]*/10', message.content):
-                return True
-            return False
-        return predicate
-
     async def fetch_cat(self, url):
         with aiohttp.Timeout(10):
             async with self.bot.aiohsession.get(url) as resp:
@@ -198,20 +190,18 @@ class Misc:
         await self.bot.say('{image}\nReply with X/10 to rate this image.'.format(
             image=image_url))
 
-        start = datetime.datetime.utcnow()
         votes = []
         voted = []
-        for _ in range(20):  # allow 20 votes
-            if (datetime.datetime.utcnow() - start).seconds > 15:
-                break
-            reply = await self.bot.wait_for_message(timeout=1,
-                                                    author=ctx.message.author,
-                                                    check=self.score_predicate(ctx))
-            if reply is None or reply.author.id in voted:
-                continue
-            sub_id = reply.author.id
+
+        def vote_check(msg):
+            if msg.channel != ctx.message.channel or msg.author.id in voted:
+                return False
+            match = re.match(r'-?[0-9]*/10', msg.content)
+            if match is None:
+                return False
+            sub_id = msg.author.id
             voted.append(sub_id)
-            score = int(reply.content.split('/')[0])
+            score = int(msg.content.split('/')[0])
             if score > 10:
                 score = 10
             elif score < 1:
@@ -219,7 +209,8 @@ class Misc:
             votes.append(self.fetch_cat(VOTE.format(api_key=self.bot.config['cat_api'],
                                                     sub_id=sub_id, score=score,
                                                     image_id=image_id)))
-            await self.bot.say('\N{THUMBS UP SIGN} Rated cat {}/10'.format(score))
+
+        await self.bot.wait_for_message(timeout=15, check=vote_check)
         await asyncio.gather(*votes)
 
 
