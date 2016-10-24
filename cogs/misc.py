@@ -170,7 +170,7 @@ class Misc:
             boxes, caturday, ties, dream,
             sinks, clothes
 
-        Up to 20 users can rate images by sending a message within 15 seconds in the format "X/10"
+        Up to 10 users can rate the image by saying "X/10" within 15 seconds.
         """
         if category and category in CATEGORIES:
             category = '&category=' + category
@@ -209,6 +209,8 @@ class Misc:
             votes.append(self.fetch_cat(VOTE.format(api_key=self.bot.config['cat_api'],
                                                     sub_id=sub_id, score=score,
                                                     image_id=image_id)))
+            if len(votes) == 10:
+                return True
 
         await self.bot.wait_for_message(timeout=15, check=vote_check)
         await self.bot.edit_message(image_msg, image_url)
