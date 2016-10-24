@@ -165,7 +165,7 @@ class Misc:
     async def cat(self, ctx, category=''):
         """Get a random cat image.
 
-        [category] can be any of:
+        [category] can be one of:
             hats, space, funny, sunglasses,
             boxes, caturday, ties, dream,
             kittens, sinks, clothes
