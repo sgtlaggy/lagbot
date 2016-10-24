@@ -14,8 +14,8 @@ from .utils.utils import NotFound
 
 GET = 'http://thecatapi.com/api/images/get?api_key={api_key}&format=xml{category}&sub_id={sub_id}'
 VOTE = 'http://thecatapi.com/api/images/vote?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&score={score}'
-CATEGORIES = ('hats', 'space', 'funny', 'sunglasses', 'boxes', 'caturday',
-              'ties', 'dream', 'kittens', 'sinks', 'clothes')
+CATEGORIES = ('hats', 'space', 'funny', 'sunglasses', 'boxes',
+              'caturday', 'ties', 'dream', 'sinks', 'clothes')
 
 
 class MostRecent(Exception):
@@ -168,7 +168,7 @@ class Misc:
         [category] can be one of:
             hats, space, funny, sunglasses,
             boxes, caturday, ties, dream,
-            kittens, sinks, clothes
+            sinks, clothes
 
         Up to 20 users can rate images by sending a message within 15 seconds in the format "X/10"
         """
