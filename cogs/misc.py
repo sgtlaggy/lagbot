@@ -187,8 +187,8 @@ class Misc:
         image_root = XMLTree.fromstring(x)[0][0][0]  # [response][data][images][image]
         image_url = image_root[0].text
         image_id = image_root[1].text
-        await self.bot.say('{image}\nReply with X/10 to rate this image.'.format(
-            image=image_url))
+        image_msg = await self.bot.say(
+            '{image}\nReply with X/10 to rate this image.'.format(image=image_url))
 
         votes = []
         voted = []
@@ -211,6 +211,7 @@ class Misc:
                                                     image_id=image_id)))
 
         await self.bot.wait_for_message(timeout=15, check=vote_check)
+        await self.bot.edit_message(image_msg, image_url)
         await asyncio.gather(*votes)
 
 
