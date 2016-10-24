@@ -6,12 +6,14 @@ Create a `config.json` file in the same folder as `bot.py` with the following co
 
 ```
 {
+    "cat_api": "thecatapi api key",
     "userdocs": "https://github.com/mikevb1/discordbot/tree/master/userdocs",
     "source": "https://github.com/mikevb1/discordbot",
     "bot_token": "secret bot token"
 }
 ```
 
+* If you don't have or want a [TheCatAPI](http://thecatapi.com/) api key, remove the "cat\_api" line. This will prevent you from using the `!cat` command.
 * If your bot isn't open-source or you don't want anyone to easily find it, remove the "source" line.
 * If your bot doesn't have publicly available documentation, remove the "userdocs" line.
 

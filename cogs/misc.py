@@ -1,11 +1,20 @@
+from xml.etree import ElementTree as XMLTree
 from collections import OrderedDict
 import datetime
 import random
+import re
 
 from discord.ext import commands
 import aiohttp
 
+from .utils.checks import bot_config_attr
 from .utils.utils import NotFound
+
+
+GET = 'http://thecatapi.com/api/images/get?api_key={api_key}&format=xml{category}&sub_id={sub_id}'
+VOTE = 'http://thecatapi.com/api/images/vote?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&score={score}'
+CATEGORIES = ('hats', 'space', 'funny', 'sunglasses', 'boxes', 'caturday',
+              'ties', 'dream', 'kittens', 'sinks', 'clothes')
 
 
 class MostRecent(Exception):
@@ -142,6 +151,59 @@ class Misc:
                   '\n**Alt Text**: {0[alt]}' \
                   '\n**Image**: {0[img]}'.format(data, self.xkcd_date(data))
         await self.bot.say(message)
+
+    async def fetch_cat(self, url):
+        with aiohttp.Timeout(10):
+            async with self.bot.aiohsession.get(url) as resp:
+                if resp.status != 200:
+                    raise NotFound('Could not get cat.')
+                return await resp.text()
+
+    @commands.command(pass_context=True)
+    @bot_config_attr('cat_api')
+    async def cat(self, ctx, category=''):
+        """Get a random cat image.
+
+        [category] can be any of:
+            hats, space, funny, sunglasses,
+            boxes, caturday, ties, dream,
+            kittens, sinks, clothes
+
+        You can rate images by sending a message within 15 seconds in the format "X/10"
+        """
+        if category and category in CATEGORIES:
+            category = '&category=' + category
+        else:
+            category = ''
+        sub_id = ctx.message.author.id
+        try:
+            x = await self.fetch_cat(GET.format(api_key=self.bot.config['cat_api'],
+                                                category=category, sub_id=sub_id))
+        except NotFound as e:
+            await self.bot.say(str(e))
+        image_root = XMLTree.fromstring(x)[0][0][0]  # [response][data][images][image]
+        image_url = image_root[0].text
+        image_id = image_root[1].text
+        await self.bot.say('{image}\nReply with X/10 to rate this image.'.format(
+            image=image_url))
+        reply = await self.bot.wait_for_message(timeout=15,
+                                                author=ctx.message.author,
+                                                check=lambda m: re.match(r'[0-9]*/10', m.content))
+        if reply is None:
+            return
+
+        score = int(reply.content.split('/')[0])
+        if score > 10:
+            score = 10
+        elif score < 1:
+            score = 1
+        try:
+            await self.fetch_cat(VOTE.format(api_key=self.bot.config['cat_api'],
+                                             sub_id=sub_id, score=score,
+                                             image_id=image_id))
+        except NotFound:
+            await self.bot.say("\N{THUMBS DOWN SIGN} Sorry, couldn't rate cat.")
+        await self.bot.say('\N{THUMBS UP SIGN} Rated cat {}/10'.format(score))
 
 
 def setup(bot):

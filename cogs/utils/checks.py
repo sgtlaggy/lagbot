@@ -1,6 +1,10 @@
 from discord.ext import commands
 
 
+def bot_config_attr(attr):
+    return commands.check(lambda ctx: attr in ctx.bot.config)
+
+
 def is_owner_check(ctx):
     return ctx.message.author.id == ctx.bot.owner.id
 
