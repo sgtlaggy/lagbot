@@ -14,10 +14,19 @@ from .utils.utils import NotFound
 
 GET = 'http://thecatapi.com/api/images/get?api_key={api_key}&format=xml{category}&sub_id={sub_id}'
 VOTE = 'http://thecatapi.com/api/images/vote?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&score={score}'
+GET_VOTES = 'http://thecatapi.com/api/images/getvotes?api_key={api_key}&sub_id={sub_id}'
 FAV = 'http://thecatapi.com/api/images/favourite?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&action={act}'
 GET_FAVS = 'http://thecatapi.com/api/images/getfavourites?api_key={api_key}&sub_id={sub_id}'
 CATEGORIES = ('hats', 'space', 'funny', 'sunglasses', 'boxes',
               'caturday', 'ties', 'dream', 'sinks', 'clothes')
+
+
+def cat_score(score: int):
+    if score > 10:
+        return 10
+    elif score < 1:
+        return 1
+    return score
 
 
 class MostRecent(Exception):
@@ -156,7 +165,7 @@ class Misc:
         await self.bot.say(message)
 
     async def fetch_cat(self, url, **format_args):
-        url = url.format(api_key=self.bot.config['api_key'], **format_args)
+        url = url.format(api_key=self.bot.config['cat_api'], **format_args)
         with aiohttp.Timeout(10):
             async with self.bot.aiohsession.get(url) as resp:
                 if resp.status != 200:
@@ -192,7 +201,7 @@ class Misc:
         image_url = image_root.find('url').text
         image_id = image_root.find('id').text
         image_msg = await self.bot.say(
-            '{image}\nReply with "X/10" to rate this image or "fav" to favorite it.'.format(image=image_url))
+            '{id}: {url}\nReply with "X/10" to rate this image or "fav" to favorite it.'.format(id=image_id, url=image_url))
 
         actions = []
         voted = []
@@ -207,11 +216,7 @@ class Misc:
                 if sub_id in voted:
                     return False
                 voted.append(sub_id)
-                score = int(score_match.group(1))
-                if score > 10:
-                    score = 10
-                elif score < 1:
-                    score = 1
+                score = cat_score(int(score_match.group(1)))
                 actions.append(self.fetch_cat(VOTE, sub_id=sub_id,
                                               image_id=image_id,
                                               score=score))
@@ -229,15 +234,58 @@ class Misc:
                 return True
 
         await self.bot.wait_for_message(timeout=15, check=vote_check)
-        await self.bot.edit_message(image_msg, image_url)
+        await self.bot.edit_message(image_msg, '{id}: {url}'.format(id=image_id, url=image_url))
         await asyncio.gather(*actions)
+
+    @cat.command(pass_context=True)
+    async def ratings(self, ctx):
+        """Get a list of images you've rated.
+
+        To change your rating of an image, see the "rerate" command.
+        """
+        sub_id = ctx.message.author.id
+        root = XMLTree.fromstring(await self.fetch_cat(GET_VOTES, sub_id=sub_id))
+        ids = [i.text for i in root.iter('id')]
+        scores = [s.text for s in root.iter('score')]
+        urls = [u.text for u in root.iter('url')]
+        msg = ['```']
+        msg.extend(['{score}/10 {id}: {url}'.format(score=s, id=i, url=u)
+                    for s, i, u in zip(scores, ids, urls)])
+        msg.append('```')
+        if len(msg):
+            await self.bot.say('\n'.join(msg))
+        else:
+            await self.bot.say("You haven't rated any images.")
+
+    @cat.command(pass_context=True)
+    async def rerate(self, ctx, image_id, new_score):
+        """Re-rate an image you've rated before.
+
+        <new_score> can be either just a number or "X/10"
+        """
+        sub_id = ctx.message.author.id
+        root = XMLTree.fromstring(await self.fetch_cat(GET_VOTES, sub_id=sub_id))
+        ids = [i.text for i in root.iter('id')]
+        if image_id not in ids:
+            await self.bot.say('Invalid image_id.')
+            return
+        if new_score.isdigit():
+            score = cat_score(int(new_score))
+        else:
+            score_match = re.match(r'(-?[0-9]*)/10', new_score)
+            if score_match is None:
+                await self.bot.say('Invalid score format.')
+                return
+            score = cat_score(int(score_match.group(1)))
+        await self.fetch_cat(VOTE, sub_id=sub_id, image_id=image_id, score=score)
+        await self.bot.say('\N{THUMBS UP SIGN} Changed your rating.')
 
     @cat.command(pass_context=True, aliases=['favs', 'favourites'])
     async def favorites(self, ctx, to_remove=None):
         """Get a list of your favorited images.
 
         Images are posted in format "ID: url".
-        [to_remove] is the ID of the image you want to unfavorite.
+        [to_remove] is an ID of the image you want to unfavorite.
         """
         sub_id = ctx.message.author.id
         root = XMLTree.fromstring(await self.fetch_cat(GET_FAVS, sub_id=sub_id))
