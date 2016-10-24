@@ -1,6 +1,7 @@
 from xml.etree import ElementTree as XMLTree
 from collections import OrderedDict
 import datetime
+import asyncio
 import random
 import re
 
@@ -152,6 +153,14 @@ class Misc:
                   '\n**Image**: {0[img]}'.format(data, self.xkcd_date(data))
         await self.bot.say(message)
 
+    def score_predicate(ctx):
+        def predicate(message):
+            if message.channel == ctx.message.channel and \
+                    re.match(r'-?[0-9]*/10', message.content):
+                return True
+            return False
+        return predicate
+
     async def fetch_cat(self, url):
         with aiohttp.Timeout(10):
             async with self.bot.aiohsession.get(url) as resp:
@@ -169,7 +178,7 @@ class Misc:
             boxes, caturday, ties, dream,
             kittens, sinks, clothes
 
-        You can rate images by sending a message within 15 seconds in the format "X/10"
+        Up to 20 users can rate images by sending a message within 15 seconds in the format "X/10"
         """
         if category and category in CATEGORIES:
             category = '&category=' + category
@@ -188,25 +197,30 @@ class Misc:
         image_id = image_root[1].text
         await self.bot.say('{image}\nReply with X/10 to rate this image.'.format(
             image=image_url))
-        reply = await self.bot.wait_for_message(timeout=15,
-                                                author=ctx.message.author,
-                                                check=lambda m: re.match(r'[0-9]*/10', m.content))
-        if reply is None:
-            return
 
-        score = int(reply.content.split('/')[0])
-        if score > 10:
-            score = 10
-        elif score < 1:
-            score = 1
-        try:
-            await self.fetch_cat(VOTE.format(api_key=self.bot.config['cat_api'],
-                                             sub_id=sub_id, score=score,
-                                             image_id=image_id))
-        except NotFound:
-            await self.bot.say("\N{THUMBS DOWN SIGN} Sorry, couldn't rate cat.")
-            return
-        await self.bot.say('\N{THUMBS UP SIGN} Rated cat {}/10'.format(score))
+        start = datetime.datetime.utcnow()
+        votes = []
+        voted = []
+        for _ in range(20):  # allow 20 votes
+            if (datetime.datetime.utcnow() - start).seconds > 15:
+                break
+            reply = await self.bot.wait_for_message(timeout=1,
+                                                    author=ctx.message.author,
+                                                    check=self.score_predicate(ctx))
+            if reply is None or reply.author.id in voted:
+                continue
+            sub_id = reply.author.id
+            voted.append(sub_id)
+            score = int(reply.content.split('/')[0])
+            if score > 10:
+                score = 10
+            elif score < 1:
+                score = 1
+            votes.append(self.fetch_cat(VOTE.format(api_key=self.bot.config['cat_api'],
+                                                    sub_id=sub_id, score=score,
+                                                    image_id=image_id)))
+            await self.bot.say('\N{THUMBS UP SIGN} Rated cat {}/10'.format(score))
+        await asyncio.gather(*votes)
 
 
 def setup(bot):
