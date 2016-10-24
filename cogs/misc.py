@@ -155,7 +155,8 @@ class Misc:
                   '\n**Image**: {0[img]}'.format(data, self.xkcd_date(data))
         await self.bot.say(message)
 
-    async def fetch_cat(self, url):
+    async def fetch_cat(self, url, **format_args):
+        url = url.format(api_key=self.bot.config['api_key'], **format_args)
         with aiohttp.Timeout(10):
             async with self.bot.aiohsession.get(url) as resp:
                 if resp.status != 200:
@@ -182,8 +183,7 @@ class Misc:
             category = ''
         sub_id = ctx.message.author.id
         try:
-            x = await self.fetch_cat(GET.format(api_key=self.bot.config['cat_api'],
-                                                category=category, sub_id=sub_id))
+            x = await self.fetch_cat(GET, category=category, sub_id=sub_id)
         except NotFound as e:
             await self.bot.say(str(e))
             return
@@ -212,9 +212,9 @@ class Misc:
                     score = 10
                 elif score < 1:
                     score = 1
-                actions.append(self.fetch_cat(VOTE.format(api_key=self.bot.config['cat_api'],
-                                                          sub_id=sub_id, score=score,
-                                                          image_id=image_id)))
+                actions.append(self.fetch_cat(VOTE, sub_id=sub_id,
+                                              image_id=image_id,
+                                              score=score))
             else:
                 if sub_id in faved:
                     return False
@@ -222,9 +222,9 @@ class Misc:
                 if not fav_match:
                     return False
                 faved.append(sub_id)
-                actions.append(self.fetch_cat(FAV.format(api_key=self.bot.config['cat_api'],
-                                                         sub_id=sub_id, image_id=image_id,
-                                                         act='add')))
+                actions.append(self.fetch_cat(FAV, sub_id=sub_id,
+                                              image_id=image_id,
+                                              act='add'))
             if len(actions) == 20:
                 return True
 
@@ -240,8 +240,7 @@ class Misc:
         [to_remove] is the ID of the image you want to unfavorite.
         """
         sub_id = ctx.message.author.id
-        root = XMLTree.fromstring(await self.fetch_cat(GET_FAVS.format(api_key=self.bot.config['cat_api'],
-                                                                       sub_id=sub_id)))
+        root = XMLTree.fromstring(await self.fetch_cat(GET_FAVS, sub_id=sub_id))
         ids = [i.text for i in root.iter('id')]
         urls = [u.text for u in root.iter('url')]
 
@@ -249,9 +248,9 @@ class Misc:
             if to_remove not in ids:
                 await self.bot.say("That's not in your favorites.")
                 return
-            await self.fetch_cat(FAV.format(api_key=self.bot.config['cat_api'],
-                                            sub_id=sub_id, image_id=to_remove,
-                                            act='remove'))
+            await self.fetch_cat(FAV, sub_id=sub_id,
+                                 image_id=to_remove,
+                                 act='remove')
             await self.bot.say('\N{THUMBS UP SIGN} Removed favorite.')
             return
 
