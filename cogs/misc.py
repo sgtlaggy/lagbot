@@ -181,6 +181,8 @@ class Misc:
                                                 category=category, sub_id=sub_id))
         except NotFound as e:
             await self.bot.say(str(e))
+            return
+
         image_root = XMLTree.fromstring(x)[0][0][0]  # [response][data][images][image]
         image_url = image_root[0].text
         image_id = image_root[1].text
@@ -203,6 +205,7 @@ class Misc:
                                              image_id=image_id))
         except NotFound:
             await self.bot.say("\N{THUMBS DOWN SIGN} Sorry, couldn't rate cat.")
+            return
         await self.bot.say('\N{THUMBS UP SIGN} Rated cat {}/10'.format(score))
 
 
