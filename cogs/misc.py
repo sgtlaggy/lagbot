@@ -197,11 +197,11 @@ class Misc:
             await self.bot.say(str(e))
             return
 
-        image_root = XMLTree.fromstring(x)
+        image_root = XMLTree.fromstring(x).find('data').find('images').find('image')
         image_url = image_root.find('url').text
         image_id = image_root.find('id').text
         image_msg = await self.bot.say(
-            '{id}: {url}\nReply with "X/10" to rate this image or "fave" to favorite it.'.format(id=image_id, url=image_url))
+            '`{id}`: {url}\nReply with "X/10" to rate this image or "fave" to favorite it.'.format(id=image_id, url=image_url))
 
         actions = []
         voted = []
@@ -302,7 +302,7 @@ class Misc:
             await self.bot.say('\N{THUMBS UP SIGN} Removed favorite.')
             return
 
-        msg = ['{id}: {url}'.format(id=i, url=u) for i, u in zip(ids, urls)]
+        msg = ['`{id}`: {url}'.format(id=i, url=u) for i, u in zip(ids, urls)]
         if len(msg):
             await self.bot.say('\n'.join(msg))
         else:
