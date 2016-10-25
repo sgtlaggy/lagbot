@@ -244,8 +244,8 @@ class Misc:
         await self.bot.edit_message(image_msg, base_msg)
         await asyncio.gather(*actions)
 
-    @cat.command(aliases=['facts'])
-    async def fact(self, count: int = 1):
+    @cat.command(name='facts', aliases=['fact'])
+    async def cat_facts(self, count: int = 1):
         """Get cat facts.
 
         [count] must be between 1 and 20 (inclusive).
