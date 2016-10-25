@@ -212,8 +212,8 @@ class Misc:
                                                 fact='\n' + '\n'.join(facts) if facts else '')
         image_msg = await self.bot.say('\n'.join([base_msg,
                                                   'For the next 30 seconds you can say:',
-                                                  '-   "X/10" to rate this image',
-                                                  '-   "fave" to favorite this image',
+                                                  '- "X/10" to rate this image',
+                                                  '- "fave" to favorite this image',
                                                   '- "report" to report this image']))
 
         actions = []
