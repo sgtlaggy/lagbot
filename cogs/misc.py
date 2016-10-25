@@ -15,6 +15,7 @@ from .utils.utils import NotFound, between
 FACTS = 'http://catfacts-api.appspot.com/api/facts?number={count}'
 
 GET = 'http://thecatapi.com/api/images/get?api_key={api_key}&format=xml{category}&sub_id={sub_id}'
+REPORT = 'http://thecatapi.com/api/images/report?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&reason={reason}'
 VOTE = 'http://thecatapi.com/api/images/vote?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&score={score}'
 GET_VOTES = 'http://thecatapi.com/api/images/getvotes?api_key={api_key}&sub_id={sub_id}'
 FAVE = 'http://thecatapi.com/api/images/favourite?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&action={act}'
@@ -187,6 +188,7 @@ class Misc:
         Within 30 seconds of the image being posted anyone can:
             * Say "X/10" (1-10) to rate the image.
             * Say "fave"/"favorite"/"favourite" to favorite the image.
+            * Say "report" to report the image.
         """
         if category and category in CATEGORIES:
             category = '&category=' + category
@@ -208,17 +210,24 @@ class Misc:
         image_id = image_root.find('id').text
         base_msg = '`{id}`: {url}{fact}'.format(id=image_id, url=image_url,
                                                 fact='\n' + '\n'.join(facts) if facts else '')
-        image_msg = await self.bot.say(base_msg + '\nReply with "X/10" to rate this image or "fave" to favorite it.')
+        image_msg = await self.bot.say('\n'.join([base_msg,
+                                                  'For the next 30 seconds you can say:',
+                                                  '-   "X/10" to rate this image',
+                                                  '-   "fave" to favorite this image',
+                                                  '- "report" to report this image']))
 
         actions = []
         voted = []
         faved = []
+        reported = []
 
         def vote_check(msg):
             if msg.channel != ctx.message.channel:
                 return False
             sub_id = msg.author.id
             score_match = re.match(r'(-?[0-9]*)/10', msg.content)
+            fave_match = any(msg.content == f for f in ('fave', 'favorite', 'favourite'))
+            report_match = msg.content.startswith('report')
             if score_match is not None:
                 if sub_id in voted:
                     return False
@@ -227,16 +236,22 @@ class Misc:
                 actions.append(self.fetch_cat(VOTE, sub_id=sub_id,
                                               image_id=image_id,
                                               score=score))
-            else:
+            elif fave_match:
                 if sub_id in faved:
-                    return False
-                fav_match = any(msg.content == f for f in ('fave', 'favorite', 'favourite'))
-                if not fav_match:
                     return False
                 faved.append(sub_id)
                 actions.append(self.fetch_cat(FAVE, sub_id=sub_id,
                                               image_id=image_id,
                                               act='add'))
+            elif report_match:
+                if sub_id in reported:
+                    return False
+                reported.append(sub_id)
+                report = msg.content.split()
+                reason = ' '.join(report[1:]) if len(report) > 1 else 'no cats'
+                actions.append(self.fetch_cat(REPORT, sub_id=sub_id,
+                                              image_id=image_id,
+                                              reason=reason))
             if len(actions) == 20:
                 return True
 
