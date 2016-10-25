@@ -259,8 +259,10 @@ class Misc:
             msg = commands.Paginator(prefix='', suffix='')
             for ind, fact in enumerate(facts):
                 msg.add_line('{}. {}'.format(ind + 1, fact))
-            facts = msg.pages
-        await self.bot.say('\n'.join(facts))
+            for page in msg.pages:
+                await self.bot.say(page)
+        else:
+            await self.bot.say(facts[0])
 
     @cat.command(pass_context=True)
     async def ratings(self, ctx):
