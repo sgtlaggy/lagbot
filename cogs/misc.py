@@ -234,7 +234,7 @@ class Misc:
                 return True
 
         await self.bot.wait_for_message(timeout=15, check=vote_check)
-        await self.bot.edit_message(image_msg, '{id}: {url}'.format(id=image_id, url=image_url))
+        await self.bot.edit_message(image_msg, '`{id}`: {url}'.format(id=image_id, url=image_url))
         await asyncio.gather(*actions)
 
     @cat.command(pass_context=True)
