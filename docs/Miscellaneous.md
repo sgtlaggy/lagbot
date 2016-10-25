@@ -71,7 +71,7 @@ Usage:
 
     !cat [category]     : Get random image, optionally with a category.
 
-After the bot replies with an image, for the next 15 seconds, anyone can rate the image or favorite it.
+After the bot replies with an image, for the next 30 seconds, anyone can rate the image or favorite it.
 
 To rate the image, reply "X/10" where X is any number 1-10. Any number less than 1 will be changed to 1 and any number greater than 10 will be changed to 10.
 To favorite the image, reply "fave", "favorite", or "favourite".

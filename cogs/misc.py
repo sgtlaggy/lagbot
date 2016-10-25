@@ -184,7 +184,7 @@ class Misc:
             boxes, caturday, ties, dream,
             sinks, clothes
 
-        Within 15 seconds of the image being posted anyone can:
+        Within 30 seconds of the image being posted anyone can:
             * Say "X/10" (1-10) to rate the image.
             * Say "fave"/"favorite"/"favourite" to favorite the image.
         """
@@ -240,7 +240,7 @@ class Misc:
             if len(actions) == 20:
                 return True
 
-        await self.bot.wait_for_message(timeout=15, check=vote_check)
+        await self.bot.wait_for_message(timeout=30, check=vote_check)
         await self.bot.edit_message(image_msg, base_msg)
         await asyncio.gather(*actions)
 
@@ -256,7 +256,10 @@ class Misc:
         except NotFound as e:
             facts = [str(e)]
         if len(facts) > 1:
-            facts = ['{}. {}'.format(ind + 1, fact) for ind, fact in enumerate(facts)]
+            msg = commands.Paginator(prefix='', suffix='')
+            for ind, fact in enumerate(facts):
+                msg.add_line('{}. {}'.format(ind + 1, fact))
+            facts = msg.pages
         await self.bot.say('\n'.join(facts))
 
     @cat.command(pass_context=True)
