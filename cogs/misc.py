@@ -9,8 +9,10 @@ from discord.ext import commands
 import aiohttp
 
 from .utils.checks import bot_config_attr
-from .utils.utils import NotFound
+from .utils.utils import NotFound, between
 
+
+FACTS = 'http://catfacts-api.appspot.com/api/facts?number={count}'
 
 GET = 'http://thecatapi.com/api/images/get?api_key={api_key}&format=xml{category}&sub_id={sub_id}'
 VOTE = 'http://thecatapi.com/api/images/vote?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&score={score}'
@@ -19,14 +21,6 @@ FAVE = 'http://thecatapi.com/api/images/favourite?api_key={api_key}&sub_id={sub_
 GET_FAVES = 'http://thecatapi.com/api/images/getfavourites?api_key={api_key}&sub_id={sub_id}'
 CATEGORIES = ('hats', 'space', 'funny', 'sunglasses', 'boxes',
               'caturday', 'ties', 'dream', 'sinks', 'clothes')
-
-
-def cat_score(score: int):
-    if score > 10:
-        return 10
-    elif score < 1:
-        return 1
-    return score
 
 
 class MostRecent(Exception):
@@ -164,6 +158,14 @@ class Misc:
                   '\n**Image**: {0[img]}'.format(data, self.xkcd_date(data))
         await self.bot.say(message)
 
+    async def fetch_facts(self, count):
+        with aiohttp.Timeout(10):
+            async with self.bot.aiohsession.get(FACTS.format(count=count)) as resp:
+                j = await resp.json()
+                if resp.status != 200 or j['success'] != 'true':
+                    raise NotFound('No cat fact available.')
+                return j['facts']
+
     async def fetch_cat(self, url, **format_args):
         url = url.format(api_key=self.bot.config['cat_api'], **format_args)
         with aiohttp.Timeout(10):
@@ -196,12 +198,17 @@ class Misc:
         except NotFound as e:
             await self.bot.say(str(e))
             return
+        try:
+            facts = await self.fetch_facts(1)
+        except NotFound as e:
+            facts = []
 
         image_root = XMLTree.fromstring(x).find('data').find('images').find('image')
         image_url = image_root.find('url').text
         image_id = image_root.find('id').text
-        image_msg = await self.bot.say(
-            '`{id}`: {url}\nReply with "X/10" to rate this image or "fave" to favorite it.'.format(id=image_id, url=image_url))
+        base_msg = '`{id}`: {url}{fact}'.format(id=image_id, url=image_url,
+                                                fact='\n' + '\n'.join(facts) if facts else '')
+        image_msg = await self.bot.say(base_msg + '\nReply with "X/10" to rate this image or "fave" to favorite it.')
 
         actions = []
         voted = []
@@ -216,7 +223,7 @@ class Misc:
                 if sub_id in voted:
                     return False
                 voted.append(sub_id)
-                score = cat_score(int(score_match.group(1)))
+                score = between(int(score_match.group(1)), 1, 10)
                 actions.append(self.fetch_cat(VOTE, sub_id=sub_id,
                                               image_id=image_id,
                                               score=score))
@@ -234,8 +241,23 @@ class Misc:
                 return True
 
         await self.bot.wait_for_message(timeout=15, check=vote_check)
-        await self.bot.edit_message(image_msg, '`{id}`: {url}'.format(id=image_id, url=image_url))
+        await self.bot.edit_message(image_msg, base_msg)
         await asyncio.gather(*actions)
+
+    @cat.command(aliases=['facts'])
+    async def fact(self, count: int = 1):
+        """Get cat facts.
+
+        [count] must be between 1 and 20 (inclusive).
+        """
+        count = between(count, 1, 20)
+        try:
+            facts = await self.fetch_facts(count)
+        except NotFound as e:
+            facts = [str(e)]
+        if len(facts) > 1:
+            facts = ['{}. {}'.format(ind + 1, fact) for ind, fact in enumerate(facts)]
+        await self.bot.say('\n'.join(facts))
 
     @cat.command(pass_context=True)
     async def ratings(self, ctx):
@@ -270,13 +292,13 @@ class Misc:
             await self.bot.say('Invalid image_id.')
             return
         if new_score.isdigit():
-            score = cat_score(int(new_score))
+            score = between(int(new_score), 1, 10)
         else:
             score_match = re.match(r'(-?[0-9]*)/10', new_score)
             if score_match is None:
                 await self.bot.say('Invalid score format.')
                 return
-            score = cat_score(int(score_match.group(1)))
+            score = between(int(score_match.group(1)), 1, 10)
         await self.fetch_cat(VOTE, sub_id=sub_id, image_id=image_id, score=score)
         await self.bot.say('\N{THUMBS UP SIGN} Changed your rating.')
 

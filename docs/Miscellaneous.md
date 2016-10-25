@@ -53,7 +53,7 @@ Usage:
 ---
 
 ## Cat
-#### Get a random cat image.
+#### Get a random cat image and fact.
 Available categories:
 
 * hats
@@ -75,6 +75,21 @@ After the bot replies with an image, for the next 15 seconds, anyone can rate th
 
 To rate the image, reply "X/10" where X is any number 1-10. Any number less than 1 will be changed to 1 and any number greater than 10 will be changed to 10.
 To favorite the image, reply "fave", "favorite", or "favourite".
+
+---
+
+### Facts
+#### Get cat facts.
+This can be called with either `!cat fact` or `!cat facts`
+
+[count] can be any number from 1 to 20. Default: 1
+
+Usage:
+
+    !cat facts [count]
+
+    !cat facts          : Get 1 cat fact.
+    !cat facts 5        : Get 5 cat facts.
 
 ---
 
