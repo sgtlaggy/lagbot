@@ -187,12 +187,16 @@ class Overwatch:
         """
         try:
             stats, heroes, tag, mode = await self.get_all(ctx, tag, mode)
+        except NotFound:
+            tag = api_to_btag(tag)
+            await self.bot.say('{} does not exist.'.format(tag))
+            return
         except NotInDB:
             await self.bot.say("Not in the db.")
             return
         except NotPlayed:
             tag = api_to_btag(tag)
-            await self.bot.say('{} does not exist or has not played Overwatch.'.format(tag))
+            await self.bot.say('{} has not played Overwatch.'.format(tag))
             return
         except InvalidBTag:
             await self.bot.say('Invalid Battletag')
@@ -240,12 +244,16 @@ class Overwatch:
         """
         try:
             _, heroes, tag, mode = await self.get_all(ctx, tag, mode, HEROES)
+        except NotFound:
+            tag = api_to_btag(tag)
+            await self.bot.say('{} does not exist.'.format(tag))
+            return
         except NotInDB:
             await self.bot.say("Not in the db.")
             return
         except NotPlayed:
             tag = api_to_btag(tag)
-            await self.bot.say('{} does not exist or has not played Overwatch.'.format(tag))
+            await self.bot.say('{} has not played Overwatch.'.format(tag))
             return
         except InvalidBTag:
             await self.bot.say('Invalid Battletag')
