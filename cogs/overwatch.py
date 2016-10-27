@@ -186,6 +186,7 @@ class Overwatch:
             * To get stats by Discord mention, the person must be in the DB.
         """
         try:
+            await self.bot.type()
             stats, heroes, tag, mode = await self.get_all(ctx, tag, mode)
         except NotFound:
             tag = api_to_btag(tag)
@@ -243,6 +244,7 @@ class Overwatch:
              * Defaults to competitive stats, falls back to quickplay.
         """
         try:
+            await self.bot.type()
             _, heroes, tag, mode = await self.get_all(ctx, tag, mode, HEROES)
         except NotFound:
             tag = api_to_btag(tag)

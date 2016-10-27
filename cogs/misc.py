@@ -126,6 +126,7 @@ class Misc:
         [comic] can be the number of a comic or "r"/"rand"/"random"
         """
         data = None
+        await self.bot.type()
         try:
             if comic in ('r', 'rand', 'random') or not comic:
                 data = await self.fetch_xkcd()
@@ -196,6 +197,7 @@ class Misc:
             category = ''
         sub_id = ctx.message.author.id
         try:
+            await self.bot.type()
             x = await self.fetch_cat(GET, category=category, sub_id=sub_id)
         except NotFound as e:
             await self.bot.say(str(e))
@@ -286,6 +288,7 @@ class Misc:
         To change your rating of an image, see the "rerate" command.
         """
         sub_id = ctx.message.author.id
+        await self.bot.type()
         root = XMLTree.fromstring(await self.fetch_cat(GET_VOTES, sub_id=sub_id))
         ids = [i.text for i in root.iter('id')]
         scores = [s.text for s in root.iter('score')]
@@ -306,6 +309,7 @@ class Misc:
         <new_score> can be either just a number or "X/10"
         """
         sub_id = ctx.message.author.id
+        await self.bot.type()
         root = XMLTree.fromstring(await self.fetch_cat(GET_VOTES, sub_id=sub_id))
         ids = [i.text for i in root.iter('id')]
         if image_id not in ids:
@@ -330,6 +334,7 @@ class Misc:
         [to_remove] is an ID of the image you want to unfavorite.
         """
         sub_id = ctx.message.author.id
+        await self.bot.type()
         root = XMLTree.fromstring(await self.fetch_cat(GET_FAVES, sub_id=sub_id))
         ids = [i.text for i in root.iter('id')]
         urls = [u.text for u in root.iter('url')]
