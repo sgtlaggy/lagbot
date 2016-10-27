@@ -15,9 +15,13 @@ class LagBot(commands.Bot):
         super().__init__(*args, **kwargs)
         if self._debug:
             self.command_prefix = '%!'
+        useragent = 'Discord Bot'
+        source = self.config.get('source')
+        if source is not None:
+            useragent += ' ' + source
         self.aiohsession = aiohttp.ClientSession(
             loop=self.loop,
-            headers={'User-Agent': "sgtlaggy Discord Bot/6.9"})
+            headers={'User-Agent': useragent})
         self.db = self.loop.run_until_complete(
             asyncpg.connect(
                 database='lagbot',
