@@ -263,16 +263,28 @@ class Misc:
         await asyncio.gather(*actions)
 
     @cat.command(name='facts', aliases=['fact'])
-    async def cat_facts(self, count: integer = 1):
+    async def cat_facts(self, count: float = 1.0):
         """Get cat facts.
 
         [count] must be between 1 and 20 (inclusive).
         """
-        count = between(count, 1, 20)
+        count = between(count, 0, 20)
+        partial = count - int(count)
+        count = int(count)
+        if partial:
+            count += 1
+        elif count == 0:
+            return
+
         try:
             facts = await self.fetch_facts(count)
         except NotFound as e:
             facts = [str(e)]
+        else:
+            if partial:
+                end_ind = int(len(facts[-1]) * partial)
+                facts[-1] = facts[-1][:end_ind]
+
         if len(facts) > 1:
             msg = commands.Paginator(prefix='', suffix='')
             for ind, fact in enumerate(facts):
