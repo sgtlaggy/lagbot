@@ -268,7 +268,10 @@ class Misc:
 
         [count] must be between 1 and 20 (inclusive).
         """
-        count = between(count, 0, 20)
+        if count < 0:
+            count = 1
+        else:
+            count = between(count, 0, 20)
         partial = count - int(count)
         count = int(count)
         if partial:
@@ -283,7 +286,7 @@ class Misc:
         else:
             if partial:
                 end_ind = int(len(facts[-1]) * partial)
-                facts[-1] = facts[-1][:end_ind]
+                facts[-1] = facts[-1][:end_ind] or facts[-1][0]
 
         if len(facts) > 1:
             msg = commands.Paginator(prefix='', suffix='')
