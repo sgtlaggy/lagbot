@@ -18,10 +18,20 @@ def between(num, num_min, num_max, inclusive=True):
             return num_min + 1
     return num
 
+
 def integer(arg):
-    if arg.isdigit():
-        return int(arg)
-    elif '.' in arg and all(n.isdigit() for n in arg.split('.')):
-        return int(arg.split('.')[0])
+    try:
+        int(arg)
+    except ValueError:
+        pass
     else:
-        raise BadArgument('Converting to "int" failed.')
+        return int(arg)
+
+    try:
+        float(arg)
+    except ValueError:
+        pass
+    else:
+        return int(round(float(arg)))
+
+    raise BadArgument('Converting to "int" failed.')
