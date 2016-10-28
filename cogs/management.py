@@ -1,7 +1,7 @@
 from discord.ext import commands
 import discord
 
-from .utils.utils import plural
+from .utils.utils import plural, integer
 from .utils import checks
 
 
@@ -76,7 +76,7 @@ class Management:
 
     @commands.command(pass_context=True, no_pm=True)
     @commands.bot_has_permissions(manage_messages=True)
-    async def purge(self, ctx, count: int, *, member: discord.Member=None):
+    async def purge(self, ctx, count: integer, *, member: discord.Member=None):
         """Purge messages from the current channel.
 
         You must have proper permissions to remove others' messages.

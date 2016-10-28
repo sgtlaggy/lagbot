@@ -7,7 +7,6 @@ import aiohttp
 from .utils.errors import NotFound, NotInDB
 from .utils import utils
 
-# self-hosting OWAPI until Fuyu updates
 endpoint = "http://127.0.0.1:4444/api/v3/u/{btag}/"
 BLOB = endpoint + "blob"
 STATS = endpoint + "stats"

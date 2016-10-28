@@ -8,9 +8,9 @@ import re
 from discord.ext import commands
 import aiohttp
 
+from .utils.utils import between, integer
 from .utils.checks import bot_config_attr
 from .utils.errors import NotFound
-from .utils.utils import between
 
 
 FACTS = 'http://catfacts-api.appspot.com/api/facts?number={count}'
@@ -63,7 +63,7 @@ class Misc:
         await self.bot.say(message)
 
     @commands.command()
-    async def flip(self, coins: int=1):
+    async def flip(self, coins: integer = 1):
         """Flip any number of coins."""
         flips = OrderedDict([('Heads', 0),
                              ('Tails', 0),
@@ -263,7 +263,7 @@ class Misc:
         await asyncio.gather(*actions)
 
     @cat.command(name='facts', aliases=['fact'])
-    async def cat_facts(self, count: int = 1):
+    async def cat_facts(self, count: integer = 1):
         """Get cat facts.
 
         [count] must be between 1 and 20 (inclusive).
