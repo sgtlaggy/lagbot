@@ -4,7 +4,8 @@ from discord.ext import commands
 import discord
 import aiohttp
 
-from .utils import checks, utils
+from .utils.utils import plural
+from .utils import checks
 
 
 def fancy_time(orig_time):
@@ -144,10 +145,10 @@ class Meta:
             fmt = '{s} second{sp}'
 
         up = fmt.format(
-            d=days, dp=utils.plural(days),
-            h=hours, hp=utils.plural(hours),
-            m=minutes, mp=utils.plural(minutes),
-            s=seconds, sp=utils.plural(seconds))
+            d=days, dp=plural(days),
+            h=hours, hp=plural(hours),
+            m=minutes, mp=plural(minutes),
+            s=seconds, sp=plural(seconds))
         await self.bot.say('```ocaml\nUptime: {}\n```'.format(up))
 
     @commands.command(pass_context=True, aliases=['ping'])

@@ -2,7 +2,6 @@ import json
 import sys
 import os
 
-
 from lagbot import LagBot
 
 # Files and Paths

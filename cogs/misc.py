@@ -9,7 +9,8 @@ from discord.ext import commands
 import aiohttp
 
 from .utils.checks import bot_config_attr
-from .utils.utils import NotFound, between
+from .utils.errors import NotFound
+from .utils.utils import between
 
 
 FACTS = 'http://catfacts-api.appspot.com/api/facts?number={count}'

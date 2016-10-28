@@ -4,7 +4,7 @@ import re
 from discord.ext import commands
 import aiohttp
 
-from .utils.utils import NotFound, NotInDB
+from .utils.errors import NotFound, NotInDB
 from .utils import utils
 
 # self-hosting OWAPI until Fuyu updates
