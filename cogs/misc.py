@@ -263,11 +263,16 @@ class Misc:
         await asyncio.gather(*actions)
 
     @cat.command(name='facts', aliases=['fact'])
-    async def cat_facts(self, count: float = 1.0):
+    async def cat_facts(self, count=1):
         """Get cat facts.
 
-        [count] must be between 1 and 20 (inclusive).
+        0 < [count] <= 20
         """
+        try:
+            count = float(count)
+        except ValueError:
+            await self.bot.say('{} is not a number.'.format(count))
+
         if count < 0:
             count = 1
         else:
