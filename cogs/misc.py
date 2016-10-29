@@ -263,16 +263,11 @@ class Misc:
         await asyncio.gather(*actions)
 
     @cat.command(name='facts', aliases=['fact'])
-    async def cat_facts(self, count=1):
+    async def cat_facts(self, count: float = 1):
         """Get cat facts.
 
         0 < [count] <= 20
         """
-        try:
-            count = float(count)
-        except ValueError:
-            await self.bot.say('{} is not a number.'.format(count))
-
         if count < 0:
             count = 1
         else:
@@ -301,6 +296,14 @@ class Misc:
                 await self.bot.say(page)
         else:
             await self.bot.say(facts[0])
+
+    @cat_facts.error
+    async def cat_facts_error(self, exc, ctx):
+        if isinstance(exc, commands.BadArgument):
+            pass
+        else:
+            ctx.command = ctx.command.name
+            await self.bot.on_command_error(exc, ctx)
 
     @cat.command(pass_context=True)
     async def ratings(self, ctx):
