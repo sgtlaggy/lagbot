@@ -1,3 +1,4 @@
+import asyncio
 import string
 import re
 
@@ -101,16 +102,22 @@ class Overwatch:
     def __init__(self, bot):
         self.bot = bot
 
-    async def fetch_stats(self, tag, end=BLOB):
-        with aiohttp.Timeout(15):
-            async with self.bot.aiohsession.get(end.format(btag=tag)) as resp:
-                status, data = resp.status, await resp.json()
-        if status == 404:
-            raise NotFound
-        region = ow_region(data)
-        if region is None:
-            raise NotPlayed
-        return data[region]
+    async def fetch_stats(self, tag, end=BLOB, attempt=1):
+        try:
+            with aiohttp.Timeout(15):
+                async with self.bot.aiohsession.get(end.format(btag=tag)) as resp:
+                    status, data = resp.status, await resp.json()
+            if status == 404:
+                raise NotFound
+            region = ow_region(data)
+            if region is None:
+                raise NotPlayed
+            return data[region]
+        except aiohttp.ClientResponseError:
+            if attempt == 3:
+                raise NotFound
+            await asyncio.sleep(1)
+            return await self.fetch_stats(tag, end, attempt + 1)
 
     async def get_tag(self, ctx, tag):
         member_id = ctx.message.author.id
