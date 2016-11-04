@@ -13,6 +13,13 @@ from .utils.checks import bot_config_attr
 from .utils.errors import NotFound
 
 
+class CatAction:
+    def __init__(self, action, uid, score=None):
+        self.action = action
+        self.id = uid
+        self.score = score
+
+
 FACTS = 'http://catfacts-api.appspot.com/api/facts?number={count}'
 
 GET = 'http://thecatapi.com/api/images/get?api_key={api_key}&format=xml{category}&sub_id={sub_id}'
@@ -23,6 +30,19 @@ FAVE = 'http://thecatapi.com/api/images/favourite?api_key={api_key}&sub_id={sub_
 GET_FAVES = 'http://thecatapi.com/api/images/getfavourites?api_key={api_key}&sub_id={sub_id}'
 CATEGORIES = ('hats', 'space', 'funny', 'sunglasses', 'boxes',
               'caturday', 'ties', 'dream', 'sinks', 'clothes')
+
+REACTIONS = ['\N{PILE OF POO}',
+             '\N{DIGIT ONE}\N{COMBINING ENCLOSING KEYCAP}',
+             '\N{DIGIT TWO}\N{COMBINING ENCLOSING KEYCAP}',
+             '\N{DIGIT THREE}\N{COMBINING ENCLOSING KEYCAP}',
+             '\N{DIGIT FOUR}\N{COMBINING ENCLOSING KEYCAP}',
+             '\N{DIGIT FIVE}\N{COMBINING ENCLOSING KEYCAP}',
+             '\N{DIGIT SIX}\N{COMBINING ENCLOSING KEYCAP}',
+             '\N{DIGIT SEVEN}\N{COMBINING ENCLOSING KEYCAP}',
+             '\N{DIGIT EIGHT}\N{COMBINING ENCLOSING KEYCAP}',
+             '\N{DIGIT NINE}\N{COMBINING ENCLOSING KEYCAP}',
+             '\N{KEYCAP TEN}',
+             '\N{HEAVY BLACK HEART}']
 
 
 class MostRecent(Exception):
@@ -207,10 +227,10 @@ class Misc:
             boxes, caturday, ties, dream,
             sinks, clothes
 
-        Within 30 seconds of the image being posted anyone can:
-            * Say "X/10" (1-10) to rate the image.
-            * Say "fave"/"favorite"/"favourite" to favorite the image.
-            * Say "report" to report the image.
+        Within 30 seconds of the image being posted anyone can react with:
+            * 1-10 to rate the image.
+            * heart to favorite the image.
+            * poop to report the image.
         """
         if category and category in CATEGORIES:
             category = '&category=' + category
@@ -224,62 +244,59 @@ class Misc:
             await self.bot.say(str(e))
             return
         try:
-            facts = await self.fetch_facts(1)
+            fact = (await self.fetch_facts(1))[0]
         except NotFound as e:
-            facts = []
+            fact = ''
 
         image_root = XMLTree.fromstring(x).find('data').find('images').find('image')
         image_url = image_root.find('url').text
         image_id = image_root.find('id').text
-        base_msg = '`{id}`: {url}{fact}'.format(id=image_id, url=image_url,
-                                                fact='\n' + '\n'.join(facts) if facts else '')
-        image_msg = await self.bot.say('\n'.join([base_msg,
-                                                  'For the next 30 seconds you can say:',
-                                                  '- "X/10" to rate this image',
-                                                  '- "fave" to favorite this image',
-                                                  '- "report" to report this image']))
+        base_msg = '`{id}`: {url}\n{fact}'.format(id=image_id, url=image_url,
+                                                  fact=fact)
+        image_msg = await self.bot.say('\n'.join([
+            base_msg,
+            'For the next 30 seconds you can select:',
+            '- :one:-:keycap_ten: to rate this image',
+            '- :heart: to favorite this image',
+            '- :poop: to report this image']).format(REACTIONS))
+        for reaction in REACTIONS[1:]:
+            await self.bot.add_reaction(image_msg, reaction)
 
         actions = []
-        voted = []
-        faved = []
-        reported = []
+        votes = {}
+        faved = set()
+        reported = False
 
-        def vote_check(msg):
-            if msg.channel != ctx.message.channel:
-                return False
-            sub_id = msg.author.id
-            score_match = re.match(r'(-?[0-9]*)/10', msg.content)
-            fave_match = any(msg.content == f for f in ('fave', 'favorite', 'favourite'))
-            report_match = msg.content.startswith('report')
-            if score_match is not None:
-                if sub_id in voted:
-                    return False
-                voted.append(sub_id)
-                score = between(int(score_match.group(1)), 1, 10)
-                actions.append(self.fetch_cat(VOTE, sub_id=sub_id,
-                                              image_id=image_id,
-                                              score=score))
-            elif fave_match:
-                if sub_id in faved:
-                    return False
-                faved.append(sub_id)
+        def vote_check(reaction, user):
+            sub_id = user.id
+            score = REACTIONS.index(reaction.emoji)
+            if 1 <= score <= 10:
+                votes[sub_id] = score
+            elif score == 11:
+                faved.add(sub_id)
                 actions.append(self.fetch_cat(FAVE, sub_id=sub_id,
                                               image_id=image_id,
                                               act='add'))
-            elif report_match:
-                if sub_id in reported:
+            else:
+                if reported:
                     return False
-                reported.append(sub_id)
-                report = msg.content.split()
-                reason = ' '.join(report[1:]) if len(report) > 1 else 'no cats'
+                nonlocal reported
+                reported = True
                 actions.append(self.fetch_cat(REPORT, sub_id=sub_id,
-                                              image_id=image_id,
-                                              reason=reason))
-            if len(actions) == 20:
+                                              image_id=image_id))
+            if len(actions) + len(votes) == 20:
                 return True
 
-        await self.bot.wait_for_message(timeout=30, check=vote_check)
+        await self.bot.wait_for_reaction(REACTIONS, timeout=30,
+                                         message=image_msg, check=vote_check)
         await self.bot.edit_message(image_msg, base_msg)
+        for reaction in REACTIONS[1:]:
+            await self.bot.remove_reaction(image_msg, reaction, self.bot.user)
+
+        for sub_id, score in votes.items():
+            actions.append(self.fetch_cat(VOTE, sub_id=sub_id,
+                                          image_id=image_id,
+                                          score=score))
         await asyncio.gather(*actions)
 
     @cat.command(name='facts', aliases=['fact'])
@@ -361,6 +378,8 @@ class Misc:
             return
         if new_score.isdigit():
             score = between(int(new_score), 1, 10)
+        elif new_score in REACTIONS[1:11]:
+            score = REACTIONS.index(new_score)
         else:
             score_match = re.match(r'(-?[0-9]*)/10', new_score)
             if score_match is None:
