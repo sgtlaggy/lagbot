@@ -364,7 +364,8 @@ class Misc:
         msg = commands.Paginator(prefix='', suffix='')
         for s, i, u in zip(scores, ids, urls):
             msg.add_line('{score}/10 {id}: {url}.'.format(score=s, id=i, url=u))
-        await self.bot.say('\n'.join(msg))
+        for page in msg.pages:
+            await self.bot.say(page)
 
     @cat.command(pass_context=True)
     async def rerate(self, ctx, image_id, new_score):
@@ -420,7 +421,8 @@ class Misc:
         msg = commands.Paginator(prefix='', suffix='')
         for i, u in zip(ids, urls):
             msg.add_line('`{id}`: {url}.'.format(id=i, url=u))
-        await self.bot.say('\n'.join(msg))
+        for page in msg.pages:
+            await self.bot.say(page)
 
 
 def setup(bot):
