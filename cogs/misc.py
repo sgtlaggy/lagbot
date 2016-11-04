@@ -278,8 +278,6 @@ class Misc:
                                               image_id=image_id,
                                               act='add'))
             else:
-                if reported:
-                    return False
                 nonlocal reported
                 reported = True
                 actions.append(self.fetch_cat(REPORT, sub_id=sub_id, image_id=image_id))
@@ -360,14 +358,13 @@ class Misc:
         ids = [i.text for i in root.iter('id')]
         scores = [s.text for s in root.iter('score')]
         urls = [u.text for u in root.iter('url')]
-        msg = ['```']
-        msg.extend(['{score}/10 {id}: {url}'.format(score=s, id=i, url=u)
-                    for s, i, u in zip(scores, ids, urls)])
-        msg.append('```')
-        if len(msg):
-            await self.bot.say('\n'.join(msg))
-        else:
+        if not ids:
             await self.bot.say("You haven't rated any images.")
+            return
+        msg = commands.Paginator(prefix='', suffix='')
+        for s, i, u in zip(scores, ids, urls):
+            msg.add_line('{score}/10 {id}: {url}.'.format(score=s, id=i, url=u))
+        await self.bot.say('\n'.join(msg))
 
     @cat.command(pass_context=True)
     async def rerate(self, ctx, image_id, new_score):
@@ -407,6 +404,9 @@ class Misc:
         root = XMLTree.fromstring(await self.fetch_cat(GET_FAVES, sub_id=sub_id))
         ids = [i.text for i in root.iter('id')]
         urls = [u.text for u in root.iter('url')]
+        if not ids:
+            await self.bot.say("You don't have any favorite images.")
+            return
 
         if to_remove is not None:
             if to_remove not in ids:
@@ -417,12 +417,10 @@ class Misc:
                                  act='remove')
             await self.bot.say('\N{THUMBS UP SIGN} Removed favorite.')
             return
-
-        msg = ['`{id}`: {url}'.format(id=i, url=u) for i, u in zip(ids, urls)]
-        if len(msg):
-            await self.bot.say('\n'.join(msg))
-        else:
-            await self.bot.say('You have no favorites!')
+        msg = commands.Paginator(prefix='', suffix='')
+        for i, u in zip(ids, urls):
+            msg.add_line('`{id}`: {url}.'.format(id=i, url=u))
+        await self.bot.say('\n'.join(msg))
 
 
 def setup(bot):
