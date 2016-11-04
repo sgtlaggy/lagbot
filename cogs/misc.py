@@ -23,7 +23,7 @@ class CatAction:
 FACTS = 'http://catfacts-api.appspot.com/api/facts?number={count}'
 
 GET = 'http://thecatapi.com/api/images/get?api_key={api_key}&format=xml{category}&sub_id={sub_id}'
-REPORT = 'http://thecatapi.com/api/images/report?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&reason={reason}'
+REPORT = 'http://thecatapi.com/api/images/report?api_key={api_key}&sub_id={sub_id}&image_id={image_id}'
 VOTE = 'http://thecatapi.com/api/images/vote?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&score={score}'
 GET_VOTES = 'http://thecatapi.com/api/images/getvotes?api_key={api_key}&sub_id={sub_id}'
 FAVE = 'http://thecatapi.com/api/images/favourite?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&action={act}'
@@ -282,13 +282,19 @@ class Misc:
                     return False
                 nonlocal reported
                 reported = True
-                actions.append(self.fetch_cat(REPORT, sub_id=sub_id,
-                                              image_id=image_id))
+                actions.append(self.fetch_cat(REPORT, sub_id=sub_id, image_id=image_id))
+                return True
             if len(actions) + len(votes) == 20:
                 return True
 
         await self.bot.wait_for_reaction(REACTIONS, timeout=30,
                                          message=image_msg, check=vote_check)
+
+        if reported:
+            await self.bot.delete_message(image_msg)
+            await actions[-1]
+            return
+
         await self.bot.edit_message(image_msg, base_msg)
         for reaction in REACTIONS[1:]:
             await self.bot.remove_reaction(image_msg, reaction, self.bot.user)
