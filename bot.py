@@ -1,11 +1,10 @@
-import json
 import sys
 import os
 
 from lagbot import LagBot
 
 # Files and Paths
-app_path = os.path.split(os.path.abspath(sys.argv[0]))[0]
+app_path = os.path.dirname(os.path.abspath(sys.argv[0]))
 config_file = os.path.join(app_path, 'config.json')
 
 # Discord Client/Bot
@@ -15,11 +14,9 @@ initial_cogs = ['cogs.{}'.format(cog) for cog in [
     'cog', 'management', 'misc', 'meta', 'rdanny', 'overwatch']]
 
 if __name__ == '__main__':
-    with open(config_file) as fp:
-        config = json.load(fp)
     bot = LagBot(command_prefix=command_prefix,
                  help_attrs=help_attrs,
-                 config=config,
+                 config_file=config_file,
                  debug=any('debug' in arg.lower() for arg in sys.argv))
 
     for cog in initial_cogs:

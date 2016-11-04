@@ -1,5 +1,7 @@
+from collections import OrderedDict
 import traceback
 import datetime
+import json
 import sys
 
 from discord.ext import commands
@@ -9,9 +11,13 @@ import asyncpg
 
 
 class LagBot(commands.Bot):
-    def __init__(self, *args, config, debug=False, **kwargs):
+    def __init__(self, *args, config_file, debug=False, **kwargs):
         self._debug = debug
-        self.config = config
+        self.config_file = config_file
+        with open(config_file) as fp:
+            self.config = json.load(fp)
+        self.owner = discord.User(**self.config.pop('owner')) if 'owner' in self.config else None
+        self.client_id = self.config.pop('client_id') if 'client_id' in self.config else None
         super().__init__(*args, **kwargs)
         if self._debug:
             self.command_prefix = '%!'
@@ -32,9 +38,20 @@ class LagBot(commands.Bot):
 
     async def on_ready(self):
         self.start_time = datetime.datetime.utcnow()
-        app_info = await self.application_info()
-        self.client_id = app_info.id
-        self.owner = app_info.owner
+        if None in (self.owner, self.client_id):
+            app_info = await self.application_info()
+            self.client_id = app_info.id
+            self.owner = app_info.owner
+            owner = OrderedDict([('name', self.owner.name),
+                                 ('id', self.owner.id),
+                                 ('discriminator', self.owner.discriminator),
+                                 ('avatar', self.owner.avatar),
+                                 ('bot', self.owner.bot)])
+            config = json.load(open(self.config_file), object_pairs_hook=OrderedDict)
+            config['client_id'] = self.client_id
+            config['owner'] = owner
+            with open(self.config_file, 'w') as fp:
+                json.dump(config, fp, indent=4)
         await self.change_presence(game=discord.Game(name='Destroy All Humans!'))
 
     async def on_server_join(self, server):
