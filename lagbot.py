@@ -42,11 +42,7 @@ class LagBot(commands.Bot):
             app_info = await self.application_info()
             self.client_id = app_info.id
             self.owner = app_info.owner
-            owner = OrderedDict([('name', self.owner.name),
-                                 ('id', self.owner.id),
-                                 ('discriminator', self.owner.discriminator),
-                                 ('avatar', self.owner.avatar),
-                                 ('bot', self.owner.bot)])
+            owner = OrderedDict([(attr, getattr(self.owner, attr)) for attr in self.owner.__slots__])
             config = json.load(open(self.config_file), object_pairs_hook=OrderedDict)
             config['client_id'] = self.client_id
             config['owner'] = owner
