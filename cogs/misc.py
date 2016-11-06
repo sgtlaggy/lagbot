@@ -68,13 +68,15 @@ class Misc:
         message = '\n'.join(message)
         await self.bot.say(message)
 
-    @commands.command(aliases=['poll'], pass_context=True)
+    @commands.command(aliases=['poll'], pass_context=True, no_pm=True)
     @commands.bot_has_permissions(add_reactions=True)
     async def vote(self, ctx, title, *options):
         """Allow users to vote on something.
 
         Every vote session lasts 1 hour.
         Allows a maximum of 10 options.
+        The poll creator can add the poop emoji to end the poll early.
+            The poll will end 30 seconds after adding it.
 
         <title> must be wrapped with double quotes (") if it contains a space
         <options> must be wrapped in double quotes if they contain spaces
@@ -86,12 +88,15 @@ class Misc:
         msg = ['__' + title + '__']
         for num, opt in zip(digits[1:], options):
             msg.append('{} {}'.format(num, opt))
-        vote_msg = await self.bot.say('\n'.join(msg))
+        poll_msg = await self.bot.say('\n'.join(msg))
         for ind in range(len(options)):
-            await self.bot.add_reaction(vote_msg, digits[ind + 1])
-        await asyncio.sleep(3600)
-        vote_msg = await self.bot.edit_message(vote_msg, '***POLL IS CLOSED***\n' + vote_msg.content)
-        reactions = [r.count for r in vote_msg.reactions[:len(options)]]
+            await self.bot.add_reaction(poll_msg, digits[ind + 1])
+        res = await self.bot.wait_for_reaction('\N{PILE OF POO}', message=poll_msg,
+                                               user=ctx.message.author, timeout=3600)
+        if res is not None:
+            await asyncio.sleep(30)
+        poll_msg = await self.bot.edit_message(poll_msg, '***POLL IS CLOSED***\n' + poll_msg.content)
+        reactions = [r.count for r in poll_msg.reactions[:len(options)]]
         win_score = max(reactions)
         if win_score == 1:
             await self.bot.say('No one voted on "{}"'.format(title))
