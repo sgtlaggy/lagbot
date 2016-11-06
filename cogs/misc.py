@@ -68,7 +68,7 @@ class Misc:
         message = '\n'.join(message)
         await self.bot.say(message)
 
-    @commands.command(pass_context=True)
+    @commands.command(aliases=['poll'], pass_context=True)
     @commands.bot_has_permissions(add_reactions=True)
     async def vote(self, ctx, title, *options):
         """Allow users to vote on something.
@@ -90,7 +90,7 @@ class Misc:
         for ind in range(len(options)):
             await self.bot.add_reaction(vote_msg, digits[ind + 1])
         await asyncio.sleep(3600)
-        vote_msg = await self.bot.edit_message(vote_msg, '***VOTING IS CLOSED***\n' + vote_msg.content)
+        vote_msg = await self.bot.edit_message(vote_msg, '***POLL IS CLOSED***\n' + vote_msg.content)
         reactions = [r.count for r in vote_msg.reactions[:len(options)]]
         win_score = max(reactions)
         if win_score == 1:
@@ -98,11 +98,12 @@ class Misc:
             return
         else:
             winners = [options[ind] for ind, count in enumerate(reactions) if count == win_score]
+            win_score -= 1
             if len(winners) == 1:
-                await self.bot.say('"{[0]}" won the vote "{}"'.format(winners, title))
+                await self.bot.say('"{[0]}" won the poll "{}" with {} votes.'.format(winners, title, win_score))
             else:
-                await self.bot.say('The vote "{}" was a tie between:\n{}'.format(
-                    title, '\n'.join(winners)))
+                await self.bot.say('The poll "{}" was a tie at {} votes between:\n{}'.format(
+                    title, win_score, '\n'.join(winners)))
 
 
 def setup(bot):
