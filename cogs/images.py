@@ -207,12 +207,18 @@ class Images:
 
         base_msg = '`{id}`: {url}\n{fact}'.format(id=image_id, url=image_url,
                                                   fact=fact)
+
+        if not ctx.message.channel.permissions_for(ctx.message.server.me).add_reactions:
+            await self.bot.say(base_msg)
+            return
+
         image_msg = await self.bot.say('\n'.join([
             base_msg,
             'For the next 30 seconds you can select:',
-            '- :one:-:keycap_ten: to rate this image',
-            '- :heart: to favorite this image',
-            '- manually add :poop: to report this image']).format(REACTIONS))
+            '- {0[1]}-{0[10]} to rate this image',
+            '- {0[11]} to favorite this image',
+            '- manually add {0[0]} to report this image']).format(REACTIONS))
+
         for reaction in REACTIONS[1:]:
             await self.bot.add_reaction(image_msg, reaction)
 
