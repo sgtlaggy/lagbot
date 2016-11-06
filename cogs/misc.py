@@ -1,9 +1,11 @@
 from collections import OrderedDict
+import asyncio
 import random
 
 from discord.ext import commands
 
 from .utils.utils import integer
+from .utils.emoji import digits
 
 
 class Misc:
@@ -65,6 +67,42 @@ class Misc:
                 message.append('{}: {}'.format(f, c))
         message = '\n'.join(message)
         await self.bot.say(message)
+
+    @commands.command(pass_context=True)
+    @commands.bot_has_permissions(add_reactions=True)
+    async def vote(self, ctx, title, *options):
+        """Allow users to vote on something.
+
+        Every vote session lasts 1 hour.
+        Allows a maximum of 10 options.
+
+        <title> must be wrapped with double quotes (") if it contains a space
+        <options> must be wrapped in double quotes if they contain spaces
+        """
+        if len(options) > 10:
+            await self.bot.say("Too many options.")
+            return
+
+        msg = ['__' + title + '__']
+        for num, opt in zip(digits[1:], options):
+            msg.append('{} {}'.format(num, opt))
+        vote_msg = await self.bot.say('\n'.join(msg))
+        for ind in range(len(options)):
+            await self.bot.add_reaction(vote_msg, digits[ind + 1])
+        await asyncio.sleep(3600)
+        vote_msg = await self.bot.edit_message(vote_msg, '***VOTING IS CLOSED***\n' + vote_msg.content)
+        reactions = [r.count for r in vote_msg.reactions[:len(options)]]
+        win_score = max(reactions)
+        if win_score == 1:
+            await self.bot.say('No one voted on "{}"'.format(title))
+            return
+        else:
+            winners = [options[ind] for ind, count in enumerate(reactions) if count == win_score]
+            if len(winners) == 1:
+                await self.bot.say('"{[0]}" won the vote "{}"'.format(winners, title))
+            else:
+                await self.bot.say('The vote "{}" was a tie between:\n{}'.format(
+                    title, '\n'.join(winners)))
 
 
 def setup(bot):

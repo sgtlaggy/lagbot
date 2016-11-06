@@ -10,6 +10,7 @@ import aiohttp
 from .utils.checks import bot_config_attr
 from .utils.errors import NotFound
 from .utils.utils import between
+from .utils.emoji import digits
 
 
 FACTS = 'http://catfacts-api.appspot.com/api/facts?number={count}'
@@ -23,18 +24,7 @@ GET_FAVES = 'http://thecatapi.com/api/images/getfavourites?api_key={api_key}&sub
 
 CATEGORIES = ('hats', 'space', 'funny', 'sunglasses', 'boxes',
               'caturday', 'ties', 'dream', 'sinks', 'clothes')
-REACTIONS = ['\N{PILE OF POO}',
-             '\N{DIGIT ONE}\N{COMBINING ENCLOSING KEYCAP}',
-             '\N{DIGIT TWO}\N{COMBINING ENCLOSING KEYCAP}',
-             '\N{DIGIT THREE}\N{COMBINING ENCLOSING KEYCAP}',
-             '\N{DIGIT FOUR}\N{COMBINING ENCLOSING KEYCAP}',
-             '\N{DIGIT FIVE}\N{COMBINING ENCLOSING KEYCAP}',
-             '\N{DIGIT SIX}\N{COMBINING ENCLOSING KEYCAP}',
-             '\N{DIGIT SEVEN}\N{COMBINING ENCLOSING KEYCAP}',
-             '\N{DIGIT EIGHT}\N{COMBINING ENCLOSING KEYCAP}',
-             '\N{DIGIT NINE}\N{COMBINING ENCLOSING KEYCAP}',
-             '\N{KEYCAP TEN}',
-             '\N{HEAVY BLACK HEART}']
+REACTIONS = ('\N{PILE OF POO}', *digits[1:], '\N{HEAVY BLACK HEART}')
 
 
 class MostRecent(Exception):

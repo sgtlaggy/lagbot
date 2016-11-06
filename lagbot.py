@@ -49,6 +49,8 @@ class LagBot(commands.Bot):
             with open(self.config_file, 'w') as fp:
                 json.dump(config, fp, indent=4)
         await self.change_presence(game=discord.Game(name='Destroy All Humans!'))
+        if self._debug:
+            print('Ready.')
 
     async def on_server_join(self, server):
         if self._debug:
