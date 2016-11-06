@@ -2,7 +2,7 @@
 ---
 
 * [Manage](#manage)
-* [Manage Nick](#nick)
+* [- Nick](#nick)
 * [About](#About)
 * [Info](#info)
 * [Uptime](#uptime)

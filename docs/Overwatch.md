@@ -13,9 +13,9 @@ If the user you're getting stats for is in the db, their stats will be in whatev
 ---
 
 * [Overwatch](#overwatchow)
-* [Heroes](#heroes)
-* [Set](#set)
-* [Unset](#unset)
+* [- Heroes](#heroes)
+* [- Set](#set)
+* [- Unset](#unset)
 
 ---
 

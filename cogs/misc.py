@@ -79,10 +79,13 @@ class Misc:
             The poll will end 30 seconds after adding it.
 
         <title> must be wrapped with double quotes (") if it contains a space
-        <options> must be wrapped in double quotes if they contain spaces
+        [options...] must be wrapped in double quotes if they contain spaces
         """
         if len(options) > 10:
-            await self.bot.say("Too many options.")
+            await self.bot.say('Too many options.')
+            return
+        elif len(options) < 2:
+            await self.bot.say('Too few options.')
             return
 
         msg = ['__' + title + '__']
