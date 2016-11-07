@@ -4,7 +4,7 @@ import random
 
 from discord.ext import commands
 
-from .utils.utils import integer
+from .utils.utils import integer, plural
 from .utils.emoji import digits, clocks
 
 
@@ -81,6 +81,7 @@ class Misc:
         :clock1:    = 1 hour
         :clock130:  = 1.5 hours
         :clock12:   = 12 hours
+        You can also add the poop emoji during this time to cancel the poll.
 
         Every vote session lasts 1 hour, unless otherwise set.
         Allows a maximum of 10 options.
@@ -103,9 +104,13 @@ class Misc:
         poll_msg = await self.bot.say('\n'.join(msg))
         for ind in range(len(options)):
             await self.bot.add_reaction(poll_msg, digits[ind + 1])
-        res = await self.bot.wait_for_reaction(CLOCKS, user=ctx.message.author,
+        res = await self.bot.wait_for_reaction([*CLOCKS, '\N{PILE OF POO}'],
+                                               user=ctx.message.author,
                                                message=poll_msg, timeout=30)
         if res is not None:
+            if res.reaction.emoji == '\N{PILE OF POO}':
+                await self.bot.delete_message(poll_msg)
+                return
             time_ind = CLOCKS.index(res.reaction.emoji)
             if time_ind % 2 == 1:
                 poll_time = (int(time_ind / 2) + 1) * 60
@@ -121,19 +126,24 @@ class Misc:
         if res is not None:
             await asyncio.sleep(30)
         poll_msg = await self.bot.edit_message(poll_msg, '***POLL IS CLOSED***\n' + poll_msg.content)
-        reactions = [r.count for r in poll_msg.reactions[:len(options)]]
-        win_score = max(reactions)
+        reactions = [r for r in poll_msg.reactions if r.emoji in digits[1:]]
+        win_score = max(r.count for r in reactions)
         if win_score == 1:
             await self.bot.say('No one voted on "{}"'.format(title))
             return
         else:
-            winners = [options[ind] for ind, count in enumerate(reactions) if count == win_score]
+            winners = []
+            for r in reactions:
+                if r.count == win_score:
+                    ind = digits.index(r.emoji)
+                    winners.append(options[ind - 1])
             win_score -= 1
             if len(winners) == 1:
-                await self.bot.say('"{[0]}" won the poll "{}" with {} votes.'.format(winners, title, win_score))
+                await self.bot.say('"{[0]}" won the poll "{}" with {} vote{}.'.format(
+                    winners, title, win_score, plural(win_score)))
             else:
-                await self.bot.say('The poll "{}" was a tie at {} votes between:\n{}'.format(
-                    title, win_score, '\n'.join(winners)))
+                await self.bot.say('The poll "{}" was a tie at {} vote{} between:\n{}'.format(
+                    title, win_score, plural(win_score), '\n'.join(winners)))
 
 
 def setup(bot):
