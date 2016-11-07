@@ -5,7 +5,10 @@ import random
 from discord.ext import commands
 
 from .utils.utils import integer
-from .utils.emoji import digits
+from .utils.emoji import digits, clocks
+
+
+CLOCKS = (clocks[-1], *clocks[:-1])
 
 
 class Misc:
@@ -73,7 +76,13 @@ class Misc:
     async def vote(self, ctx, title, *options):
         """Allow users to vote on something.
 
-        Every vote session lasts 1 hour.
+        For 30 seconds after creating a poll, you can add any :clockTIME: emoji to set the time.
+        :clock1230: = 30 minutes
+        :clock1:    = 1 hour
+        :clock130:  = 1.5 hours
+        :clock12:   = 12 hours
+
+        Every vote session lasts 1 hour, unless otherwise set.
         Allows a maximum of 10 options.
         The poll creator can add the poop emoji to end the poll early.
             The poll will end 30 seconds after adding it.
@@ -94,8 +103,21 @@ class Misc:
         poll_msg = await self.bot.say('\n'.join(msg))
         for ind in range(len(options)):
             await self.bot.add_reaction(poll_msg, digits[ind + 1])
+        res = await self.bot.wait_for_reaction(CLOCKS, user=ctx.message.author,
+                                               message=poll_msg, timeout=30)
+        if res is not None:
+            time_ind = CLOCKS.index(res.reaction.emoji)
+            if time_ind % 2 == 1:
+                poll_time = (int(time_ind / 2) + 1) * 60
+            else:
+                poll_time = 30
+                while time_ind:
+                    poll_time += 60
+                    time_ind -= 2
+        else:
+            poll_time = 60
         res = await self.bot.wait_for_reaction('\N{PILE OF POO}', message=poll_msg,
-                                               user=ctx.message.author, timeout=3600)
+                                               user=ctx.message.author, timeout=(poll_time * 60) - 30)
         if res is not None:
             await asyncio.sleep(30)
         poll_msg = await self.bot.edit_message(poll_msg, '***POLL IS CLOSED***\n' + poll_msg.content)
