@@ -46,17 +46,17 @@ Usage:
 #### Allow users to vote on a topic.
 ##### Requires __the bot__ has the `Add Reactions` permission.
 
+Within 30 seconds of starting it, the poll creator can add a :clockTIME: emoji to set
+  the poll time limit or :poop: to cancel the poll.
+
 Built-in time limit of 1 hour.
 Allows a maximum of 10 options.
 The person who starts the poll can end it early by adding the poop emoji as a reaction.
-
-Any parameter with spaces needs to be wrapped in double quotes (").
-`Lion King` is two options, `"Lion King"` is one option.
 
 Usage:
 
     ![vote|poll] <title> [options...]
 
-    !poll "A, B, or C?" A B C       : Creates poll with title "A, B, or C?" and options "A", "B", and "C"
-    !poll "What movie is best?" Cinderella "Lion King" : Creates poll with title "What movie is best?"
-                                                         with options "Cinderella" and "Lion King"
+    !poll What movie is best? : Creates poll with title "What movie is best?"
+    Cinderella                : with options "Cinderella" and "Lion King"
+    Lion King

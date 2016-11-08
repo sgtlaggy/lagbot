@@ -4,7 +4,7 @@ import random
 
 from discord.ext import commands
 
-from .utils.utils import integer, plural
+from .utils.utils import integer, plural, say_and_pm
 from .utils.emoji import digits, clocks
 
 
@@ -73,8 +73,14 @@ class Misc:
 
     @commands.command(aliases=['poll'], pass_context=True, no_pm=True)
     @commands.bot_has_permissions(add_reactions=True)
-    async def vote(self, ctx, title, *options):
+    async def vote(self, ctx, *, options):
         """Allow users to vote on something.
+
+        Usage:
+        !poll Title Here
+        Option 1
+        Option ..
+        Option 10
 
         For 30 seconds after creating a poll, you can add any :clockTIME: emoji to set the time.
         :clock1230: = 30 minutes
@@ -87,10 +93,8 @@ class Misc:
         Allows a maximum of 10 options.
         The poll creator can add the poop emoji to end the poll early.
             The poll will end 30 seconds after adding it.
-
-        <title> must be wrapped with double quotes (") if it contains a space
-        [options...] must be wrapped in double quotes if they contain spaces
         """
+        title, *options = options.split('\n')
         if len(options) > 10:
             await self.bot.say('Too many options.')
             return
@@ -129,7 +133,7 @@ class Misc:
         reactions = [r for r in poll_msg.reactions if r.emoji in digits[1:]]
         win_score = max(r.count for r in reactions)
         if win_score == 1:
-            await self.bot.say('No one voted on "{}"'.format(title))
+            await say_and_pm(ctx, 'No one voted on "{}" {{channel}}'.format(title))
             return
         else:
             winners = []
@@ -139,10 +143,10 @@ class Misc:
                     winners.append(options[ind - 1])
             win_score -= 1
             if len(winners) == 1:
-                await self.bot.say('"{[0]}" won the poll "{}" with {} vote{}.'.format(
+                await say_and_pm(ctx, '"{[0]}" won the poll "{}" {{channel}} with {} vote{}.'.format(
                     winners, title, win_score, plural(win_score)))
             else:
-                await self.bot.say('The poll "{}" was a tie at {} vote{} between:\n{}'.format(
+                await say_and_pm(ctx, 'The poll "{}" {{channel}} was a tie at {} vote{} between:\n{}'.format(
                     title, win_score, plural(win_score), '\n'.join(winners)))
 
 

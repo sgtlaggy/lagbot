@@ -35,3 +35,11 @@ def integer(arg):
         return int(round(float(arg)))
 
     raise BadArgument('Converting to "int" failed.')
+
+async def say_and_pm(ctx, content):
+    channel = ctx.message.channel
+    author = ctx.message.author
+    to_say = content.format(channel='')
+    to_pm = content.format(channel='in %s' % channel.mention)
+    await ctx.bot.send_message(channel, to_say)
+    await ctx.bot.send_message(author, to_pm)
