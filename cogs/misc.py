@@ -1,4 +1,5 @@
 from collections import OrderedDict
+import unicodedata
 import asyncio
 import random
 
@@ -9,6 +10,8 @@ from .utils.emoji import digits, clocks
 
 
 CLOCKS = (clocks[-1], *clocks[:-1])
+
+UNILINK = "http://www.fileformat.info/info/unicode/char/{}/index.htm"
 
 
 class Misc:
@@ -148,6 +151,19 @@ class Misc:
             else:
                 await say_and_pm(ctx, 'The poll "{}" {{channel}} was a tie at {} vote{} between:\n{}'.format(
                     title, win_score, plural(win_score), '\n'.join(winners)))
+
+    @commands.command()
+    async def charinfo(self, *, chars):
+        """Get unicode character info."""
+        msg = commands.Paginator(prefix='', suffix='')
+        chars = unicodedata.normalize('NFC', chars)
+        for char in chars:
+            uc = hex(ord(char))[2:]
+            msg.add_line('{char} - `{char}` - {name} - {link}'.format(
+                name=unicodedata.name(char, '`U+%s`' % uc.upper()),
+                char=char, link=UNILINK.format(uc)))
+        for page in msg.pages:
+            await self.bot.say(page)
 
 
 def setup(bot):
