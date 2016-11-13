@@ -2,6 +2,7 @@ from collections import OrderedDict
 import unicodedata
 import asyncio
 import random
+import re
 
 from discord.ext import commands
 
@@ -9,43 +10,49 @@ from .utils.utils import integer, plural, say_and_pm
 from .utils.emoji import digits, clocks
 
 
+DIE_RE = re.compile(r'(?P<count>\d+)?[dD]?(?P<sides>\d+)?')
+
 CLOCKS = (clocks[-1], *clocks[:-1])
 
 UNILINK = "http://www.fileformat.info/info/unicode/char/{}/index.htm"
+
+
+def get_die(die):
+    match = DIE_RE.match(die)
+    count = match.group('count')
+    sides = match.group('sides')
+    if count is None and sides is None:
+        return None
+    return (int(count) if count else 1,
+            int(sides) if sides else 6)
 
 
 class Misc:
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command(rest_is_raw=True)
-    async def roll(self, *, args):
+    @commands.command()
+    async def roll(self, *args):
         """In format XdY, rolls X dice each with Y sides.
 
         If X is neglected, it will be assumed to mean 1 die.
         You can also specify a list of dice to roll. "1d6 2d20 d12"
         """
-        args = args.split() or ['1d6']
-        dice = []
-        try:
-            for arg in args:
-                die = arg.split('d')
-                die[0] = die[0] or 1
-                dice.append(tuple(map(int, die)))
-        except:
-            return
-
-        sides = 0
-        rolls = []
+        dice = [get_die(arg) for arg in args] or [(1, 6)]
+        dice = [die for die in dice if die is not None]
+        dice_count = len(dice)
+        msg = []
         for tup in dice:
-            count = tup[0]
-            if len(tup) != 1:
-                sides = tup[1]
-            for i in range(1, count + 1):
-                rolls.append(str(random.randint(1, sides or 6)))
-
-        message = ', '.join(rolls)
-        await self.bot.say(message)
+            count, sides = tup
+            rolls = []
+            for i in range(count):
+                rolls.append(str(random.randint(1, sides)))
+            if dice_count > 1:
+                msg.append('d{}: {}'.format(sides, ', '.join(rolls)))
+            else:
+                msg.append(', '.join(rolls))
+        if msg:
+            await self.bot.say('\n'.join(msg))
 
     @commands.command()
     async def flip(self, coins: integer = 1):
