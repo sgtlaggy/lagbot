@@ -2,7 +2,6 @@ from collections import OrderedDict
 import unicodedata
 import asyncio
 import random
-import re
 
 from discord.ext import commands
 
@@ -10,21 +9,23 @@ from .utils.utils import integer, plural, say_and_pm
 from .utils.emoji import digits, clocks
 
 
-DIE_RE = re.compile(r'(?P<count>\d+)?[dD]?(?P<sides>\d+)?')
-
 CLOCKS = (clocks[-1], *clocks[:-1])
 
 UNILINK = "http://www.fileformat.info/info/unicode/char/{}/index.htm"
 
 
 def get_die(die):
-    match = DIE_RE.match(die)
-    count = match.group('count')
-    sides = match.group('sides')
-    if count is None and sides is None:
-        return None
-    return (int(count) if count else 1,
-            int(sides) if sides else 6)
+    d = 'd' in die.lower()
+    count, sides = 1, 6
+    try:
+        split = die.lower().split('d')
+        if split[0]:
+            count = int(split[0])
+        if d:
+            sides = int(split[1])
+    except:
+        raise commands.BadArgument('Invalid format: %s' % die)
+    return (count, sides)
 
 
 class Misc:
@@ -32,18 +33,16 @@ class Misc:
         self.bot = bot
 
     @commands.command()
-    async def roll(self, *args):
+    async def roll(self, *args: get_die):
         """In format XdY, rolls X dice each with Y sides.
 
         If X is neglected, it will be assumed to mean 1 die.
         You can also specify a list of dice to roll. "1d6 2d20 d12"
         """
-        dice = [get_die(arg) for arg in args] or [(1, 6)]
-        dice = [die for die in dice if die is not None]
+        dice = args or [(1, 6)]
         dice_count = len(dice)
         msg = []
-        for tup in dice:
-            count, sides = tup
+        for count, sides in dice:
             rolls = []
             for i in range(count):
                 rolls.append(str(random.randint(1, sides)))
@@ -53,6 +52,11 @@ class Misc:
                 msg.append(', '.join(rolls))
         if msg:
             await self.bot.say('\n'.join(msg))
+
+    @roll.error
+    async def roll_error(self, exc, ctx):
+        if isinstance(exc, commands.BadArgument):
+            await self.bot.say(str(exc))
 
     @commands.command()
     async def flip(self, coins: integer = 1):
