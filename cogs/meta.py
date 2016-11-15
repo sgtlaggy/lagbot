@@ -75,6 +75,32 @@ class Meta(BaseCog):
         bot_member = ctx.message.server.me
         await self.bot.change_nickname(bot_member, new_nick or None)
 
+    def get_oauth_url(self):
+        perms = discord.Permissions()
+        perms.kick_members = True
+        perms.ban_members = True
+        perms.read_messages = True
+        perms.send_messages = True
+        perms.manage_messages = True
+        perms.embed_links = True
+        perms.change_nickname = True
+        perms.add_reactions = True
+        return discord.utils.oauth_url(self.bot.client_id, permissions=perms)
+
+    @commands.command()
+    async def join(self):
+        """Add bot to one of your servers.
+
+        Bots can no longer accept instant invite links.
+        You can only invite/add bots to servers you create.
+        This command gives you a link to add this bot to your servers.
+        """
+        message = []
+        message.append('Follow this link, login if necessary, then select a server you own to add me to.')
+        message.append('The requested permissions are required for some of my commands to function.')
+        message.append(self.get_oauth_url())
+        await self.bot.say('\n'.join(message))
+
     def get_uptime(self, brief=False):
         now = datetime.utcnow()
         delta = now - self.bot.start_time
@@ -105,7 +131,9 @@ class Meta(BaseCog):
     @commands.command()
     async def about(self):
         """Display bot information."""
-        embed = discord.Embed(description='Uptime: {}'.format(self.get_uptime(brief=True)))
+        description = 'Uptime: {}\n[Invite Link]({})'.format(self.get_uptime(brief=True),
+                                                             self.get_oauth_url())
+        embed = discord.Embed(description=description)
         embed.set_author(name=str(self.bot.owner),
                          icon_url=self.bot.owner.avatar_url)
         docs = 'Say {0.command_prefix}help'
