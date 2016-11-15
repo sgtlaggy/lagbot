@@ -17,7 +17,7 @@ class LagBot(commands.Bot):
         with open(config_file) as fp:
             self.config = json.load(fp)
         self.owner = discord.User(**self.config.pop('owner')) if 'owner' in self.config else None
-        self.client_id = self.config.pop('client_id') if 'client_id' in self.config else None
+        self.client_id = self.config.pop('client_id', None)
         super().__init__(*args, **kwargs)
         if self._debug:
             self.command_prefix = '%!'
@@ -42,10 +42,11 @@ class LagBot(commands.Bot):
             app_info = await self.application_info()
             self.client_id = app_info.id
             self.owner = app_info.owner
-            owner = OrderedDict([(attr, getattr(self.owner, attr)) for attr in self.owner.__slots__])
             config = json.load(open(self.config_file), object_pairs_hook=OrderedDict)
             config['client_id'] = self.client_id
-            config['owner'] = owner
+            config['owner'] = OrderedDict(('username' if attr == 'name' else attr,
+                                           getattr(self.owner, attr))
+                                          for attr in self.owner.__slots__)
             with open(self.config_file, 'w') as fp:
                 json.dump(config, fp, indent=4)
         await self.change_presence(game=discord.Game(name='Destroy All Humans!'))

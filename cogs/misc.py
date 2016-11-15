@@ -1,9 +1,11 @@
 from collections import OrderedDict
 import unicodedata
+import datetime
 import asyncio
 import random
 
 from discord.ext import commands
+import discord
 
 from .utils.utils import integer, plural, say_and_pm
 from .utils.emoji import digits, clocks
@@ -26,6 +28,16 @@ def get_die(die):
     except:
         raise commands.BadArgument('Invalid format: %s' % die)
     return (count, sides)
+
+
+def fancy_time(orig_time):
+    diff = datetime.utcnow() - orig_time
+    nice = ''
+    if diff.days >= 365:
+        nice += str(diff.days // 365) + ' years, '
+    nice += str(diff.days % 365) + ' days ago'
+    nice += ' ({} UTC)'.format(orig_time)
+    return nice
 
 
 class Misc:
@@ -162,6 +174,31 @@ class Misc:
             else:
                 await say_and_pm(ctx, 'The poll "{}" {{channel}} was a tie at {} vote{} between:\n{}'.format(
                     title, win_score, plural(win_score), '\n'.join(winners)))
+
+    @commands.command(pass_context=True, no_pm=True)
+    async def info(self, ctx, *, member: discord.Member):
+        """Display information of specific user."""
+        message = []
+
+        roles = [role.name.replace('@', '@\u200b')
+                 for role in member.roles
+                 if role.name != '@everyone']
+
+        message.append('```ocaml')
+        lines = [
+            ('Name', member.name),
+            ('Tag', member.discriminator),
+            ('ID', member.id),
+            ('Joined Server', fancy_time(member.joined_at)),
+            ('Joined Discord', fancy_time(member.created_at)),
+            ('Roles', ', '.join(roles)),
+            ('Avatar', member.avatar_url)]
+        width = max(len(k) for k, v in lines) + 1
+        for line in lines:
+            message.append('{0:<{width}}: {1}'.format(*line, width=width))
+        message.append('```')
+        message = '\n'.join(message)
+        await self.bot.say(message)
 
     @commands.command()
     async def charinfo(self, *, chars):

@@ -8,14 +8,9 @@ from .utils import checks
 from .base import BaseCog
 
 
-def fancy_time(orig_time):
-    diff = datetime.utcnow() - orig_time
-    nice = ''
-    if diff.days >= 365:
-        nice += str(diff.days // 365) + ' years, '
-    nice += str(diff.days % 365) + ' days ago'
-    nice += ' ({} UTC)'.format(orig_time)
-    return nice
+UPTIME_BRIEF = ('{d}d', '{h}h', '{m}m', '{s}s')
+UPTIME_LONG = ('{d} day{dp}', '{h} hour{hp}',
+               '{m} minute{mp}', '{s} second{sp}')
 
 
 class Meta(BaseCog):
@@ -80,73 +75,60 @@ class Meta(BaseCog):
         bot_member = ctx.message.server.me
         await self.bot.change_nickname(bot_member, new_nick or None)
 
-    @commands.command()
-    async def about(self):
-        """Display bot information."""
-        source = self.bot.config.get('source', None)
-        userdocs = self.bot.config.get('userdocs', None)
-        message = []
-        message.append('Documentation for my commands can be found with `{0.command_prefix}help`')
-        if userdocs:
-            message[0] += ' or at {userdocs}'
-        message[0] += '.'
-        message.append('My developer is {0.owner}.')
-        if source:
-            message.append('My source code can be found at {source}.')
-        message = '\n'.join(message).format(self.bot, source=source,
-                                            userdocs=userdocs)
-        await self.bot.say(message)
-
-    @commands.command(pass_context=True, no_pm=True)
-    async def info(self, ctx, *, member: discord.Member=None):
-        """Display information on the bot or a specific user."""
-        message = []
-        member = member or ctx.message.server.me
-
-        roles = [role.name.replace('@', '@\u200b')
-                 for role in member.roles]
-        roles.remove('@\u200beveryone')
-
-        message.append('```ocaml')
-        lines = [
-            ('Name', member.name),
-            ('Tag', member.discriminator),
-            ('ID', member.id),
-            ('Joined Server', fancy_time(member.joined_at)),
-            ('Joined Discord', fancy_time(member.created_at)),
-            ('Roles', ', '.join(roles)),
-            ('Avatar', member.avatar_url)]
-        width = max(len(k) for k, v in lines) + 1
-        for line in lines:
-            message.append('{0:<{width}}: {1}'.format(*line, width=width))
-        message.append('```')
-        message = '\n'.join(message)
-        await self.bot.say(message)
-
-    @commands.command()
-    async def uptime(self):
-        """Display bot uptime."""
+    def get_uptime(self, brief=False):
         now = datetime.utcnow()
         delta = now - self.bot.start_time
         hours, remainder = divmod(int(delta.total_seconds()), 3600)
         minutes, seconds = divmod(remainder, 60)
         days, hours = divmod(hours, 24)
 
-        if days:
-            fmt = '{d} day{dp}, {h} hour{hp}, {m} minute{mp}, {s} second{sp}'
-        elif hours:
-            fmt = '{h} hour{hp}, {m} minute{mp}, {s} second{sp}'
-        elif minutes:
-            fmt = '{m} minute{mp}, {s} second{sp}'
+        if brief:
+            fmt = UPTIME_BRIEF
+            joiner = ' '
         else:
-            fmt = '{s} second{sp}'
+            fmt = UPTIME_LONG
+            joiner = ', '
 
-        up = fmt.format(
+        for ind, time in enumerate((days, hours, minutes, seconds, None)):
+            if time:
+                fmt = fmt[ind:]
+                break
+            elif time is None:
+                fmt = [fmt[3]]
+
+        return joiner.join(fmt).format(
             d=days, dp=plural(days),
             h=hours, hp=plural(hours),
             m=minutes, mp=plural(minutes),
             s=seconds, sp=plural(seconds))
-        await self.bot.say('```ocaml\nUptime: {}\n```'.format(up))
+
+    @commands.command()
+    async def about(self):
+        """Display bot information."""
+        embed = discord.Embed(description='Uptime: {}'.format(self.get_uptime(brief=True)))
+        embed.set_author(name=str(self.bot.owner),
+                         icon_url=self.bot.owner.avatar_url)
+        docs = 'Say {0.command_prefix}help'
+        if self.bot.config.get('userdocs'):
+            docs += ' or see [here]({0.config[userdocs]})'
+        docs += '.'
+        embed.add_field(name='Documentation', value=docs.format(self.bot))
+        source = self.bot.config.get('source')
+        if source:
+            embed.add_field(name='Source', value='See [here]({}).'.format(source))
+        embed.set_footer(text='Made with discord.py', icon_url='http://i.imgur.com/5BFecvA.png')
+        embed.timestamp = self.bot.start_time
+        await self.bot.say(embed=embed)
+
+    @commands.command()
+    async def uptime(self):
+        """Display bot uptime."""
+        uptime = '\n'.join(self.get_uptime().split(', '))
+        embed = discord.Embed(
+            description='```ocaml\nUptime:\n{}\n```'.format(uptime),
+            timestamp=self.bot.start_time)
+        embed.set_footer(text='Online Since')
+        await self.bot.say(embed=embed)
 
     @commands.command(pass_context=True, aliases=['ping'])
     async def poke(self, ctx):
