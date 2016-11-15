@@ -2,10 +2,10 @@ from datetime import datetime
 
 from discord.ext import commands
 import discord
-import aiohttp
 
 from .utils.utils import plural
 from .utils import checks
+from .base import BaseCog
 
 
 def fancy_time(orig_time):
@@ -18,7 +18,7 @@ def fancy_time(orig_time):
     return nice
 
 
-class Meta:
+class Meta(BaseCog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -52,11 +52,8 @@ class Meta:
                 status=getattr(discord.Status, new_status or '', 'online'))
 
     async def set_avatar_by_url(self, url):
-        with aiohttp.Timeout(10):
-            async with self.bot.aiohsession.get(url) as resp:
-                if resp.status != 200:
-                    return
-                await self.bot.edit_profile(avatar=await resp.read())
+        image = await self.request(url, 'read')
+        await self.bot.edit_profile(avatar=image)
 
     @manage.command(pass_context=True)
     @checks.is_owner()

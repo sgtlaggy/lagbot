@@ -11,6 +11,7 @@ from .utils.checks import bot_config_attr
 from .utils.errors import NotFound
 from .utils.utils import between
 from .utils.emoji import digits
+from .base import BaseCog
 
 
 FACTS = 'http://catfacts-api.appspot.com/api/facts?number={count}'
@@ -31,7 +32,7 @@ class MostRecent(Exception):
     pass
 
 
-class Images:
+class Images(BaseCog):
     def __init__(self, bot):
         self.bot = bot
 
@@ -42,19 +43,12 @@ class Images:
         url += 'info.0.json'
         return url
 
-    async def fetch_xkcd(self, num='', attempt=1):
+    async def fetch_xkcd(self, num=''):
+        url = self.make_xkcd_url(num)
         try:
-            url = self.make_xkcd_url(num)
-            with aiohttp.Timeout(10):
-                async with self.bot.aiohsession.get(url) as resp:
-                    if resp.status != 200:
-                        raise NotFound('Could not get comic.')
-                    return await resp.json()
-        except aiohttp.ClientResponseError:
-            if attempt == 3:
-                raise NotFound('Could not get comic.')
-            await asyncio.sleep(1)
-            return await self.fetch_xkcd(num, attempt + 1)
+            return await self.request(url)
+        except AssertionError:
+            raise NotFound('Could not get comic.')
 
     def xkcd_date(self, data):
         if 'date' in data:
@@ -113,55 +107,34 @@ class Images:
                   '\n**Image**: {0[img]}'.format(data, self.xkcd_date(data))
         await self.bot.say(message)
 
-    async def fetch_facts(self, count, attempt=1):
+    async def fetch_facts(self, count):
         try:
-            with aiohttp.Timeout(10):
-                async with self.bot.aiohsession.get(FACTS.format(count=count)) as resp:
-                    j = await resp.json()
-                    if resp.status != 200 or j['success'] != 'true':
-                        raise NotFound('No cat fact available.')
-                    return j['facts']
-        except aiohttp.ClientResponseError:
-            if attempt == 3:
+            j = await self.request(FACTS.format(count=count))
+        except AssertionError:
+            raise NotFound('No cat fact available.')
+        else:
+            if j['success'] != 'true':
                 raise NotFound('No cat fact available.')
-            else:
-                await asyncio.sleep(1)
-                return await self.fetch_facts(count, attempt + 1)
+            return j['facts']
 
-    async def fetch_cat(self, url, attempt=1, **format_args):
+    async def fetch_cat(self, url, **format_args):
+        url = url.format(api_key=self.bot.config['cat_api'],
+                         reason=format_args.pop('reason', ''),
+                         **format_args)
         try:
-            url = url.format(api_key=self.bot.config['cat_api'],
-                             reason=format_args.pop('reason', ''),
-                             **format_args)
-            with aiohttp.Timeout(10):
-                async with self.bot.aiohsession.get(url) as resp:
-                    if resp.status != 200:
-                        raise NotFound('Could not get cat.')
-                    return await resp.text()
-        except aiohttp.ClientResponseError:
-            if attempt == 3:
-                raise NotFound('Could not get cat.')
-            else:
-                await asyncio.sleep(1)
-                return await self.fetch_cat(url, attempt + 1, **format_args)
+            return await self.request(url, 'text')
+        except AssertionError:
+            raise NotFound('Could not get cat.')
 
     async def try_cat_image(self, url, attempt=1):
         if url is None:
             return False
         try:
-            with aiohttp.Timeout(10):
-                async with self.bot.aiohsession.get(url) as resp:
-                    if resp.status != 200:
-                        return False
-                    return True
-        except aiohttp.ClientOSError:  # DNS name not resolved
+            await self.request(url, 'read')
+        except (AssertionError, aiohttp.ClientOSError):  # DNS name not resolved
             return False
-        except aiohttp.ClientResponseError:
-            if attempt == 3:
-                return False
-            else:
-                await asyncio.sleep(1)
-                return await self.try_cat_image(url, attempt + 1)
+        else:
+            return True
 
     @commands.group(pass_context=True, invoke_without_command=True)
     @bot_config_attr('cat_api')

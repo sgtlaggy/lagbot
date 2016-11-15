@@ -1,11 +1,10 @@
-import asyncio
 import string
 import re
 
 from discord.ext import commands
-import aiohttp
 
 from .utils.errors import NotFound, NotInDB
+from .base import BaseCog
 from .utils import utils
 
 endpoint = "http://127.0.0.1:4444/api/v3/u/{btag}/"
@@ -98,26 +97,19 @@ def most_played(hero_dict):
         yield (hero.title(), time_str(played))
 
 
-class Overwatch:
+class Overwatch(BaseCog):
     def __init__(self, bot):
         self.bot = bot
 
-    async def fetch_stats(self, tag, end=BLOB, attempt=1):
+    async def fetch_stats(self, tag, end=BLOB):
         try:
-            with aiohttp.Timeout(15):
-                async with self.bot.aiohsession.get(end.format(btag=tag)) as resp:
-                    status, data = resp.status, await resp.json()
-            if status == 404:
-                raise NotFound
-            region = ow_region(data)
-            if region is None:
-                raise NotPlayed
-            return data[region]
-        except aiohttp.ClientResponseError:
-            if attempt == 3:
-                raise NotFound
-            await asyncio.sleep(1)
-            return await self.fetch_stats(tag, end, attempt + 1)
+            data = await self.request(end.format(btag=tag), timeout=15)
+        except AssertionError:
+            raise NotFound
+        region = ow_region(data)
+        if region is None:
+            raise NotPlayed
+        return data[region]
 
     async def get_tag(self, ctx, tag):
         member_id = ctx.message.author.id

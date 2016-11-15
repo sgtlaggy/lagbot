@@ -25,7 +25,7 @@ class LagBot(commands.Bot):
         source = self.config.get('source')
         if source is not None:
             useragent += ' ' + source
-        self.aiohsession = aiohttp.ClientSession(
+        self._http = aiohttp.ClientSession(
             loop=self.loop,
             headers={'User-Agent': useragent})
         self.db = self.loop.run_until_complete(
