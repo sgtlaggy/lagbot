@@ -3,7 +3,7 @@ import re
 
 from discord.ext import commands
 
-from .utils.errors import NotFound, NotInDB
+from .utils.errors import NotFound, ServerError, NotInDB
 from .base import BaseCog
 from .utils import utils
 
@@ -102,27 +102,33 @@ class Overwatch(BaseCog):
         self.bot = bot
 
     async def fetch_stats(self, tag, end=BLOB):
+        btag = api_to_btag(tag)
         try:
-            data = await self.request(end.format(btag=tag), timeout=15)
-        except AssertionError:
-            raise NotFound
+            status, data = await self.request(end.format(btag=tag), timeout=15)
+        except:
+            raise NotFound('{} does not exist.'.format(btag))
+        if status == 500:
+            raise ServerError('Blizzard broke something. Please wait a bit before trying again.')
+            await self.bot.send_message(self.bot.owner, 'Blizzard broke OWAPI.')
+        elif status != 200:
+            raise NotFound("Couldn't get stats for {}.".format(btag))
         region = ow_region(data)
         if region is None:
-            raise NotPlayed
+            raise NotPlayed('{} has not played Overwatch.'.format(btag))
         return data[region]
 
     async def get_tag(self, ctx, tag):
         member_id = ctx.message.author.id
         tag = api_player_tag(tag)
         if tag is None:
-            raise InvalidBTag
+            raise InvalidBTag('Invalid Battletag')
         if tag == '' or '-' not in tag:
             member_id = tag or member_id
             tag = await self.bot.db.fetchval('''
                 SELECT btag FROM overwatch WHERE id = $1
                 ''', member_id)
         if tag is None:
-            raise NotInDB
+            raise NotInDB('Not in the db.')
         return tag, member_id
 
     async def get_mode(self, member_id):
@@ -186,19 +192,8 @@ class Overwatch(BaseCog):
         try:
             await self.bot.type()
             stats, heroes, tag, mode = await self.get_all(ctx, tag, mode)
-        except NotFound:
-            tag = api_to_btag(tag)
-            await self.bot.say('{} does not exist.'.format(tag))
-            return
-        except NotInDB:
-            await self.bot.say("Not in the db.")
-            return
-        except NotPlayed:
-            tag = api_to_btag(tag)
-            await self.bot.say('{} has not played Overwatch.'.format(tag))
-            return
-        except InvalidBTag:
-            await self.bot.say('Invalid Battletag')
+        except (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag) as e:
+            await self.bot.say(e)
             return
 
         mp_hero, mp_time = next(most_played(heroes))
@@ -244,19 +239,8 @@ class Overwatch(BaseCog):
         try:
             await self.bot.type()
             _, heroes, tag, mode = await self.get_all(ctx, tag, mode, HEROES)
-        except NotFound:
-            tag = api_to_btag(tag)
-            await self.bot.say('{} does not exist.'.format(tag))
-            return
-        except NotInDB:
-            await self.bot.say("Not in the db.")
-            return
-        except NotPlayed:
-            tag = api_to_btag(tag)
-            await self.bot.say('{} has not played Overwatch.'.format(tag))
-            return
-        except InvalidBTag:
-            await self.bot.say('Invalid Battletag')
+        except (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag) as e:
+            await self.bot.say(e)
             return
 
         message = ['{} hero stats:'.format(mode.title())]

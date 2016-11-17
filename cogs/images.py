@@ -45,10 +45,11 @@ class Images(BaseCog):
 
     async def fetch_xkcd(self, num=''):
         url = self.make_xkcd_url(num)
-        try:
-            return await self.request(url)
-        except AssertionError:
+        status, data = await self.request(url)
+        if status != 200:
             raise NotFound('Could not get comic.')
+        else:
+            return data
 
     def xkcd_date(self, data):
         if 'date' in data:
@@ -108,33 +109,29 @@ class Images(BaseCog):
         await self.bot.say(message)
 
     async def fetch_facts(self, count):
-        try:
-            j = await self.request(FACTS.format(count=count))
-        except AssertionError:
+        status, j = await self.request(FACTS.format(count=count))
+        if status != 200 or (j is not None and j['success'] != 'true'):
             raise NotFound('No cat fact available.')
-        else:
-            if j['success'] != 'true':
-                raise NotFound('No cat fact available.')
-            return j['facts']
+        return j['facts']
 
     async def fetch_cat(self, url, **format_args):
         url = url.format(api_key=self.bot.config['cat_api'],
                          reason=format_args.pop('reason', ''),
                          **format_args)
-        try:
-            return await self.request(url, 'text')
-        except AssertionError:
+        status, data = await self.request(url, 'text')
+        if status != 200:
             raise NotFound('Could not get cat.')
+        return data
 
     async def try_cat_image(self, url, attempt=1):
         if url is None:
             return False
         try:
-            await self.request(url, 'read')
-        except (AssertionError, aiohttp.ClientOSError):  # DNS name not resolved
+            resp = await self.request(url, 'read')
+        except aiohttp.ClientOSError:  # DNS name not resolved
             return False
         else:
-            return True
+            return resp.status == 200
 
     @commands.group(pass_context=True, invoke_without_command=True)
     @bot_config_attr('cat_api')
