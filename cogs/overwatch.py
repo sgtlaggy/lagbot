@@ -2,20 +2,48 @@ import string
 import re
 
 from discord.ext import commands
+import discord
 
 from .utils.errors import NotFound, ServerError, NotInDB
 from .base import BaseCog
 from .utils import utils
 
-endpoint = "http://127.0.0.1:4444/api/v3/u/{btag}/"
+endpoint = "http://127.0.0.1:4444/owapi/v3/u/{btag}/"
 BLOB = endpoint + "blob"
 STATS = endpoint + "stats"
 HEROES = endpoint + "heroes"
 HEROES_QP = HEROES + "/quickplay"
 HEROES_COMP = HEROES + "/competitive"
 
+BTAG_RE = re.compile(r'<@!?([0-9]+)>$')
+
 MODES = ('quick', 'quickplay', 'qp', 'unranked',
          'comp', 'competitive', 'ranked')
+
+HERO_INFO = {'ana': {'color': 0xCCC2AE, 'name': 'Ana'},
+             'bastion': {'color': 0x6E994D, 'name': 'Bastion'},
+             'dva': {'color': 0xFF7FD1, 'name': 'D.Va'},
+             'genji': {'color': 0x84FE01, 'name': 'Genji'},
+             'hanzo': {'color': 0x938848, 'name': 'Hanzo'},
+             'junkrat': {'color': 0xD39308, 'name': 'Junkrat'},
+             'lucio': {'color': 0x8BEC22, 'name': 'L\N{LATIN SMALL LETTER U WITH ACUTE}cio'},
+             'mccree': {'color': 0x8D3939, 'name': 'McCree'},
+             'mei': {'color': 0x9ADBF4, 'name': 'Mei'},
+             'mercy': {'color': 0xFFE16C, 'name': 'Mercy'},
+             'pharah': {'color': 0x1B65C6, 'name': 'Pharah'},
+             'reaper': {'color': 0x272725, 'name': 'Reaper'},
+             'reinhardt': {'color': 0xAA958E, 'name': 'Reinhardt'},
+             'roadhog': {'color': 0xC19477, 'name': 'Roadhog'},
+             'soldier76': {'color': 0x5870B6, 'name': 'Soldier: 76'},
+             'sombra': {'color': 0x000000, 'name': 'Sombra'},
+             'symmetra': {'color': 0x5CECFF, 'name': 'Symmetra'},
+             'torbjorn': {'color': 0xFF6200, 'name': 'Torbj\N{LATIN SMALL LETTER O WITH DIAERESIS}rn'},
+             'tracer': {'color': 0xF8911B, 'name': 'Tracer'},
+             'widowmaker': {'color': 0x6F6FAE, 'name': 'Widowmaker'},
+             'winston': {'color': 0x4C505C, 'name': 'Winston'},
+             'zarya': {'color': 0xF571A8, 'name': 'Zarya'},
+             'zenyatta': {'color': 0xC79C00, 'name': 'Zenyatta'}
+             }
 
 
 class NotPlayed(Exception):
@@ -27,6 +55,17 @@ class InvalidBTag(Exception):
 
 
 SYMBOLS = string.punctuation + ' '
+
+
+def links_embed(tag, region, color=None):
+    official = 'https://playoverwatch.com/en-us/career/pc/{}/{}'.format(region, tag)
+    owapi = 'http://lag.b0ne.com/owapi/v3/u/{}/blob?format=json_pretty'.format(tag)
+    webapp = 'http://lag.b0ne.com/ow/'
+    desc = ' | '.join(['[Official Stats]({})',
+                       '[Raw Stats]({})',
+                       '[Raw Stats Landing Page]({})']).format(
+                           official, owapi, webapp)
+    return discord.Embed(description=desc, colour=color)
 
 
 def validate_btag(btag):
@@ -46,7 +85,7 @@ def validate_btag(btag):
 
 
 def api_player_tag(arg):
-    match = re.match(r'<@!?([0-9]+)>$', arg)
+    match = BTAG_RE.match(arg)
     if match is not None:
         return match.group(1)
     elif arg in MODES:
@@ -94,7 +133,8 @@ def time_str(decimal):
 def most_played(hero_dict):
     sort = sorted(hero_dict.items(), key=lambda kv: kv[1], reverse=True)
     for hero, played in sort:
-        yield (hero.title(), time_str(played))
+        if hero != 'overwatchguidundefined':
+            yield (hero, time_str(played))
 
 
 class Overwatch(BaseCog):
@@ -103,18 +143,16 @@ class Overwatch(BaseCog):
 
     async def fetch_stats(self, tag, end=BLOB):
         btag = api_to_btag(tag)
-        try:
-            status, data = await self.request(end.format(btag=tag), timeout=15)
-        except:
-            raise NotFound('{} does not exist.'.format(btag))
+        status, data = await self.request(end.format(btag=tag), timeout=15)
         if status == 500:
+            await self.bot.send_message(self.bot.owner, 'Blizzard broke OWAPI.\n' + data['exc'])
             raise ServerError('Blizzard broke something. Please wait a bit before trying again.')
-            await self.bot.send_message(self.bot.owner, 'Blizzard broke OWAPI.')
         elif status != 200:
             raise NotFound("Couldn't get stats for {}.".format(btag))
         region = ow_region(data)
         if region is None:
             raise NotPlayed('{} has not played Overwatch.'.format(btag))
+        data[region]['region'] = region
         return data[region]
 
     async def get_tag(self, ctx, tag):
@@ -162,8 +200,8 @@ class Overwatch(BaseCog):
         if mode == 'competitive' and not data['stats'].get(mode) and \
                 not data['heroes']['stats'][mode]:
             mode = 'quickplay'
-        return data['stats'].get(mode), \
-            data['heroes']['playtime'][mode], tag, mode
+        return data['stats'].get(mode), data['heroes']['playtime'][mode], \
+            tag, mode, data['region']
 
     @commands.group(aliases=['ow'], pass_context=True, invoke_without_command=True)
     async def overwatch(self, ctx, tag='', mode=None):
@@ -191,7 +229,7 @@ class Overwatch(BaseCog):
         """
         try:
             await self.bot.type()
-            stats, heroes, tag, mode = await self.get_all(ctx, tag, mode)
+            stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode)
         except (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag) as e:
             await self.bot.say(e)
             return
@@ -207,7 +245,7 @@ class Overwatch(BaseCog):
         if mode == 'competitive':
             lines.append(('Competitive Rank',
                           stats['overall_stats']['comprank'] or 'Unranked'))
-        lines.append(('Most Played Hero', mp_hero))
+        lines.append(('Most Played Hero', HERO_INFO[mp_hero]['name']))
         lines.append(('Hero Time', mp_time))
         if stats['overall_stats'].get('games'):
             lines.extend([
@@ -225,8 +263,8 @@ class Overwatch(BaseCog):
         for line in lines:
             message.append('{0:<{width}} : {1}'.format(*line, width=width))
         message.append('```')
-
-        await self.bot.say('\n'.join(message))
+        embed = links_embed(tag, region, HERO_INFO[mp_hero]['color'])
+        await self.bot.say('\n'.join(message), embed=embed)
 
     @overwatch.command(pass_context=True)
     async def heroes(self, ctx, tag='', mode=None):
@@ -238,7 +276,7 @@ class Overwatch(BaseCog):
         """
         try:
             await self.bot.type()
-            _, heroes, tag, mode = await self.get_all(ctx, tag, mode, HEROES)
+            _, heroes, tag, mode, region = await self.get_all(ctx, tag, mode, HEROES)
         except (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag) as e:
             await self.bot.say(e)
             return
@@ -246,14 +284,17 @@ class Overwatch(BaseCog):
         message = ['{} hero stats:'.format(mode.title())]
         width = max(len(k) for k in heroes.keys())
         message.append('```ocaml')
-        for hero, played in most_played(heroes):
+        ordered = list(most_played(heroes))
+        for hero, played in ordered:
             if played:
                 message.append('{0:<{width}} : {1}'.format(
-                    hero,
+                    HERO_INFO[hero]['name'],
                     played,
                     width=width))
         message.append('```')
-        await self.bot.say('\n'.join(message))
+        hero = ordered[0][0]
+        embed = links_embed(tag, region, HERO_INFO[hero]['color'])
+        await self.bot.say('\n'.join(message), embed=embed)
 
     @overwatch.command(name='set', aliases=['save'], pass_context=True)
     async def ow_set(self, ctx, tag, mode=None):
