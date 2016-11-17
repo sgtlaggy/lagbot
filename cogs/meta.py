@@ -95,11 +95,13 @@ class Meta(BaseCog):
         You can only invite/add bots to servers you create.
         This command gives you a link to add this bot to your servers.
         """
-        message = []
-        message.append('Follow this link, login if necessary, then select a server you own to add me to.')
-        message.append('The requested permissions are required for some of my commands to function.')
-        message.append(self.get_oauth_url())
-        await self.bot.say('\n'.join(message))
+        desc = '\n'.join([
+            'Follow this link, login if necessary, then select a server you own to add me to.',
+            'The requested permissions are required for some of my commands to function.'])
+        embed = discord.Embed(title='Click here!',
+                              url=self.get_oauth_url(),
+                              description=desc)
+        await self.bot.say(embed=embed)
 
     def get_uptime(self, brief=False):
         now = datetime.utcnow()
@@ -144,7 +146,7 @@ class Meta(BaseCog):
         source = self.bot.config.get('source')
         if source:
             embed.add_field(name='Source', value='See [here]({}).'.format(source))
-        embed.set_footer(text='Made with discord.py', icon_url='http://i.imgur.com/5BFecvA.png')
+        embed.set_footer(text='Made with discord.py | Online Since', icon_url='http://i.imgur.com/5BFecvA.png')
         embed.timestamp = self.bot.start_time
         await self.bot.say(embed=embed)
 
