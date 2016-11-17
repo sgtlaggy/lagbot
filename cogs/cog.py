@@ -25,17 +25,18 @@ class CogManagement:
 
     @commands.group(name='reload', hidden=True, invoke_without_command=True)
     @checks.is_owner()
-    async def reload_ext(self, ext):
-        mod = 'cogs.' + ext
-        if mod not in self.bot.extensions:
-            await self.bot.say('Cog {} is not loaded.'.format(ext))
-            return
-        try:
-            await self.reload_ext_helper(ext)
-            await self.bot.say('Reloaded cog {}.'.format(ext))
-        except Exception as e:
-            await self.bot.say("Couldn't reload cog {}.".format(ext))
-            print(e)
+    async def reload_ext(self, *exts):
+        for ext in exts:
+            mod = 'cogs.' + ext
+            if mod not in self.bot.extensions:
+                await self.bot.say('Cog {} is not loaded.'.format(ext))
+                return
+            try:
+                await self.reload_ext_helper(ext)
+                await self.bot.say('Reloaded cog {}.'.format(ext))
+            except Exception as e:
+                await self.bot.say("Couldn't reload cog {}.".format(ext))
+                print(e)
 
     @reload_ext.command(name='all')
     @checks.is_owner()
@@ -46,31 +47,33 @@ class CogManagement:
 
     @commands.command(name='load', hidden=True)
     @checks.is_owner()
-    async def load_ext(self, ext):
-        mod = 'cogs.' + ext
-        if mod in self.bot.extensions:
-            await self.bot.say('Cog {} is already loaded.'.format(ext))
-            return
-        try:
-            self.bot.load_extension(mod)
-            await self.bot.say('Loaded cog {}.'.format(ext))
-        except Exception as e:
-            await self.bot.say("Couldn't load cog {}.".format(ext))
-            print(e)
+    async def load_ext(self, *exts):
+        for ext in exts:
+            mod = 'cogs.' + ext
+            if mod in self.bot.extensions:
+                await self.bot.say('Cog {} is already loaded.'.format(ext))
+                return
+            try:
+                self.bot.load_extension(mod)
+                await self.bot.say('Loaded cog {}.'.format(ext))
+            except Exception as e:
+                await self.bot.say("Couldn't load cog {}.".format(ext))
+                print(e)
 
     @commands.command(name='unload', hidden=True)
     @checks.is_owner()
-    async def unload_ext(self, ext):
-        mod = 'cogs.' + ext
-        if mod not in self.bot.extensions:
-            await self.bot.say('Cog {} is not loaded.'.format(ext))
-            return
-        try:
-            self.bot.unload_extension(mod)
-            await self.bot.say('Unloaded cog {}.'.format(ext))
-        except Exception as e:
-            await self.bot.say("Couldn't unload cog {}.".format(ext))
-            print(e)
+    async def unload_ext(self, *exts):
+        for ext in exts:
+            mod = 'cogs.' + ext
+            if mod not in self.bot.extensions:
+                await self.bot.say('Cog {} is not loaded.'.format(ext))
+                return
+            try:
+                self.bot.unload_extension(mod)
+                await self.bot.say('Unloaded cog {}.'.format(ext))
+            except Exception as e:
+                await self.bot.say("Couldn't unload cog {}.".format(ext))
+                print(e)
 
 
 def setup(bot):
