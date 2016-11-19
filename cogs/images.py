@@ -39,11 +39,12 @@ class Images(BaseCog):
     def __init__(self, bot):
         self.bot = bot
 
-    def make_xkcd_url(self, num=''):
+    def make_xkcd_url(self, num='', api=True):
         url = 'http://xkcd.com/'
         if num:
             url += str(num) + '/'
-        url += 'info.0.json'
+        if api:
+            url += 'info.0.json'
         return url
 
     async def fetch_xkcd(self, num=''):
@@ -105,11 +106,12 @@ class Images(BaseCog):
         except MostRecent:
             pass
 
-        message = '**Date**: {1:%m/%d/%Y}' \
-                  '\n**Title**: {0[num]}. {0[safe_title]}' \
-                  '\n**Alt Text**: {0[alt]}' \
-                  '\n**Image**: {0[img]}'.format(data, self.xkcd_date(data))
-        await self.bot.say(message)
+        description = '**Date:** {:%m/%d/%Y}\n{[alt]}'.format(self.xkcd_date(data), data)
+        embed = discord.Embed(title='{0[num]}: {0[safe_title]}'.format(data),
+                              url=self.make_xkcd_url(data['num'], api=False),
+                              description=description)
+        embed.set_image(url=data['img'])
+        await self.bot.say(embed=embed)
 
     async def fetch_facts(self, count):
         status, j = await self.request(FACTS.format(count=count))
