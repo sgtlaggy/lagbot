@@ -47,11 +47,11 @@ Usage:
 ##### Requires __the bot__ has the `Add Reactions` permission.
 
 Within 30 seconds of starting it, the poll creator can add a :clockTIME: emoji to set
-  the poll time limit or :poop: to cancel the poll.
+the poll time limit or :x: to cancel the poll.
 
-Built-in time limit of 1 hour.
+Default time limit of 1 hour.
 Allows a maximum of 10 options.
-The person who starts the poll can end it early by adding the poop emoji as a reaction.
+The person who starts the poll can end it early by adding the :x: emoji as a reaction.
 
 Usage:
 

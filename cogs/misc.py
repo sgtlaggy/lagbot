@@ -113,11 +113,11 @@ class Misc:
         :clock1:    = 1 hour
         :clock130:  = 1.5 hours
         :clock12:   = 12 hours
-        You can also add the poop emoji during this time to cancel the poll.
+        You can also add the :x: emoji during this time to cancel the poll.
 
         Every vote session lasts 1 hour, unless otherwise set.
         Allows a maximum of 10 options.
-        The poll creator can add the poop emoji to end the poll early.
+        The poll creator can add the :x: emoji to end the poll early.
             The poll will end 30 seconds after adding it.
         """
         title, *options = options.split('\n')
@@ -134,11 +134,11 @@ class Misc:
         poll_msg = await self.bot.say('\n'.join(msg))
         for ind in range(len(options)):
             await self.bot.add_reaction(poll_msg, digits[ind + 1])
-        res = await self.bot.wait_for_reaction([*CLOCKS, '\N{PILE OF POO}'],
+        res = await self.bot.wait_for_reaction([*CLOCKS, '\N{CROSS MARK}'],
                                                user=ctx.message.author,
                                                message=poll_msg, timeout=30)
         if res is not None:
-            if res.reaction.emoji == '\N{PILE OF POO}':
+            if res.reaction.emoji == '\N{CROSS MARK}':
                 await self.bot.delete_message(poll_msg)
                 return
             time_ind = CLOCKS.index(res.reaction.emoji)
@@ -151,7 +151,7 @@ class Misc:
                     time_ind -= 2
         else:
             poll_time = 60
-        res = await self.bot.wait_for_reaction('\N{PILE OF POO}', message=poll_msg,
+        res = await self.bot.wait_for_reaction('\N{CROSS MARK}', message=poll_msg,
                                                user=ctx.message.author, timeout=(poll_time * 60) - 30)
         if res is not None:
             await asyncio.sleep(30)
