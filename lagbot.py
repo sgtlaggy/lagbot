@@ -86,7 +86,8 @@ class LagBot(commands.Bot):
         print(msg, file=sys.stderr)
         tb = traceback.format_exception(*self.tb_args(getattr(exc, 'original', exc)))
         tb = ''.join(tb)
-        try:
-            await self.send_message(self.owner, '{}\n```py\n{}\n```'.format(msg, tb))
-        except:
-            pass
+        if not self._debug:
+            try:
+                await self.send_message(self.owner, '{}\n```py\n{}\n```'.format(msg, tb))
+            except:
+                pass

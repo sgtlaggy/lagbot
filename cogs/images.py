@@ -5,6 +5,7 @@ import random
 import re
 
 from discord.ext import commands
+import discord
 import aiohttp
 
 from .utils.checks import bot_config_attr
@@ -16,12 +17,14 @@ from .base import BaseCog
 
 FACTS = 'http://catfacts-api.appspot.com/api/facts?number={count}'
 
-GET = 'http://thecatapi.com/api/images/get?api_key={api_key}&format=xml{category}&sub_id={sub_id}'
-REPORT = 'http://thecatapi.com/api/images/report?api_key={api_key}&sub_id={sub_id}&image_id={image_id}{reason}'
-VOTE = 'http://thecatapi.com/api/images/vote?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&score={score}'
-GET_VOTES = 'http://thecatapi.com/api/images/getvotes?api_key={api_key}&sub_id={sub_id}'
-FAVE = 'http://thecatapi.com/api/images/favourite?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&action={act}'
-GET_FAVES = 'http://thecatapi.com/api/images/getfavourites?api_key={api_key}&sub_id={sub_id}'
+HOME = 'http://thecatapi.com/'
+HOME_BY_ID = HOME + '?id={image_id}'
+GET = HOME + 'api/images/get?api_key={api_key}&format=xml{category}&sub_id={sub_id}'
+REPORT = HOME + 'api/images/report?api_key={api_key}&sub_id={sub_id}&image_id={image_id}{reason}'
+VOTE = HOME + 'api/images/vote?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&score={score}'
+GET_VOTES = HOME + 'api/images/getvotes?api_key={api_key}&sub_id={sub_id}'
+FAVE = HOME + 'api/images/favourite?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&action={act}'
+GET_FAVES = HOME + 'api/images/getfavourites?api_key={api_key}&sub_id={sub_id}'
 
 CATEGORIES = ('hats', 'space', 'funny', 'sunglasses', 'boxes',
               'caturday', 'ties', 'dream', 'sinks', 'clothes')
@@ -148,10 +151,10 @@ class Images(BaseCog):
             * heart to favorite the image.
             * poop to report the image.
         """
-        if category and category in CATEGORIES:
+        if category in CATEGORIES:
             category = '&category=' + category
-        else:
-            category = ''
+        elif category:
+            await self.bot.say('Invalid category. Try one of: ' + ', '.join(CATEGORIES))
         sub_id = ctx.message.author.id
         await self.bot.type()
         try:
@@ -175,22 +178,22 @@ class Images(BaseCog):
         except NotFound as e:
             fact = ''
 
-        base_msg = '`{id}`: {url}\n{fact}'.format(id=image_id, url=image_url,
-                                                  fact=fact)
+        embed = discord.Embed(title=image_id, url=HOME_BY_ID.format(image_id=image_id),
+                              description=fact or None)
+        embed.set_image(url=image_url)
+        embed.add_field(name='Rate', value='{0[1]}-{0[10]}'.format(REACTIONS))
+        embed.add_field(name='Favorite: ' + REACTIONS[11],
+                        value='Report: ' + REACTIONS[0])
 
         if not ctx.message.channel.permissions_for(ctx.message.server.me).add_reactions:
-            await self.bot.say(base_msg)
+            await self.bot.say(embed=embed)
             return
 
-        image_msg = await self.bot.say('\n'.join([
-            base_msg,
-            'For the next 30 seconds you can select:',
-            '- {0[1]}-{0[10]} to rate this image',
-            '- {0[11]} to favorite this image',
-            '- manually add {0[0]} to report this image']).format(REACTIONS))
+        embed.colour = discord.Colour.green()
+        msg = await self.bot.say(embed=embed)
 
         for reaction in REACTIONS[1:]:
-            await self.bot.add_reaction(image_msg, reaction)
+            await self.bot.add_reaction(msg, reaction)
 
         actions = []
         votes = {}
@@ -216,16 +219,18 @@ class Images(BaseCog):
                 return True
 
         await self.bot.wait_for_reaction(REACTIONS, timeout=30,
-                                         message=image_msg, check=vote_check)
+                                         message=msg, check=vote_check)
 
         if reported:
-            await self.bot.delete_message(image_msg)
+            await self.bot.delete_message(msg)
             await actions[-1]
             return
 
-        await self.bot.edit_message(image_msg, base_msg)
+        embed.colour = discord.Colour.red()
+        embed._fields = None
+        await self.bot.edit_message(msg, embed=embed)
         for reaction in REACTIONS[1:]:
-            await self.bot.remove_reaction(image_msg, reaction, self.bot.user)
+            await self.bot.remove_reaction(msg, reaction, self.bot.user)
 
         for sub_id, score in votes.items():
             actions.append(self.fetch_cat(VOTE, sub_id=sub_id,
