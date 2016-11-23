@@ -37,7 +37,8 @@ class LagBot(commands.Bot):
         super().run(self.config.pop('bot_token'), *args, **kwargs)
 
     async def on_ready(self):
-        self.start_time = datetime.datetime.utcnow()
+        if 'start_time' not in dir(self):
+            self.start_time = datetime.datetime.utcnow()
         if None in (self.owner, self.client_id):
             app_info = await self.application_info()
             self.client_id = app_info.id

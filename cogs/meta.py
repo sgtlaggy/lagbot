@@ -33,8 +33,8 @@ class Meta(BaseCog):
     @checks.is_owner()
     async def status(self, ctx, *, new_status=None):
         """Change bot's online status or game name."""
-        for s in self.bot.servers:
-            bot_member = s.get_member(self.bot.user.id)
+        for server in self.bot.servers:
+            bot_member = server.me
             break
 
         if ctx.invoked_with == 'game':
@@ -77,16 +77,16 @@ class Meta(BaseCog):
         bot_member = ctx.message.server.me
         await self.bot.change_nickname(bot_member, new_nick or None)
 
-    def get_oauth_url(self):
+    def oauth_url(self):
         perms = discord.Permissions()
-        perms.kick_members = True
-        perms.ban_members = True
-        perms.read_messages = True
-        perms.send_messages = True
-        perms.manage_messages = True
-        perms.embed_links = True
-        perms.change_nickname = True
-        perms.add_reactions = True
+        perms.update(kick_members=True,
+                     ban_members=True,
+                     read_messages=True,
+                     send_messages=True,
+                     manage_messages=True,
+                     embed_links=True,
+                     change_nickname=True,
+                     add_reactions=True)
         return discord.utils.oauth_url(self.bot.client_id, permissions=perms)
 
     @commands.command()
@@ -101,7 +101,7 @@ class Meta(BaseCog):
             'Follow this link, login if necessary, then select a server you own to add me to.',
             'The requested permissions are required for some of my commands to function.'])
         embed = discord.Embed(title='Click here!',
-                              url=self.get_oauth_url(),
+                              url=self.oauth_url(),
                               description=desc)
         await self.bot.say(embed=embed)
 
@@ -136,7 +136,7 @@ class Meta(BaseCog):
     async def about(self):
         """Display bot information."""
         description = 'Uptime: {}\n[Invite Link]({})'.format(self.get_uptime(brief=True),
-                                                             self.get_oauth_url())
+                                                             self.oauth_url())
         embed = discord.Embed(description=description)
         embed.set_author(name=str(self.bot.owner),
                          icon_url=self.bot.owner.avatar_url)
