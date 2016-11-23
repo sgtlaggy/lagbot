@@ -77,6 +77,21 @@ class Meta(BaseCog):
         bot_member = ctx.message.server.me
         await self.bot.change_nickname(bot_member, new_nick or None)
 
+    @commands.command(pass_context=True, aliases=['restart', 'kill'], hidden=True)
+    @checks.is_owner()
+    async def exit(self, ctx, code: int = None):
+        """Restart/kill the bot.
+
+        Optionally set exit code for custom handling.
+        """
+        codes = {'restart': 0, 'kill': 1}
+        code = codes.get(ctx.invoked_with, code)
+        if code is None:
+            await self.bot.say('Invalid exit code.')
+            return
+        await self.bot.logout()
+        raise SystemExit(code)
+
     def oauth_url(self):
         perms = discord.Permissions()
         perms.update(kick_members=True,

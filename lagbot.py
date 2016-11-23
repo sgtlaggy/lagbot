@@ -1,6 +1,7 @@
 from collections import OrderedDict
 import traceback
 import datetime
+import asyncio
 import json
 import sys
 
@@ -32,6 +33,12 @@ class LagBot(commands.Bot):
             asyncpg.connect(
                 database='lagbot',
                 loop=self.loop))
+
+    async def logout(self):
+        await super().logout()
+        await self._http.close()
+        await asyncio.sleep(2)
+        await self.db.close()
 
     def run(self, *args, **kwargs):
         super().run(self.config.pop('bot_token'), *args, **kwargs)
