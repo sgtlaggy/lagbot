@@ -6,6 +6,7 @@ import random
 
 from discord.ext import commands
 import discord
+import dice
 
 from .utils.utils import integer, plural, say_and_pm
 from .utils.emoji import digits, clocks
@@ -14,20 +15,6 @@ from .utils.emoji import digits, clocks
 CLOCKS = (clocks[-1], *clocks[:-1])
 
 UNILINK = "http://www.fileformat.info/info/unicode/char/{}/index.htm"
-
-
-def get_die(die):
-    d = 'd' in die.lower()
-    count, sides = 1, 6
-    try:
-        split = die.lower().split('d')
-        if split[0]:
-            count = int(split[0])
-        if d:
-            sides = int(split[1])
-    except:
-        raise commands.BadArgument('Invalid format: %s' % die)
-    return (count, sides)
 
 
 def fancy_time(orig_time):
@@ -40,32 +27,39 @@ def fancy_time(orig_time):
     return nice
 
 
+def get_die(die):
+    return (die, dice.roll(die))
+
+
 class Misc:
     def __init__(self, bot):
         self.bot = bot
 
-    @commands.command()
-    async def roll(self, *args: get_die):
-        """In format XdY, rolls X dice each with Y sides.
+    @commands.command(name='roll')
+    async def roll_dice(self, *rolls: get_die):
+        """In format CdS, rolls C dice each with S sides.
 
-        If X is neglected, it will be assumed to mean 1 die.
+        If C is neglected, it will be assumed to mean 1 die.
+
+        Advanced notation:
+            * add "t" to get the total of the rolls : 2d6t   -> 9
+            * add "s" to sort the rolls             : 2d6s   -> 2, 4
+            * add "^X" to keep the highest X rolls  : 10d6^3 -> 4, 4, 5
+            * add "vX" to keep the lowest X rolls   : 10d6v3 -> 1, 2, 2
+
         You can also specify a list of dice to roll. "1d6 2d20 d12"
-        """
-        dice = args or [(1, 6)]
-        dice_count = len(dice)
-        msg = []
-        for count, sides in dice:
-            rolls = []
-            for i in range(count):
-                rolls.append(str(random.randint(1, sides)))
-            if dice_count > 1:
-                msg.append('d{}: {}'.format(sides, ', '.join(rolls)))
-            else:
-                msg.append(', '.join(rolls))
-        if msg:
-            await self.bot.say('\n'.join(msg))
 
-    @roll.error
+        This command also handles basic arithmetic operations (/*+-)
+        """
+        rolls = rolls or [('1d6', random.randint(1, 6))]
+        msg = []
+        for roll, result in rolls:
+            if isinstance(result, list):
+                result = ', '.join(map(str, result))
+            msg.append('{}: {}'.format(roll, result))
+        await self.bot.say('\n'.join(msg))
+
+    @roll_dice.error
     async def roll_error(self, exc, ctx):
         if isinstance(exc, commands.BadArgument):
             await self.bot.say(str(exc))
