@@ -235,36 +235,26 @@ class Overwatch(BaseCog):
             return
 
         mp_hero, mp_time = next(most_played(heroes))
-
-        message = ['{} stats:'.format(mode.title())]
-        lines = [
-            ('Battletag', api_to_btag(tag)),
-            ('Time Played', time_str(stats['game_stats']['time_played'])),
-            ('Level', ow_level(stats['overall_stats']))
-        ]
-        if mode == 'competitive':
-            lines.append(('Competitive Rank',
-                          stats['overall_stats']['comprank'] or 'Unranked'))
-        lines.append(('Most Played Hero', HERO_INFO[mp_hero]['name']))
-        lines.append(('Hero Time', mp_time))
-        if stats['overall_stats'].get('games'):
-            lines.extend([
-                ('Games Played', stats['overall_stats']['games']),
-                ('Games Won', stats['overall_stats']['wins']),
-                ('Win Rate', '{}%'.format(stats['overall_stats']['win_rate']))
-            ])
-        else:
-            lines.append(('Games Won', stats['overall_stats']['wins']))
-        lines.append(('Kill/Death', round(stats['game_stats']['kpd'], 2)))
-        lines.append(('Environmental Deaths',
-                      int(stats['game_stats'].get('environmental_deaths', 0))))
-        message.append('```ocaml')
-        width = max(len(k) for k, v in lines)
-        for line in lines:
-            message.append('{0:<{width}} : {1}'.format(*line, width=width))
-        message.append('```')
         embed = links_embed(tag, region, HERO_INFO[mp_hero]['color'])
-        await self.bot.say('\n'.join(message), embed=embed)
+        embed.title = '**{} Stats**'.format(mode.title())
+        embed.set_author(name=api_to_btag(tag),
+                         icon_url='http://lag.b0ne.com/images/overwatch.png')
+        embed.add_field(name='Time Played', value=stats['game_stats']['time_played'])
+        embed.add_field(name='Level', value=ow_level(stats['overall_stats']))
+        if mode == 'competitive':
+            embed.add_field(name='Competitive Rank',
+                            value=stats['overall_stats']['comprank'] or 'Unranked')
+        embed.add_field(name='Most Played Hero', value=' - '.join([HERO_INFO[mp_hero]['name'], mp_time]))
+        if stats['overall_stats'].get('games'):
+            embed.add_field(name='Games Played', value=stats['overall_stats']['games'])
+            embed.add_field(name='Games Won', value=stats['overall_stats']['wins'])
+            embed.add_field(name='Win Rate', value='{}%'.format(stats['overall_stats']['win_rate']))
+        else:
+            embed.add_field(name='Games Won', value=stats['overall_stats']['wins'])
+        embed.add_field(name='Kill/Death', value=round(stats['game_stats']['kpd'], 2))
+        embed.add_field(name='Environmental Deaths',
+                        value=int(stats['game_stats'].get('environmental_deaths', 0)))
+        await self.bot.say(embed=embed)
 
     @overwatch.command(pass_context=True)
     async def heroes(self, ctx, tag='', mode=None):
