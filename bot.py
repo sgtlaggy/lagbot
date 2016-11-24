@@ -34,3 +34,5 @@ if __name__ == '__main__':
         ***BOT CRASHED OR SOMETHING***
         ******************************""")
         print(e)
+    if hasattr(bot, 'exit_status'):
+        sys.exit(bot.exit_status)

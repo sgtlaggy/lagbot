@@ -89,8 +89,8 @@ class Meta(BaseCog):
         if code is None:
             await self.bot.say('Invalid exit code.')
             return
+        self.bot.exit_status = code
         await self.bot.logout()
-        raise SystemExit(code)
 
     def oauth_url(self):
         perms = discord.Permissions()
