@@ -26,13 +26,5 @@ if __name__ == '__main__':
             print("Couldn't load cog {}\n{}: {}".format(
                 cog, type(e).__name__, e))
 
-    try:
-        bot.run()
-    except Exception as e:
-        print("""
-        ******************************
-        ***BOT CRASHED OR SOMETHING***
-        ******************************""")
-        print(e)
-    if hasattr(bot, 'exit_status'):
-        sys.exit(bot.exit_status)
+    bot.run()
+    sys.exit(getattr(bot, 'exit_status', 0))
