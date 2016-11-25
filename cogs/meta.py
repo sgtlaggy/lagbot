@@ -1,16 +1,8 @@
-from datetime import datetime
-
 from discord.ext import commands
 import discord
 
-from .utils.utils import plural
 from .utils import checks
 from .base import BaseCog
-
-
-UPTIME_BRIEF = ('{d}d', '{h}h', '{m}m', '{s}s')
-UPTIME_LONG = ('{d} day{dp}', '{h} hour{hp}',
-               '{m} minute{mp}', '{s} second{sp}')
 
 
 class Meta(BaseCog):
@@ -120,37 +112,10 @@ class Meta(BaseCog):
                               description=desc)
         await self.bot.say(embed=embed)
 
-    def get_uptime(self, brief=False):
-        now = datetime.utcnow()
-        delta = now - self.bot.start_time
-        hours, remainder = divmod(int(delta.total_seconds()), 3600)
-        minutes, seconds = divmod(remainder, 60)
-        days, hours = divmod(hours, 24)
-
-        if brief:
-            fmt = UPTIME_BRIEF
-            joiner = ' '
-        else:
-            fmt = UPTIME_LONG
-            joiner = ', '
-
-        for ind, time in enumerate((days, hours, minutes, seconds, None)):
-            if time:
-                fmt = fmt[ind:]
-                break
-            elif time is None:
-                fmt = [fmt[3]]
-
-        return joiner.join(fmt).format(
-            d=days, dp=plural(days),
-            h=hours, hp=plural(hours),
-            m=minutes, mp=plural(minutes),
-            s=seconds, sp=plural(seconds))
-
     @commands.command()
     async def about(self):
         """Display bot information."""
-        description = 'Uptime: {}\n[Invite Link]({})'.format(self.get_uptime(brief=True),
+        description = 'Uptime: {}\n[Invite Link]({})'.format(self.bot.get_uptime(brief=True),
                                                              self.oauth_url())
         embed = discord.Embed(description=description)
         embed.set_author(name=str(self.bot.owner),
@@ -170,7 +135,7 @@ class Meta(BaseCog):
     @commands.command()
     async def uptime(self):
         """Display bot uptime."""
-        uptime = '\n'.join(self.get_uptime().split(', '))
+        uptime = '\n'.join(self.bot.get_uptime().split(', '))
         embed = discord.Embed(
             description='```ocaml\nUptime:\n{}\n```'.format(uptime),
             timestamp=self.bot.start_time)

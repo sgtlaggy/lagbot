@@ -9,6 +9,8 @@ import discord
 import aiohttp
 import asyncpg
 
+from cogs.utils.utils import plural
+
 
 class LagBot(commands.Bot):
     def __init__(self, *args, config_file, debug=False, **kwargs):
@@ -97,3 +99,30 @@ class LagBot(commands.Bot):
                 await self.send_message(self.owner, '{}\n```py\n{}\n```'.format(msg, tb))
             except:
                 pass
+
+    def get_uptime(self, brief=False):
+        now = datetime.datetime.utcnow()
+        delta = now - self.start_time
+        hours, remainder = divmod(int(delta.total_seconds()), 3600)
+        minutes, seconds = divmod(remainder, 60)
+        days, hours = divmod(hours, 24)
+
+        if brief:
+            fmt = ('{d}d', '{h}h', '{m}m', '{s}s')
+            joiner = ' '
+        else:
+            fmt = ('{d} day{dp}', '{h} hour{hp}', '{m} minute{mp}', '{s} second{sp}')
+            joiner = ', '
+
+        for ind, time in enumerate((days, hours, minutes, seconds, None)):
+            if time:
+                fmt = fmt[ind:]
+                break
+            elif time is None:
+                fmt = [fmt[3]]
+
+        return joiner.join(fmt).format(
+            d=days, dp=plural(days),
+            h=hours, hp=plural(hours),
+            m=minutes, mp=plural(minutes),
+            s=seconds, sp=plural(seconds))
