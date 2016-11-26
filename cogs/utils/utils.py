@@ -1,6 +1,10 @@
 from discord.ext.commands import BadArgument
 
 
+TIME_BRIEF = ('{d}d', '{h}h', '{m}m', '{s}s')
+TIME_LONG = ('{d} day{dp}', '{h} hour{hp}', '{m} minute{mp}', '{s} second{sp}')
+
+
 def plural(num):
     return 's' if num != 1 else ''
 

@@ -114,7 +114,7 @@ class Misc:
         The poll creator can add the :x: emoji to end the poll early.
             The poll will end 30 seconds after adding it.
         """
-        title, *options = options.split('\n')
+        title, *options = [opt.strip() for opt in options.split('\n')]
         if len(options) > 10:
             await self.bot.say('Too many options.')
             return

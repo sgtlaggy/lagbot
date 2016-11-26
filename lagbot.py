@@ -9,7 +9,7 @@ import discord
 import aiohttp
 import asyncpg
 
-from cogs.utils.utils import plural
+from cogs.utils.utils import plural, TIME_BRIEF, TIME_LONG
 
 
 class LagBot(commands.Bot):
@@ -108,10 +108,10 @@ class LagBot(commands.Bot):
         days, hours = divmod(hours, 24)
 
         if brief:
-            fmt = ('{d}d', '{h}h', '{m}m', '{s}s')
+            fmt = TIME_BRIEF
             joiner = ' '
         else:
-            fmt = ('{d} day{dp}', '{h} hour{hp}', '{m} minute{mp}', '{s} second{sp}')
+            fmt = TIME_LONG
             joiner = ', '
 
         for ind, time in enumerate((days, hours, minutes, seconds, None)):

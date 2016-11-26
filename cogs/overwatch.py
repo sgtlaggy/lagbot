@@ -54,6 +54,18 @@ class InvalidBTag(Exception):
     pass
 
 
+class portrait:
+    default = 'https://blzgdapipro-a.akamaihd.net/hero/{}/hero-select-portrait{}.png'
+    @classmethod
+    def get(cls, hero):
+        if hero not in ('soldier76', 'sombra'):
+            return cls.default.format(hero, '')
+        elif hero == 'soldier76':
+            return cls.default.format('soldier-76', '')
+        elif hero == 'sombra':
+            return cls.default.format(hero, '-d5121256f71c9d7dc7a434ac75be95d99942e8386ba7f8462f3e15d91223854c9b9adde42a3aca70715ab24326a7c27848151e8ab92a259ac7744d7f15a6d91b')
+
+
 SYMBOLS = string.punctuation + ' '
 
 
@@ -238,8 +250,9 @@ class Overwatch(BaseCog):
         embed = links_embed(tag, region, HERO_INFO[mp_hero]['color'])
         embed.title = '**{} Stats**'.format(mode.title())
         embed.set_author(name=api_to_btag(tag),
-                         icon_url='http://lag.b0ne.com/images/overwatch.png')
-        embed.add_field(name='Time Played', value=stats['game_stats']['time_played'])
+                         icon_url=stats['overall_stats']['avatar'])
+        embed.set_thumbnail(url=portrait.get(mp_hero))
+        embed.add_field(name='Time Played', value=time_str(stats['game_stats']['time_played']))
         embed.add_field(name='Level', value=ow_level(stats['overall_stats']))
         if mode == 'competitive':
             embed.add_field(name='Competitive Rank',
@@ -248,6 +261,7 @@ class Overwatch(BaseCog):
         if stats['overall_stats'].get('games'):
             embed.add_field(name='Games Played', value=stats['overall_stats']['games'])
             embed.add_field(name='Games Won', value=stats['overall_stats']['wins'])
+            embed.add_field(name='Games Tied', value=stats['overall_stats']['ties'])
             embed.add_field(name='Win Rate', value='{}%'.format(stats['overall_stats']['win_rate']))
         else:
             embed.add_field(name='Games Won', value=stats['overall_stats']['wins'])
