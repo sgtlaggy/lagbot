@@ -6,6 +6,7 @@ import random
 
 from discord.ext import commands
 import discord
+import zenhan
 import dice
 
 from .utils.utils import integer, plural, say_and_pm
@@ -206,6 +207,15 @@ class Misc:
                 char=char, link=UNILINK.format(uc)))
         for page in msg.pages:
             await self.bot.say(page)
+
+    @commands.command(pass_context=True, aliases=['fullwidth'])
+    async def meme(self, ctx, *, chars):
+        """Turn your lame normal text into full-width text."""
+        try:
+            await self.bot.delete_message(ctx.message)
+        except:
+            pass
+        await self.bot.say(zenhan.h2z(chars))
 
 
 def setup(bot):
