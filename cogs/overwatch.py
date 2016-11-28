@@ -26,7 +26,7 @@ HERO_INFO = {'ana': {'color': 0xCCC2AE, 'name': 'Ana'},
              'genji': {'color': 0x84FE01, 'name': 'Genji'},
              'hanzo': {'color': 0x938848, 'name': 'Hanzo'},
              'junkrat': {'color': 0xD39308, 'name': 'Junkrat'},
-             'lucio': {'color': 0x8BEC22, 'name': 'L\N{LATIN SMALL LETTER U WITH ACUTE}cio'},
+             'lucio': {'color': 0x8BEC22, 'name': 'Lúcio'},
              'mccree': {'color': 0x8D3939, 'name': 'McCree'},
              'mei': {'color': 0x9ADBF4, 'name': 'Mei'},
              'mercy': {'color': 0xFFE16C, 'name': 'Mercy'},
@@ -37,7 +37,7 @@ HERO_INFO = {'ana': {'color': 0xCCC2AE, 'name': 'Ana'},
              'soldier76': {'color': 0x5870B6, 'name': 'Soldier: 76'},
              'sombra': {'color': 0x000000, 'name': 'Sombra'},
              'symmetra': {'color': 0x5CECFF, 'name': 'Symmetra'},
-             'torbjorn': {'color': 0xFF6200, 'name': 'Torbj\N{LATIN SMALL LETTER O WITH DIAERESIS}rn'},
+             'torbjorn': {'color': 0xFF6200, 'name': 'Torbjörn'},
              'tracer': {'color': 0xF8911B, 'name': 'Tracer'},
              'widowmaker': {'color': 0x6F6FAE, 'name': 'Widowmaker'},
              'winston': {'color': 0x4C505C, 'name': 'Winston'},
@@ -283,7 +283,7 @@ class Overwatch(BaseCog):
             return
 
         message = ['{} hero stats:'.format(mode.title())]
-        width = max(len(k) for k in heroes.keys())
+        width = max(len(HERO_INFO[hero]['name']) for hero in heroes.keys())
         message.append('```ocaml')
         ordered = list(most_played(heroes))
         for hero, played in ordered:
@@ -323,16 +323,17 @@ class Overwatch(BaseCog):
                 await self.bot.say('Invalid Battletag')
             new_mode = ow_mode(mode)
         async with self.bot.db.transaction():
-            if in_db and mode is None and tag in MODES:
-                await self.bot.db.execute('''
-                    UPDATE overwatch SET mode = $1 WHERE id = $2
-                    ''', new_mode, author_id)
-                message = '\N{THUMBS UP SIGN} Updated preferred mode.'
-            elif in_db and mode is None and tag not in MODES:
-                await self.bot.db.execute('''
-                    UPDATE overwatch SET btag = $1 WHERE id = $2
-                    ''', new_tag, author_id)
-                message = '\N{THUMBS UP SIGN} Updated Battletag.'
+            if in_db and mode is None:
+                if tag in MODES:
+                    await self.bot.db.execute('''
+                        UPDATE overwatch SET mode = $1 WHERE id = $2
+                        ''', new_mode, author_id)
+                    message = '\N{THUMBS UP SIGN} Updated preferred mode.'
+                else:
+                    await self.bot.db.execute('''
+                        UPDATE overwatch SET btag = $1 WHERE id = $2
+                        ''', new_tag, author_id)
+                    message = '\N{THUMBS UP SIGN} Updated Battletag.'
             elif in_db:
                 await self.bot.db.execute('''
                     UPDATE overwatch SET (btag, mode) = ($1, $2) WHERE id = $3
