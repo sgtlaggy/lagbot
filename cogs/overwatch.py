@@ -150,9 +150,6 @@ def most_played(hero_dict):
 
 
 class Overwatch(BaseCog):
-    def __init__(self, bot):
-        self.bot = bot
-
     async def fetch_stats(self, tag, end=BLOB):
         btag = api_to_btag(tag)
         status, data = await self.request(end.format(btag=tag), timeout=15)

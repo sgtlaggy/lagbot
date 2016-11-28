@@ -3,12 +3,10 @@ import asyncio
 from discord.ext import commands
 
 from .utils import checks
+from .base import BaseCog
 
 
-class CogManagement:
-    def __init__(self, bot):
-        self.bot = bot
-
+class CogManagement(BaseCog):
     async def reload_ext_helper(self, ext):
         try:
             self.bot.unload_extension('cogs.{}'.format(ext))

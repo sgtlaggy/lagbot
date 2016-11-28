@@ -3,6 +3,9 @@ from collections import namedtuple
 RESPONSE = namedtuple('response', 'status data')
 
 class BaseCog:
+    def __init__(self, bot):
+        self.bot = bot
+
     async def request(self, url, _type='json', *, timeout=10, method='GET', **kwargs):
         if _type not in ('json', 'read', 'text'):
             return

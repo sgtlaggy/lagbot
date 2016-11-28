@@ -36,9 +36,6 @@ class MostRecent(Exception):
 
 
 class Images(BaseCog):
-    def __init__(self, bot):
-        self.bot = bot
-
     def make_xkcd_url(self, num='', api=True):
         url = 'http://xkcd.com/'
         if num:

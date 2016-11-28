@@ -2,12 +2,10 @@ from discord.ext import commands
 import discord
 
 from .utils.utils import plural, integer
+from .base import BaseCog
 
 
-class Management:
-    def __init__(self, bot):
-        self.bot = bot
-
+class Management(BaseCog):
     @commands.command(no_pm=True)
     @commands.has_permissions(kick_members=True)
     async def kick(self, *, member: discord.Member):

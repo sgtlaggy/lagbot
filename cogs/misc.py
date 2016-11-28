@@ -11,6 +11,7 @@ import dice
 
 from .utils.utils import integer, plural, say_and_pm
 from .utils.emoji import digits, clocks
+from .base import BaseCog
 
 
 CLOCKS = (clocks[-1], *clocks[:-1])
@@ -37,10 +38,7 @@ def get_die(die):
     return (die, dice.roll(die))
 
 
-class Misc:
-    def __init__(self, bot):
-        self.bot = bot
-
+class Misc(BaseCog):
     @commands.command(name='roll')
     async def roll_dice(self, *rolls: get_die):
         """In format CdS, rolls C dice each with S sides.
