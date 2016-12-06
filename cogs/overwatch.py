@@ -58,7 +58,7 @@ class portrait:
     default = 'https://blzgdapipro-a.akamaihd.net/hero/{}/hero-select-portrait{}.png'
     @classmethod
     def get(cls, hero):
-        if hero not in ('soldier76', 'sombra'):
+        if hero not in {'soldier76', 'sombra'}:
             return cls.default.format(hero, '')
         elif hero == 'soldier76':
             return cls.default.format('soldier-76', '')
@@ -123,7 +123,7 @@ def ow_level(overall_stats):
 
 
 def ow_region(data):
-    for region in ('us', 'kr', 'eu', 'any'):
+    for region in {'us', 'kr', 'eu', 'any'}:
         if data.get(region) is not None:
             return region
 
@@ -236,8 +236,8 @@ class Overwatch(BaseCog):
             * BattleTags are case-sensitive.
             * To get stats by Discord mention, the person must be in the DB.
         """
+        await self.bot.type()
         try:
-            await self.bot.type()
             stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode)
         except (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag) as e:
             await self.bot.say(e)
@@ -275,8 +275,8 @@ class Overwatch(BaseCog):
         [mode] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
              * Defaults to competitive stats, falls back to quickplay.
         """
+        await self.bot.type()
         try:
-            await self.bot.type()
             _, heroes, tag, mode, region = await self.get_all(ctx, tag, mode, HEROES)
         except (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag) as e:
             await self.bot.say(e)

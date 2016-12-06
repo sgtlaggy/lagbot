@@ -20,7 +20,7 @@ class Management(BaseCog):
         except discord.HTTPException:
             await self.bot.say('Kicking failed.')
         else:
-            await self.bot.say('\U0001f44c')
+            await self.bot.say('\N{THUMBS UP SIGN}')
 
     @commands.command(no_pm=True)
     @commands.has_permissions(ban_members=True)
@@ -36,7 +36,7 @@ class Management(BaseCog):
         except discord.HTTPException:
             await self.bot.say('Banning failed.')
         else:
-            await self.bot.say('\U0001f44c')
+            await self.bot.say('\N{THUMBS UP SIGN}')
 
     @commands.command(pass_context=True, no_pm=True)
     @commands.bot_has_permissions(manage_messages=True)

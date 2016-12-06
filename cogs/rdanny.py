@@ -73,7 +73,7 @@ class RoboDanny:
 
             cleaned = self.cleanup_code(response.content)
 
-            if cleaned in ('quit', 'exit', 'exit()'):
+            if cleaned in {'quit', 'exit', 'exit()'}:
                 await self.bot.say('Exiting.')
                 self.sessions.remove(msg.channel.id)
                 return

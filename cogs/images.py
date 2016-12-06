@@ -26,8 +26,8 @@ GET_VOTES = HOME + 'api/images/getvotes?api_key={api_key}&sub_id={sub_id}'
 FAVE = HOME + 'api/images/favourite?api_key={api_key}&sub_id={sub_id}&image_id={image_id}&action={act}'
 GET_FAVES = HOME + 'api/images/getfavourites?api_key={api_key}&sub_id={sub_id}'
 
-CATEGORIES = ('hats', 'space', 'funny', 'sunglasses', 'boxes',
-              'caturday', 'ties', 'dream', 'sinks', 'clothes')
+CATEGORIES = {'hats', 'space', 'funny', 'sunglasses', 'boxes',
+              'caturday', 'ties', 'dream', 'sinks', 'clothes'}
 REACTIONS = ('\N{PILE OF POO}', *digits[1:], '\N{HEAVY BLACK HEART}')
 
 
@@ -77,7 +77,7 @@ class Images(BaseCog):
         data = None
         await self.bot.type()
         try:
-            if comic in ('r', 'rand', 'random') or not comic:
+            if comic in {'r', 'rand', 'random'} or not comic:
                 data = await self.fetch_xkcd()
                 await self.bot.db.fetchrow('''
                     SELECT * FROM xkcd WHERE num = $1
