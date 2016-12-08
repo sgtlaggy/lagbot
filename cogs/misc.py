@@ -193,15 +193,25 @@ class Misc(BaseCog):
     @commands.command()
     async def charinfo(self, *, chars):
         """Get unicode character info."""
-        msg = commands.Paginator(prefix='', suffix='')
+        if not chars:
+            return
         chars = unicodedata.normalize('NFC', chars)
+        if len(chars) > 25:
+            return
+        embed = discord.Embed()
         for char in chars:
             uc = hex(ord(char))[2:]
-            msg.add_line('{char} - `{char}` - {name} - {link}'.format(
-                name=unicodedata.name(char, '`U+%s`' % uc.upper()),
-                char=char, link=UNILINK.format(uc)))
-        for page in msg.pages:
-            await self.bot.say(page)
+            name = unicodedata.name(char, 'unknown')
+            if name in {'SPACE', 'EM QUAD', 'EN QUAD'} or ' SPACE' in name:
+                char = '" "'
+            if len(uc) <= 4:
+                code = '`\\u%s`' % uc.lower().zfill(4)
+            else:
+                code = '`\\U%s`' % uc.upper().zfill(8)
+            embed.add_field(name=name,
+                            value='{char} [{code}]({url})'.format(
+                                char=char, code=code, url=UNILINK.format(uc)))
+        await self.bot.say(embed=embed)
 
     @commands.command(pass_context=True, aliases=['fullwidth'])
     async def meme(self, ctx, *, chars):
