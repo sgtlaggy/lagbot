@@ -8,12 +8,11 @@ from .utils.errors import NotFound, ServerError, NotInDB
 from .base import BaseCog
 from .utils import utils
 
+
 endpoint = "http://127.0.0.1:4444/owapi/v3/u/{btag}/"
 BLOB = endpoint + "blob"
 STATS = endpoint + "stats"
 HEROES = endpoint + "heroes"
-HEROES_QP = HEROES + "/quickplay"
-HEROES_COMP = HEROES + "/competitive"
 
 BTAG_RE = re.compile(r'<@!?([0-9]+)>$')
 
@@ -56,6 +55,7 @@ class InvalidBTag(Exception):
 
 class portrait:
     default = 'https://blzgdapipro-a.akamaihd.net/hero/{}/hero-select-portrait{}.png'
+
     @classmethod
     def get(cls, hero):
         if hero not in {'soldier76', 'sombra'}:
@@ -66,18 +66,13 @@ class portrait:
             return cls.default.format(hero, '-d5121256f71c9d7dc7a434ac75be95d99942e8386ba7f8462f3e15d91223854c9b9adde42a3aca70715ab24326a7c27848151e8ab92a259ac7744d7f15a6d91b')
 
 
+def stat_links(tag, region):
+    return dict(official='https://playoverwatch.com/en-us/career/pc/{}/{}'.format(region, tag),
+                owapi='http://lag.b0ne.com/owapi/v3/u/{}/blob?format=json_pretty'.format(tag),
+                webapp='http://lag.b0ne.com/ow/')
+
+
 SYMBOLS = string.punctuation + ' '
-
-
-def links_embed(tag, region, color=None):
-    official = 'https://playoverwatch.com/en-us/career/pc/{}/{}'.format(region, tag)
-    owapi = 'http://lag.b0ne.com/owapi/v3/u/{}/blob?format=json_pretty'.format(tag)
-    webapp = 'http://lag.b0ne.com/ow/'
-    desc = ' | '.join(['[Official Stats]({})',
-                       '[Raw Stats]({})',
-                       '[Raw Stats Landing Page]({})']).format(
-                           official, owapi, webapp)
-    return discord.Embed(description=desc, colour=color)
 
 
 def validate_btag(btag):
@@ -229,10 +224,9 @@ class Overwatch(BaseCog):
         Own Stats, Different mode     : !ow [optional-set/heroes] qp/comp
 
         Notes
-            * If you are in the DB you can replace your battletag to get/change
-                your own stats with a mode different than you have saved.
-            * You can follow BattleTag/Discord mention with a mode of gameplay
-                to force getting quickplay/competitive stats.
+            * You can click the battletag to go to that person's official stats page.
+            * If you are in the DB you can replace your battletag to get/change your own stats with a mode different than you have saved.
+            * You can follow BattleTag/Discord mention with a mode of gameplay to force getting quickplay/competitive stats.
             * BattleTags are case-sensitive.
             * To get stats by Discord mention, the person must be in the DB.
         """
@@ -244,10 +238,12 @@ class Overwatch(BaseCog):
             return
 
         mp_hero, mp_time = next(most_played(heroes))
-        embed = links_embed(tag, region, HERO_INFO[mp_hero]['color'])
-        embed.title = '**{} Stats**'.format(mode.title())
+        embed = discord.Embed(colour=HERO_INFO[mp_hero]['color'])
+        links = stat_links(tag, region)
+        embed.description = '**{} Stats** ([raw]({}))'.format(mode.title(), links['owapi'])
         embed.set_author(name=api_to_btag(tag),
-                         icon_url=stats['overall_stats']['avatar'])
+                         icon_url=stats['overall_stats']['avatar'],
+                         url=links['official'])
         embed.set_thumbnail(url=portrait.get(mp_hero))
         embed.add_field(name='Time Played', value=time_str(stats['game_stats']['time_played']))
         embed.add_field(name='Level', value=ow_level(stats['overall_stats']))
@@ -277,7 +273,7 @@ class Overwatch(BaseCog):
         """
         await self.bot.type()
         try:
-            _, heroes, tag, mode, region = await self.get_all(ctx, tag, mode, HEROES)
+            stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode)
         except (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag) as e:
             await self.bot.say(e)
             return
@@ -294,7 +290,11 @@ class Overwatch(BaseCog):
                     width=width))
         message.append('```')
         hero = ordered[0][0]
-        embed = links_embed(tag, region, HERO_INFO[hero]['color'])
+        links = stat_links(tag, region)
+        embed = discord.Embed(colour=HERO_INFO[hero]['color'])
+        embed.set_author(name=api_to_btag(tag),
+                         icon_url=stats['overall_stats']['avatar'],
+                         url=links['official'])
         await self.bot.say('\n'.join(message), embed=embed)
 
     @overwatch.command(name='set', aliases=['save'], pass_context=True)
