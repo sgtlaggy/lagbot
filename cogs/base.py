@@ -1,4 +1,5 @@
 from collections import namedtuple
+import logging
 
 RESPONSE = namedtuple('response', 'status data')
 
@@ -16,5 +17,5 @@ class BaseCog:
             try:
                 data = await getattr(resp, _type)()
             except:
-                pass
+                logging.exception('Failed getting type {} from "{}".'.format(_type, url))
             return RESPONSE(resp.status, data)

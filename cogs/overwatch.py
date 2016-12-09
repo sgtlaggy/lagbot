@@ -321,6 +321,7 @@ class Overwatch(BaseCog):
             new_tag = validate_btag(tag)
             if new_tag is None:
                 await self.bot.say('Invalid Battletag')
+                return
             new_mode = ow_mode(mode)
         async with self.bot.db.transaction():
             if in_db and mode is None:

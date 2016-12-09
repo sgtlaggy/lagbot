@@ -1,8 +1,8 @@
 from collections import OrderedDict
 import traceback
 import datetime
+import logging
 import json
-import sys
 
 from discord.ext import commands
 import discord
@@ -59,7 +59,7 @@ class LagBot(commands.Bot):
                 json.dump(config, fp, indent=4)
         await self.change_presence(game=discord.Game(name='Destroy All Humans!'))
         if self._debug:
-            print('Ready.')
+            logging.info('Ready.')
 
     async def on_server_join(self, server):
         if self._debug:
@@ -80,9 +80,7 @@ class LagBot(commands.Bot):
         """Emulate default on_command_error and add server + channel info."""
         if hasattr(ctx.command, 'on_error') or isinstance(exc, commands.CommandNotFound):
             return
-        print('Ignoring exception in command {}'.format(ctx.command),
-              file=sys.stderr)
-        traceback.print_exception(*self.tb_args(exc), file=sys.stderr)
+        logging.warning('Ignoring exception in command {}'.format(ctx.command))
         if isinstance(ctx.message.channel, discord.PrivateChannel):
             if str(ctx.message.channel.type) == 'group':
                 msg = 'Message was "{0.content}" by {0.author} in {0.channel}.'
@@ -91,10 +89,10 @@ class LagBot(commands.Bot):
         else:
             msg = 'Message was "{0.content}" by {0.author} in "{0.channel}" on "{0.server}".'
         msg = msg.format(ctx.message)
-        print(msg, file=sys.stderr)
-        tb = traceback.format_exception(*self.tb_args(getattr(exc, 'original', exc)))
-        tb = ''.join(tb)
+        logging.exception(msg)
         if not self._debug:
+            tb = traceback.format_exception(*self.tb_args(getattr(exc, 'original', exc)))
+            tb = ''.join(tb)
             try:
                 await self.send_message(self.owner, '{}\n```py\n{}\n```'.format(msg, tb))
             except:

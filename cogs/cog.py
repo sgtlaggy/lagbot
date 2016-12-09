@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 from discord.ext import commands
 
@@ -34,7 +35,7 @@ class CogManagement(BaseCog):
                 await self.bot.say('Reloaded cog {}.'.format(ext))
             except Exception as e:
                 await self.bot.say("Couldn't reload cog {}.".format(ext))
-                print(e)
+                logging.error("Couldn't reload cog {}.".format(ext))
 
     @reload_ext.command(name='all')
     @checks.is_owner()
@@ -56,7 +57,7 @@ class CogManagement(BaseCog):
                 await self.bot.say('Loaded cog {}.'.format(ext))
             except Exception as e:
                 await self.bot.say("Couldn't load cog {}.".format(ext))
-                print(e)
+                logging.error("Couldn't load cog {}.".format(ext))
 
     @commands.command(name='unload', hidden=True)
     @checks.is_owner()
@@ -71,7 +72,7 @@ class CogManagement(BaseCog):
                 await self.bot.say('Unloaded cog {}.'.format(ext))
             except Exception as e:
                 await self.bot.say("Couldn't unload cog {}.".format(ext))
-                print(e)
+                logging.error("Couldn't unload cog {}.".format(ext))
 
 
 def setup(bot):

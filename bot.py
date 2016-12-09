@@ -1,7 +1,10 @@
+import logging
 import sys
 import os
 
 from lagbot import LagBot
+
+logging.basicConfig(level=logging.WARNING)
 
 # Files and Paths
 app_path = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -23,8 +26,9 @@ if __name__ == '__main__':
         try:
             bot.load_extension(cog)
         except Exception as e:
-            print("Couldn't load cog {}\n{}: {}".format(
+            logging.error("Couldn't load cog {}\n{}: {}".format(
                 cog, type(e).__name__, e))
 
     bot.run()
+    logging.shutdown()
     sys.exit(getattr(bot, 'exit_status', 0))
