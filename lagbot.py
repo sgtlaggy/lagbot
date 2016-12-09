@@ -1,4 +1,4 @@
-from collections import OrderedDict
+from collections import OrderedDict, namedtuple
 import traceback
 import datetime
 import logging
@@ -9,7 +9,10 @@ import discord
 import aiohttp
 import asyncpg
 
-from cogs.utils.utils import plural, TIME_BRIEF, TIME_LONG
+from cogs.utils.utils import plural, TIME_BRIEF, TIME_LONG, tb_args
+
+
+Response = namedtuple('Response', 'status data')
 
 
 class LagBot(commands.Bot):
@@ -75,9 +78,6 @@ class LagBot(commands.Bot):
             return
         await self.process_commands(msg)
 
-    def tb_args(self, exc):
-        return (type(exc), exc, exc.__traceback__)
-
     async def on_command_error(self, exc, ctx):
         """Emulate default on_command_error and add server + channel info."""
         if hasattr(ctx.command, 'on_error') or isinstance(exc, commands.CommandNotFound):
@@ -93,12 +93,25 @@ class LagBot(commands.Bot):
         msg = msg.format(ctx.message)
         logging.exception(msg)
         if not self._debug:
-            tb = traceback.format_exception(*self.tb_args(getattr(exc, 'original', exc)))
+            tb = traceback.format_exception(*tb_args(getattr(exc, 'original', exc)))
             tb = ''.join(tb)
             try:
                 await self.send_message(self.owner, '{}\n```py\n{}\n```'.format(msg, tb))
             except:
                 pass
+
+    async def request(self, url, _type='json', *, timeout=10, method='GET', **kwargs):
+        if _type not in {'json', 'read', 'text'}:
+            return
+        if kwargs.get('data') and method == 'GET':
+            method = 'POST'
+        async with self._http.request(method, url, timeout=timeout, **kwargs) as resp:
+            data = None
+            try:
+                data = await getattr(resp, _type)()
+            except:
+                logging.exception('Failed getting type {} from "{}".'.format(_type, url))
+            return Response(resp.status, data)
 
     def get_uptime(self, brief=False):
         now = datetime.datetime.utcnow()

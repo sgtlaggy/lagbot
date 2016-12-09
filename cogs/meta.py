@@ -36,7 +36,7 @@ class Meta(BaseCog):
                 status=getattr(discord.Status, new_status or '', 'online'))
 
     async def set_avatar_by_url(self, url):
-        status, image = await self.request(url, 'read')
+        status, image = await self.bot.request(url, 'read')
         if status != 200:
             return
         await self.bot.edit_profile(avatar=image)

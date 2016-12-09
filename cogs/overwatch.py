@@ -147,7 +147,7 @@ def most_played(hero_dict):
 class Overwatch(BaseCog):
     async def fetch_stats(self, tag, end=BLOB):
         btag = api_to_btag(tag)
-        status, data = await self.request(end.format(btag=tag), timeout=15)
+        status, data = await self.bot.request(end.format(btag=tag), timeout=15)
         if status == 500:
             await self.bot.send_message(self.bot.owner, 'Blizzard broke OWAPI.\n' + data['exc'])
             raise ServerError('Blizzard broke something. Please wait a bit before trying again.')

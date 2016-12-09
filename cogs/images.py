@@ -46,7 +46,7 @@ class Images(BaseCog):
 
     async def fetch_xkcd(self, num=''):
         url = self.make_xkcd_url(num)
-        status, data = await self.request(url)
+        status, data = await self.bot.request(url)
         if status != 200:
             raise NotFound('Could not get comic.')
         else:
@@ -111,7 +111,7 @@ class Images(BaseCog):
         await self.bot.say(embed=embed)
 
     async def fetch_facts(self, count):
-        status, j = await self.request(FACTS.format(count=count))
+        status, j = await self.bot.request(FACTS.format(count=count))
         if status != 200 or (j is not None and j['success'] != 'true'):
             raise NotFound('No cat fact available.')
         return j['facts']
@@ -120,7 +120,7 @@ class Images(BaseCog):
         url = url.format(api_key=self.bot.config['cat_api'],
                          reason=format_args.pop('reason', ''),
                          **format_args)
-        status, data = await self.request(url, 'text')
+        status, data = await self.bot.request(url, 'text')
         if status != 200:
             raise NotFound('Could not get cat.')
         return data
@@ -129,7 +129,7 @@ class Images(BaseCog):
         if url is None:
             return False
         try:
-            resp = await self.request(url, 'read')
+            resp = await self.bot.request(url, 'read')
         except aiohttp.ClientOSError:  # DNS name not resolved
             return False
         else:

@@ -1,21 +1,7 @@
-from collections import namedtuple
-import logging
-
-RESPONSE = namedtuple('response', 'status data')
-
 class BaseCog:
     def __init__(self, bot):
-        self.bot = bot
+        self._bot = bot
 
-    async def request(self, url, _type='json', *, timeout=10, method='GET', **kwargs):
-        if _type not in {'json', 'read', 'text'}:
-            return
-        if kwargs.get('data') and method == 'GET':
-            method = 'POST'
-        async with self.bot._http.request(method, url, timeout=timeout, **kwargs) as resp:
-            data = None
-            try:
-                data = await getattr(resp, _type)()
-            except:
-                logging.exception('Failed getting type {} from "{}".'.format(_type, url))
-            return RESPONSE(resp.status, data)
+    @property
+    def bot(self):
+        return self._bot
