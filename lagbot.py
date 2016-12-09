@@ -57,7 +57,9 @@ class LagBot(commands.Bot):
                                           for attr in self.owner.__slots__)
             with open(self.config_file, 'w') as fp:
                 json.dump(config, fp, indent=4)
-        await self.change_presence(game=discord.Game(name='Destroy All Humans!'))
+        game = self.config.get('game')
+        if game is not None:
+            await self.change_presence(game=discord.Game(name=game))
         if self._debug:
             logging.info('Ready.')
 
