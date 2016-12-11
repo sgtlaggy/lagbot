@@ -39,9 +39,9 @@ class LagBot(commands.Bot):
                 loop=self.loop))
 
     async def logout(self):
-        await super().logout()
         await self._http.close()
         await self.db.close()
+        await super().logout()
 
     def run(self, *args, **kwargs):
         super().run(self.config.pop('bot_token'), *args, **kwargs)

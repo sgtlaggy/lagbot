@@ -4,7 +4,8 @@ import os
 
 from lagbot import LagBot
 
-logging.basicConfig(level=logging.WARNING)
+debug = any('debug' in arg.lower() for arg in sys.argv)
+logging.basicConfig(level=logging.INFO if debug else logging.WARNING)
 
 # Files and Paths
 app_path = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -17,10 +18,8 @@ initial_cogs = ['cogs.{}'.format(cog) for cog in [
     'cog', 'images', 'management', 'meta', 'misc', 'overwatch', 'rdanny']]
 
 if __name__ == '__main__':
-    bot = LagBot(command_prefix=command_prefix,
-                 help_attrs=help_attrs,
-                 config_file=config_file,
-                 debug=any('debug' in arg.lower() for arg in sys.argv))
+    bot = LagBot(command_prefix=command_prefix, help_attrs=help_attrs,
+                 config_file=config_file, debug=debug)
 
     for cog in initial_cogs:
         try:
