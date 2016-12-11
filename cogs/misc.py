@@ -95,6 +95,13 @@ class Misc(BaseCog):
         message = '\n'.join(message)
         await self.bot.say(message)
 
+    @commands.command()
+    async def choose(self, *options):
+        if len(options) == 0:
+            await self.bot.say('No.')
+        else:
+            await self.bot.say(random.choice(options))
+
     @commands.command(aliases=['poll'], pass_context=True, no_pm=True)
     @commands.bot_has_permissions(add_reactions=True)
     async def vote(self, ctx, *, options):

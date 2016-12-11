@@ -42,6 +42,15 @@ Usage:
 
 ---
 
+### Choose
+#### Choose one from a set of options.
+
+Usage:
+
+    !choose "a b c" def g h i   : select from options "a b c", "def", "g", "h", and "i"
+
+---
+
 ### Vote
 #### Allow users to vote on a topic.
 ##### Requires __the bot__ has the `Add Reactions` permission.
