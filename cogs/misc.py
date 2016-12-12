@@ -231,5 +231,4 @@ class Misc(BaseCog):
 
 
 def setup(bot):
-    """Magic function to set up cog."""
     bot.add_cog(Misc(bot))
