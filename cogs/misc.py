@@ -204,6 +204,7 @@ class Misc(BaseCog):
             return
         chars = unicodedata.normalize('NFC', chars)
         if len(chars) > 25:
+            await self.bot.say('Too many emoji.')
             return
         embed = discord.Embed()
         for char in chars:

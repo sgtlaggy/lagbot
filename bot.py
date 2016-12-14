@@ -25,8 +25,7 @@ if __name__ == '__main__':
         try:
             bot.load_extension(cog)
         except Exception as e:
-            logging.error("Couldn't load cog {}\n{}: {}".format(
-                cog, type(e).__name__, e))
+            logging.exception("Couldn't load cog {}".format(cog))
 
     bot.run()
     logging.shutdown()
