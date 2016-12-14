@@ -25,7 +25,7 @@ class LagBot(commands.Bot):
         self.client_id = self.config.pop('client_id', None)
         super().__init__(*args, **kwargs)
         if self._debug:
-            self.command_prefix = '%!'
+            self.command_prefix = '?!'
         useragent = 'Discord Bot'
         source = self.config.get('source')
         if source is not None:

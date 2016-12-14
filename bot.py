@@ -15,7 +15,8 @@ config_file = os.path.join(app_path, 'config.json')
 command_prefix = '!'
 help_attrs = {'hidden': True}
 initial_cogs = ['cogs.{}'.format(cog) for cog in [
-    'cog', 'images', 'management', 'meta', 'misc', 'overwatch', 'rdanny']]
+    'cog', 'images', 'management', 'meta',
+    'misc', 'overwatch', 'rdanny', 'tags']]
 
 if __name__ == '__main__':
     bot = LagBot(command_prefix=command_prefix, help_attrs=help_attrs,

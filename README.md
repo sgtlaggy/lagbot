@@ -27,10 +27,10 @@ These are the commands to run in the psql prompt to do this:
 
 1. `CREATE DATABASE lagbot;`
 2. `\c lagbot`
-3. `CREATE TABLE overwatch (id text PRIMARY KEY, btag text, mode text)`\*
-4. `CREATE TABLE xkcd (num integer PRIMARY KEY, safe_title text, alt text, img text, date date)`
-
-\* Note `id` will be changing from `text` to `bigint` with the discord.py rewrite.
+3. `CREATE TABLE overwatch (id text PRIMARY KEY, btag text, mode text);`
+4. `CREATE TABLE xkcd (num integer PRIMARY KEY, safe_title text, alt text, img text, date date);`
+5. `CREATE TABLE tags (name text PRIMARY KEY, content text, uses integer DEFAULT 0, owner_id text, modified_at timestamp);`
+6. `CREATE TABLE tagusers (id text PRIMARY KEY, uses integer DEFAULT 1);`
 
 ##### For Overwatch stats, you have 2 options:
 
