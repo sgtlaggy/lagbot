@@ -87,6 +87,27 @@ class Tags(BaseCog):
         await self.bot.say('Created tag "{}".'.format(name))
 
     @tag.command(pass_context=True)
+    async def rename(self, ctx, name: lower, *, new_name: lower):
+        """Rename a tag you created.
+
+        <name> must be wrapped in quotes if it contains a space.
+        """
+        try:
+            tag = await self.get_tag(name)
+            self.verify_name(new_name)
+        except (NotInDB, ValueError) as e:
+            await self.bot.say(e)
+            return
+        if ctx.message.author.id != tag['owner_id']:
+            await self.bot.say("You don't own that tag.")
+            return
+        async with self.bot.db.transaction():
+            await self.bot.db.execute('''
+                UPDATE tags SET name = $1 WHERE name = $2
+                ''', new_name, name)
+        await self.bot.say('Renamed tag "{}" to "{}".'.format(name, new_name))
+
+    @tag.command(pass_context=True)
     async def edit(self, ctx, name: lower, *, new_text):
         """Edit a tag you created.
 
