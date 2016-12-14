@@ -312,10 +312,10 @@ class Overwatch(BaseCog):
             set <tag> [mode] - change BattleTag and preferred mode
         """
         author_id = ctx.message.author.id
-        in_db = bool(await self.bot.db.fetchval('''
-            SELECT id FROM overwatch WHERE id = $1
-            ''', author_id))
-        if in_db and mode is None and tag in MODES:
+        rec = await self.bot.db.fetchval('''
+            SELECT count(*) FROM overwatch WHERE id = $1
+            ''', author_id)
+        if rec and mode is None and tag in MODES:
             new_tag, new_mode, _ = await self.get_tag_mode(ctx, tag, mode)
         else:
             new_tag = validate_btag(tag)
@@ -324,28 +324,21 @@ class Overwatch(BaseCog):
                 return
             new_mode = ow_mode(mode)
         async with self.bot.db.transaction():
-            if in_db and mode is None:
-                if tag in MODES:
-                    await self.bot.db.execute('''
-                        UPDATE overwatch SET mode = $1 WHERE id = $2
-                        ''', new_mode, author_id)
-                    message = '\N{THUMBS UP SIGN} Updated preferred mode.'
-                else:
-                    await self.bot.db.execute('''
-                        UPDATE overwatch SET btag = $1 WHERE id = $2
-                        ''', new_tag, author_id)
-                    message = '\N{THUMBS UP SIGN} Updated Battletag.'
-            elif in_db:
-                await self.bot.db.execute('''
-                    UPDATE overwatch SET (btag, mode) = ($1, $2) WHERE id = $3
-                    ''', new_tag, new_mode, author_id)
-                message = '\N{THUMBS UP SIGN} Updated Battletag and preferred mode.'
+            await self.bot.db.execute('''
+                INSERT INTO overwatch (id, btag, mode) VALUES ($1, $2, $3)
+                ON CONFLICT (id)
+                DO UPDATE SET (btag, mode) = ($2, $3)
+                ''', author_id, new_tag, new_mode)
+        if not rec:
+            message = 'Added to db.'
+        elif mode is None:
+            if tag in MODES:
+                message = 'Updated preferred mode.'
             else:
-                await self.bot.db.execute('''
-                    INSERT INTO overwatch (id, btag, mode) VALUES ($1, $2, $3)
-                    ''', author_id, new_tag, new_mode)
-                message = '\N{THUMBS UP SIGN} Added to db.'
-        await self.bot.say(message)
+                message = 'Updated Battletag.'
+        else:
+            message = 'Updated Battletag and preferred mode.'
+        await self.bot.say('\N{THUMBS UP SIGN} ' + message)
 
     @overwatch.command(name='unset', aliases=['delete', 'remove'], pass_context=True)
     async def ow_unset(self, ctx):
