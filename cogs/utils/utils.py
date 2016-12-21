@@ -50,5 +50,5 @@ async def say_and_pm(ctx, content):
     await ctx.bot.send_message(author, to_pm)
 
 
-def tb_args(self, exc):
+def tb_args(exc):
     return (type(exc), exc, exc.__traceback__)
