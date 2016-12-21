@@ -1,4 +1,5 @@
 import difflib
+import base64
 
 from discord.ext import commands
 import asyncpg
@@ -10,6 +11,17 @@ from .base import BaseCog
 
 
 TAG_PREFIX = '%'
+
+# postgres keeps seeing `b64encode(text.encode())` as `text` even though it's
+# `bytea`, so the `.encode()).decode()` is to store base64 with no headaches
+
+
+def encode(text):
+    return base64.b64encode(text.encode()).decode()
+
+
+def decode(text):
+    return base64.b64decode(text.encode()).decode()
 
 
 def lower(arg):
@@ -23,7 +35,7 @@ class Tags(BaseCog):
     def verify_name(self, name):
         if not name:
             raise ValueError('Tag name cannot be empty.')
-        elif '@everyone' in name or '@here' in name:
+        elif any(illegal in name for illegal in {'@everyone', '@here'}):
             raise ValueError('Illegal tag name.')
         elif len(name) > 32:
             raise ValueError('Tag name too long.')
@@ -53,7 +65,7 @@ class Tags(BaseCog):
         except NotInDB as e:
             await self.bot.say(e)
             return
-        await self.bot.say(tag['content'])
+        await self.bot.say(decode(tag['content']))
         async with self.bot.db.transaction():
             await self.bot.db.execute('''
                 UPDATE tags SET uses = uses + 1 WHERE name = $1
@@ -78,9 +90,9 @@ class Tags(BaseCog):
         try:
             async with self.bot.db.transaction():
                 await self.bot.db.execute('''
-                    INSERT INTO tags (name, content, owner_id, modified_at)
-                    VALUES ($1, $2, $3, $4)
-                    ''', name, text, ctx.message.author.id, ctx.message.timestamp)
+                    INSERT INTO tags (name, content, owner_id)
+                    VALUES ($1, $2, $3)
+                    ''', name, encode(text), ctx.message.author.id)
         except asyncpg.UniqueViolationError:
             await self.bot.say('A tag with that name already exists!')
             return
@@ -125,7 +137,7 @@ class Tags(BaseCog):
             await self.bot.db.execute('''
                 UPDATE tags SET (content, modified_at) = ($1, $2)
                 WHERE name = $3
-                ''', new_text, ctx.message.timestamp, name)
+                ''', encode(new_text), ctx.message.timestamp, name)
         await self.bot.say('Updated tag "{}".'.format(name))
 
     @tag.command(pass_context=True)
@@ -216,7 +228,7 @@ class Tags(BaseCog):
     async def leaderboard(self, ctx):
         """See leaderboard of most used tags and largest users of tags."""
         tags = await self.bot.db.fetch('''
-            SELECT name, uses FROM tags ORDER BY uses DESC LIMIT 5
+            SELECT name, uses FROM tags ORDER BY uses DESC LIMIT 10
             ''')
         userstats = await self.bot.db.fetch('''
             SELECT id, uses FROM tagusers ORDER BY uses DESC LIMIT 10
