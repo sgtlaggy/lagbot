@@ -97,6 +97,10 @@ class Misc(BaseCog):
 
     @commands.command()
     async def choose(self, *options):
+        """Choose a random element from a list of items.
+
+        Any item that contains a space must be wrapped in double quotes (").
+        """
         if len(options) == 0:
             await self.bot.say('No.')
         else:
