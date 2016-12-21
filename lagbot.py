@@ -91,14 +91,12 @@ class LagBot(commands.Bot):
         else:
             msg = 'Message was "{0.content}" by {0.author} in "{0.channel}" on "{0.server}".'
         msg = msg.format(ctx.message)
-        try:
-            raise getattr(exc, 'original', exc)
-        except:  # raise original exception if exc is CommandInvokeError
-            logging.exception(msg)
+
+        exc = getattr(exc, 'original', exc)
+        tb = ''.join(traceback.format_exception(*tb_args(exc)))
+        logging.error('\n'.join((msg, tb)))
 
         if not self._debug:
-            tb = traceback.format_exception(*tb_args(getattr(exc, 'original', exc)))
-            tb = ''.join(tb)
             try:
                 await self.send_message(self.owner, '{}\n```py\n{}\n```'.format(msg, tb))
             except:
