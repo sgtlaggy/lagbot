@@ -163,7 +163,7 @@ class Overwatch(BaseCog):
         member_id = ctx.message.author.id
         tag = api_player_tag(tag)
         if tag is None:
-            raise InvalidBTag('Invalid Battletag')
+            raise InvalidBTag('Invalid BattleTag')
         if tag == '' or '-' not in tag:
             member_id = tag or member_id
             tag = await self.bot.db.fetchval('''
@@ -216,7 +216,7 @@ class Overwatch(BaseCog):
                       'comp', 'competitive', 'ranked'
              * Defaults to competitive stats, falls back to quickplay.
 
-        Stats by Battletag            : !ow BattleTag#1234
+        Stats by BattleTag            : !ow BattleTag#1234
         Stats by Discord mention      : !ow @DiscordName
         Add yourself to database      : !ow set BattleTag#1234
         Remove yourself from database : !ow unset
@@ -224,8 +224,8 @@ class Overwatch(BaseCog):
         Own Stats, Different mode     : !ow [optional-set/heroes] qp/comp
 
         Notes
-            * You can click the battletag to go to that person's official stats page.
-            * If you are in the DB you can replace your battletag to get/change your own stats with a mode different than you have saved.
+            * You can click the BattleTag to go to that person's official stats page.
+            * If you are in the DB you can replace your BattleTag to get/change your own stats with a mode different than you have saved.
             * You can follow BattleTag/Discord mention with a mode of gameplay to force getting quickplay/competitive stats.
             * BattleTags are case-sensitive.
             * To get stats by Discord mention, the person must be in the DB.
@@ -299,7 +299,7 @@ class Overwatch(BaseCog):
 
     @overwatch.command(name='set', aliases=['save'], pass_context=True)
     async def ow_set(self, ctx, tag, mode=None):
-        """Set your battletag and default gamemode.
+        """Set your BattleTag and default gamemode.
 
         <tag> is your BattleTag
         [mode] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
@@ -308,50 +308,58 @@ class Overwatch(BaseCog):
         Note:
         If you're already in the db, you can use this command again as follows:
             set [mode] - change preferred mode
-            set <tag>  - change battletag
+            set <tag>  - change BattleTag
             set <tag> [mode] - change BattleTag and preferred mode
         """
-        author_id = ctx.message.author.id
-        rec = await self.bot.db.fetchval('''
-            SELECT count(*) FROM overwatch WHERE id = $1
-            ''', author_id)
-        if rec and mode is None and tag in MODES:
-            new_tag, new_mode, _ = await self.get_tag_mode(ctx, tag, mode)
+        author = ctx.message.author
+        rec = await self.bot.db.fetchrow('''
+            SELECT * FROM overwatch WHERE id = $1
+            ''', author.id)
+        if rec is not None:
+            if mode is None and tag in MODES:
+                new_tag = rec['btag']
+                new_mode = ow_mode(tag)
+            else:
+                new_tag = validate_btag(tag)
+                if new_tag is None:
+                    await self.bot.say('Invalid BattleTag or mode.')
+                    return
+                if mode in MODES:
+                    new_mode = ow_mode(mode)
+                else:
+                    new_mode = rec['mode']
         else:
             new_tag = validate_btag(tag)
-            if new_tag is None:
-                await self.bot.say('Invalid Battletag')
-                return
             new_mode = ow_mode(mode)
         async with self.bot.db.transaction():
             await self.bot.db.execute('''
                 INSERT INTO overwatch (id, btag, mode) VALUES ($1, $2, $3)
                 ON CONFLICT (id)
                 DO UPDATE SET (btag, mode) = ($2, $3)
-                ''', author_id, new_tag, new_mode)
+                ''', author.id, new_tag, new_mode)
         if not rec:
             message = 'Added to db.'
         elif mode is None:
             if tag in MODES:
                 message = 'Updated preferred mode.'
             else:
-                message = 'Updated Battletag.'
+                message = 'Updated BattleTag.'
         else:
-            message = 'Updated Battletag and preferred mode.'
+            message = 'Updated BattleTag and preferred mode.'
         await self.bot.say('\N{THUMBS UP SIGN} ' + message)
 
     @overwatch.command(name='unset', aliases=['delete', 'remove'], pass_context=True)
     async def ow_unset(self, ctx):
-        """Remove your battletag from the DB."""
-        author_id = ctx.message.author.id
+        """Remove your BattleTag from the DB."""
+        author = ctx.message.author
         in_db = bool(await self.bot.db.fetchval('''
             SELECT id FROM overwatch WHERE id = $1
-            ''', author_id))
+            ''', author.id))
         if in_db:
             async with self.bot.db.transaction():
                 await self.bot.db.execute('''
                     DELETE FROM overwatch WHERE id = $1
-                    ''', author_id)
+                    ''', author.id)
             message = '\N{THUMBS UP SIGN} Removed from db.'
         else:
             message = '\N{THUMBS DOWN SIGN} Not in db.'
