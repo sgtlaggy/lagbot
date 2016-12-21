@@ -34,13 +34,13 @@ def fancy_time(orig_time, utc=False):
     return nice
 
 
-def get_die(die):
-    return (die, dice.roll(die))
+def die(arg):
+    return (arg, dice.roll(arg))
 
 
 class Misc(BaseCog):
     @commands.command(name='roll')
-    async def roll_dice(self, *rolls: get_die):
+    async def roll_dice(self, *rolls: die):
         """In format CdS, rolls C dice each with S sides.
 
         If C is neglected, it will be assumed to mean 1 die.
