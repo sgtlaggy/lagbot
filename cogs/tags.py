@@ -54,6 +54,21 @@ class Tags(BaseCog):
             raise NotInDB('Tag not found.')
         raise NotInDB('Tag not found. Did you mean...\n' + '\n'.join(matches))
 
+    async def update_uses(self, tag, user):
+        if isinstance(tag, str):
+            name = tag
+        else:
+            name = tag['name']
+        async with self.bot.db.transaction():
+            await self.bot.db.execute('''
+                UPDATE tags SET uses = uses + 1 WHERE name = $1
+                ''', name)
+            await self.bot.db.execute('''
+                INSERT INTO tagusers VALUES ($1)
+                ON CONFLICT (id)
+                DO UPDATE SET uses = tagusers.uses + 1
+                ''', user.id)
+
     @commands.group(pass_context=True, invoke_without_command=True)
     async def tag(self, ctx, *, name: lower):
         """Get a tag.
@@ -66,15 +81,18 @@ class Tags(BaseCog):
             await self.bot.say(e)
             return
         await self.bot.say(decode(tag['content']))
-        async with self.bot.db.transaction():
-            await self.bot.db.execute('''
-                UPDATE tags SET uses = uses + 1 WHERE name = $1
-                ''', tag['name'])
-            await self.bot.db.execute('''
-                INSERT INTO tagusers VALUES ($1)
-                ON CONFLICT (id)
-                DO UPDATE SET uses = tagusers.uses + 1
-                ''', ctx.message.author.id)
+        await self.update_uses(tag, ctx.message.author)
+
+    @tag.command(pass_context=True)
+    async def random(self, ctx):
+        tag = await self.bot.db.fetchrow('''
+            SELECT * FROM tags ORDER BY random() LIMIT 1
+            ''')
+        if tag is None:
+            await self.bot.say('No tags in db.')
+            return
+        await self.bot.say(decode(tag['content']))
+        await self.update_uses(tag, ctx.message.author)
 
     @tag.command(pass_context=True)
     async def create(self, ctx, name: lower, *, text):
