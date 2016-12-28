@@ -145,6 +145,12 @@ def most_played(hero_dict):
 
 
 class Overwatch(BaseCog):
+    """Commands for getting Overwatch stats.
+
+    Any command argument named "tag" is a case-sensitive BattleTag.
+    If you have your BattleTag in the DB, you can specify gamemode instead of BattleTag to get your own stats in a different gamemode than you have saved.
+    Any command argument named "mode" is a gamemode (qp, comp, quickplay, competitive, unranked, ranked).
+    """
     async def fetch_stats(self, tag, end=BLOB):
         btag = api_to_btag(tag)
         status, data = await self.bot.request(end.format(btag=tag), timeout=15)

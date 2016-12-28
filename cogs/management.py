@@ -6,6 +6,7 @@ from .base import BaseCog
 
 
 class Management(BaseCog):
+    """Admin/moderation commands."""
     @commands.command(no_pm=True)
     @commands.has_permissions(kick_members=True)
     async def kick(self, *, member: discord.Member):

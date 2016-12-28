@@ -29,9 +29,7 @@ def lower(arg):
 
 
 class Tags(BaseCog):
-    def __init__(self, bot):
-        super().__init__(bot)
-
+    """Commands related to tags."""
     def verify_name(self, name):
         if not name:
             raise ValueError('Tag name cannot be empty.')

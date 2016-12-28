@@ -39,6 +39,7 @@ def die(arg):
 
 
 class Misc(BaseCog):
+    """Miscellaneous commands that don't fit in other categories."""
     @commands.command(name='roll')
     async def roll_dice(self, *rolls: die):
         """In format CdS, rolls C dice each with S sides.

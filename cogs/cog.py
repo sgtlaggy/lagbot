@@ -8,6 +8,7 @@ from .base import BaseCog
 
 
 class CogManagement(BaseCog):
+    """Cog management commands, owner only."""
     async def reload_ext_helper(self, ext):
         try:
             self.bot.unload_extension('cogs.{}'.format(ext))

@@ -6,6 +6,7 @@ from .base import BaseCog
 
 
 class Meta(BaseCog):
+    """Commands that are related to the bot itself."""
     @commands.group(hidden=True)
     async def manage(self):
         """Manage bot user attributes."""

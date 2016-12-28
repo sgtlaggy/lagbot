@@ -27,6 +27,7 @@ def date(argument):
 
 
 class RoboDanny:
+    """Commands I stole from Robodanny (https://github.com/Rapptz/RoboDanny)."""
     def __init__(self, bot):
         self.bot = bot
         self.sessions = set()

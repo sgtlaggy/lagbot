@@ -36,6 +36,7 @@ class MostRecent(Exception):
 
 
 class Images(BaseCog):
+    """Commands to fetch images from various sources."""
     def make_xkcd_url(self, num='', api=True):
         url = 'http://xkcd.com/'
         if num:
