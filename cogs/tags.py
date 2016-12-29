@@ -261,10 +261,11 @@ class Tags(BaseCog):
 
     async def on_message(self, message):
         if message.content.startswith(TAG_PREFIX):
+            tag = message.content[len(TAG_PREFIX):]
             ctx = commands.Context(bot=self.bot,
                                    invoked_with=TAG_PREFIX,
                                    message=message,
-                                   view=commands.view.StringView(message.content[len(TAG_PREFIX):]),
+                                   view=commands.view.StringView(tag),
                                    prefix=TAG_PREFIX)
             await self.tag.invoke(ctx)
 

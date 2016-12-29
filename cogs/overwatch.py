@@ -53,7 +53,23 @@ class InvalidBTag(Exception):
     pass
 
 
-class portrait:
+class Rank:
+    default = 'https://blzgdapipro-a.akamaihd.net/game/rank-icons/season-2/rank-{}.png'
+    ranks = {'bronze': 1,
+             'silver': 2,
+             'gold': 3,
+             'platinum': 4,
+             'diamond': 5,
+             'master': 6,
+             'grandmaster': 7
+             }
+
+    @classmethod
+    def get(cls, rank):
+        return cls.default.format(cls.ranks[rank])
+
+
+class Portrait:
     default = 'https://blzgdapipro-a.akamaihd.net/hero/{}/hero-select-portrait{}.png'
 
     @classmethod
@@ -247,15 +263,18 @@ class Overwatch(BaseCog):
         embed = discord.Embed(colour=HERO_INFO[mp_hero]['color'])
         links = stat_links(tag, region)
         embed.description = '**{} Stats** ([raw]({}))'.format(mode.title(), links['owapi'])
-        embed.set_author(name=api_to_btag(tag),
-                         icon_url=stats['overall_stats']['avatar'],
-                         url=links['official'])
-        embed.set_thumbnail(url=portrait.get(mp_hero))
+        author_icon = stats['overall_stats']['avatar']
+        embed.set_thumbnail(url=Portrait.get(mp_hero))
         embed.add_field(name='Time Played', value=time_str(stats['game_stats']['time_played']))
         embed.add_field(name='Level', value=ow_level(stats['overall_stats']))
-        if mode == 'competitive':
-            embed.add_field(name='Competitive Rank',
-                            value=stats['overall_stats']['comprank'] or 'Unranked')
+        if stats['competitive']:
+            tier = stats['overall_stats']['tier']
+            if tier is not None:
+                rank = '{0[tier]} {0[comprank]}'.format(stats['overall_stats']).title()
+                author_icon = Rank.get(tier)
+            else:
+                rank = 'Unranked'
+            embed.add_field(name='Competitive Rank', value=rank)
         embed.add_field(name='Most Played Hero', value=' - '.join([HERO_INFO[mp_hero]['name'], mp_time]))
         if stats['overall_stats'].get('games'):
             embed.add_field(name='Games Played', value=stats['overall_stats']['games'])
@@ -267,6 +286,9 @@ class Overwatch(BaseCog):
         embed.add_field(name='Kill/Death', value=round(stats['game_stats']['kpd'], 2))
         embed.add_field(name='Environmental Deaths',
                         value=int(stats['game_stats'].get('environmental_deaths', 0)))
+        embed.set_author(name=api_to_btag(tag),
+                         icon_url=author_icon,
+                         url=links['official'])
         await self.bot.say(embed=embed)
 
     @overwatch.command(pass_context=True)
@@ -298,8 +320,13 @@ class Overwatch(BaseCog):
         hero = ordered[0][0]
         links = stat_links(tag, region)
         embed = discord.Embed(colour=HERO_INFO[hero]['color'])
+        tier = stats['overall_stats']['tier']
+        if stats['competitive'] and tier is not None:
+            author_icon = Rank.get(tier)
+        else:
+            author_icon = stats['overall_stats']['avatar']
         embed.set_author(name=api_to_btag(tag),
-                         icon_url=stats['overall_stats']['avatar'],
+                         icon_url=author_icon,
                          url=links['official'])
         await self.bot.say('\n'.join(message), embed=embed)
 
