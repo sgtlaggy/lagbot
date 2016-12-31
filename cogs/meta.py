@@ -74,7 +74,7 @@ class Meta(BaseCog):
 
         Optionally set exit code for custom handling.
         """
-        codes = {'restart': 0, 'kill': 1}
+        codes = {'restart': 2, 'kill': 1}
         code = codes.get(ctx.invoked_with, code)
         if code is None:
             await self.bot.say('Invalid exit code.')

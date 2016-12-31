@@ -38,5 +38,7 @@ if __name__ == '__main__':
             logging.exception("Couldn't load cog {}".format(cog))
 
     bot.run()
+    status = getattr(bot, 'exit_status', 0)
+    logging.critical('Exiting with {}'.format(status))
     logging.shutdown()
-    sys.exit(getattr(bot, 'exit_status', 0))
+    sys.exit(status)
