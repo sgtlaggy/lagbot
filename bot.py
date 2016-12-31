@@ -1,5 +1,7 @@
+import functools
 import asyncio
 import logging
+import signal
 import sys
 import os
 
@@ -31,6 +33,10 @@ if __name__ == '__main__':
     bot = LagBot(command_prefix=command_prefix, help_attrs=help_attrs,
                  config_file=config_file, debug=debug)
 
+    bot.loop.add_signal_handler(
+        signal.SIGTERM,
+        functools.partial(bot.loop.create_task, bot.logout()))
+
     for cog in initial_cogs:
         try:
             bot.load_extension(cog)
@@ -39,6 +45,7 @@ if __name__ == '__main__':
 
     bot.run()
     status = getattr(bot, 'exit_status', 0)
-    logging.critical('Exiting with {}'.format(status))
+    if status:
+        logging.critical('Exiting with {}'.format(status))
     logging.shutdown()
     sys.exit(status)
