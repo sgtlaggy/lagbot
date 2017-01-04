@@ -7,26 +7,23 @@ from .base import BaseCog
 
 class Meta(BaseCog):
     """Commands that are related to the bot itself."""
-    @commands.group(hidden=True)
+    @commands.group(pass_context=False, hidden=True)
     async def manage(self):
         """Manage bot user attributes."""
         pass
 
-    @manage.command()
+    @manage.command(pass_context=False)
     @checks.is_owner()
     async def name(self, *, new_name=None):
         """Rename bot."""
         if new_name:
             await self.bot.edit_profile(username=new_name)
 
-    @manage.command(pass_context=True, aliases=['game'])
+    @manage.command(aliases=['game'])
     @checks.is_owner()
     async def status(self, ctx, *, new_status=None):
         """Change bot's online status or game name."""
-        for server in self.bot.servers:
-            bot_member = server.me
-            break
-
+        bot_member = self.bot.guilds[0].me
         if ctx.invoked_with == 'game':
             await self.bot.change_presence(
                 game=discord.Game(name=new_status),
@@ -42,7 +39,7 @@ class Meta(BaseCog):
             return
         await self.bot.edit_profile(avatar=image)
 
-    @manage.command(pass_context=True)
+    @manage.command()
     @checks.is_owner()
     async def avatar(self, ctx, new_avatar=None):
         """Change bot's avatar.
@@ -59,15 +56,14 @@ class Meta(BaseCog):
             else:
                 await self.bot.edit_profile(avatar=None)
 
-    @manage.command(pass_context=True, no_pm=True)
+    @manage.command(no_pm=True)
     @commands.bot_has_permissions(change_nickname=True)
     @checks.owner_or_permissions(manage_nicknames=True)
     async def nick(self, ctx, *, new_nick=None):
         """Change bot's nickname."""
-        bot_member = ctx.message.server.me
-        await self.bot.change_nickname(bot_member, new_nick or None)
+        await ctx.message.guild.me.edit(nick=new_nick or None)
 
-    @commands.command(pass_context=True, aliases=['restart', 'kill'], hidden=True)
+    @commands.command(aliases=['restart', 'kill'], hidden=True)
     @checks.is_owner()
     async def exit(self, ctx, code: int = None):
         """Restart/kill the bot.
@@ -77,7 +73,7 @@ class Meta(BaseCog):
         codes = {'restart': 2, 'kill': 1}
         code = codes.get(ctx.invoked_with, code)
         if code is None:
-            await self.bot.say('Invalid exit code.')
+            await ctx.send('Invalid exit code.')
             return
         self.bot.exit_status = code
         await self.bot.logout()
@@ -87,6 +83,7 @@ class Meta(BaseCog):
         perms.update(kick_members=True,
                      ban_members=True,
                      read_messages=True,
+                     read_message_history=True,
                      send_messages=True,
                      manage_messages=True,
                      embed_links=True,
@@ -95,7 +92,7 @@ class Meta(BaseCog):
         return discord.utils.oauth_url(self.bot.client_id, permissions=perms)
 
     @commands.command()
-    async def join(self):
+    async def join(self, ctx):
         """Add bot to one of your servers.
 
         Bots can no longer accept instant invite links.
@@ -108,10 +105,10 @@ class Meta(BaseCog):
         embed = discord.Embed(title='Click here!',
                               url=self.oauth_url(),
                               description=desc)
-        await self.bot.say(embed=embed)
+        await ctx.send(embed=embed)
 
     @commands.command()
-    async def about(self):
+    async def about(self, ctx):
         """Display bot information."""
         description = 'Uptime: {}\n[Invite Link]({})'.format(self.bot.get_uptime(brief=True),
                                                              self.oauth_url())
@@ -128,26 +125,26 @@ class Meta(BaseCog):
             embed.add_field(name='Source', value='See [here]({}).'.format(source))
         embed.set_footer(text='Made with discord.py | Online Since', icon_url='http://i.imgur.com/5BFecvA.png')
         embed.timestamp = self.bot.start_time
-        await self.bot.say(embed=embed)
+        await ctx.send(embed=embed)
 
     @commands.command()
-    async def uptime(self):
+    async def uptime(self, ctx):
         """Display bot uptime."""
         uptime = '\n'.join(self.bot.get_uptime().split(', '))
         embed = discord.Embed(
             description='```ocaml\nUptime:\n{}\n```'.format(uptime),
             timestamp=self.bot.start_time)
         embed.set_footer(text='Online Since')
-        await self.bot.say(embed=embed)
+        await ctx.send(embed=embed)
 
-    @commands.command(pass_context=True, aliases=['ping'])
+    @commands.command(aliases=['ping'])
     async def poke(self, ctx):
         """Make sure bot is working."""
         if ctx.invoked_with == 'poke':
             reply = 'I need an adult!'
         else:
             reply = 'Pong!'
-        await self.bot.say(reply)
+        await ctx.send(reply)
 
 
 def setup(bot):

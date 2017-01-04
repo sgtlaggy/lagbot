@@ -41,7 +41,7 @@ def die(arg):
 class Misc(BaseCog):
     """Miscellaneous commands that don't fit in other categories."""
     @commands.command(name='roll')
-    async def roll_dice(self, *rolls: die):
+    async def roll_dice(self, ctx, *rolls: die):
         """In format CdS, rolls C dice each with S sides.
 
         If C is neglected, it will be assumed to mean 1 die.
@@ -62,15 +62,15 @@ class Misc(BaseCog):
             if isinstance(result, list):
                 result = ', '.join(map(str, result))
             msg.append('{}: {}'.format(roll, result))
-        await self.bot.say('\n'.join(msg))
+        await ctx.send('\n'.join(msg))
 
     @roll_dice.error
     async def roll_error(self, exc, ctx):
         if isinstance(exc, commands.BadArgument):
-            await self.bot.say(str(exc))
+            await ctx.send(str(exc))
 
     @commands.command()
-    async def flip(self, coins: integer = 1):
+    async def flip(self, ctx, coins: integer = 1):
         """Flip any number of coins."""
         flips = OrderedDict([('Heads', 0),
                              ('Tails', 0),
@@ -94,20 +94,20 @@ class Misc(BaseCog):
                     break
                 message.append('{}: {}'.format(f, c))
         message = '\n'.join(message)
-        await self.bot.say(message)
+        await ctx.send(message)
 
     @commands.command()
-    async def choose(self, *options):
+    async def choose(self, ctx, *options):
         """Choose a random element from a list of items.
 
         Any item that contains a space must be wrapped in double quotes (").
         """
         if len(options) == 0:
-            await self.bot.say('No.')
+            await ctx.send('No.')
         else:
-            await self.bot.say(random.choice(options))
+            await ctx.send(random.choice(options))
 
-    @commands.command(aliases=['poll'], pass_context=True, no_pm=True)
+    @commands.command(aliases=['poll'], no_pm=True)
     @commands.bot_has_permissions(add_reactions=True)
     async def vote(self, ctx, *, options):
         """Allow users to vote on something.
@@ -132,24 +132,24 @@ class Misc(BaseCog):
         """
         title, *options = [opt.strip() for opt in options.split('\n')]
         if len(options) > 10:
-            await self.bot.say('Too many options.')
+            await ctx.send('Too many options.')
             return
         elif len(options) < 2:
-            await self.bot.say('Too few options.')
+            await ctx.send('Too few options.')
             return
 
         msg = ['__' + title + '__']
         for num, opt in zip(digits[1:], options):
             msg.append('{} {}'.format(num, opt))
-        poll_msg = await self.bot.say('\n'.join(msg))
+        poll_msg = await ctx.send('\n'.join(msg))
         for ind in range(len(options)):
-            await self.bot.add_reaction(poll_msg, digits[ind + 1])
+            await poll_msg.add_reaction(digits[ind + 1])
         res = await self.bot.wait_for_reaction([*CLOCKS, '\N{CROSS MARK}'],
                                                user=ctx.message.author,
                                                message=poll_msg, timeout=30)
         if res is not None:
             if res.reaction.emoji == '\N{CROSS MARK}':
-                await self.bot.delete_message(poll_msg)
+                await poll_msg.delete()
                 return
             time_ind = CLOCKS.index(res.reaction.emoji)
             if time_ind % 2 == 1:
@@ -162,10 +162,11 @@ class Misc(BaseCog):
         else:
             poll_time = 60
         res = await self.bot.wait_for_reaction('\N{CROSS MARK}', message=poll_msg,
-                                               user=ctx.message.author, timeout=(poll_time * 60) - 30)
+                                               user=ctx.message.author,
+                                               timeout=(poll_time * 60) - 30)
         if res is not None:
             await asyncio.sleep(30)
-        poll_msg = await self.bot.edit_message(poll_msg, '***POLL IS CLOSED***\n' + poll_msg.content)
+        poll_msg = await poll_msg.edit('***POLL IS CLOSED***\n' + poll_msg.content)
         reactions = [r for r in poll_msg.reactions if r.emoji in digits[1:]]
         win_score = max(r.count for r in reactions)
         if win_score == 1:
@@ -185,31 +186,29 @@ class Misc(BaseCog):
                 await say_and_pm(ctx, 'The poll "{}" {{channel}} was a tie at {} vote{} between:\n{}'.format(
                     title, win_score, plural(win_score), '\n'.join(winners)))
 
-    @commands.command(pass_context=True, no_pm=True)
+    @commands.command(no_pm=True)
     async def info(self, ctx, *, member: discord.Member = None):
         """Display information of specific user."""
         member = member or ctx.message.author
-        roles = [role.name.replace('@', '@\u200b')
-                 for role in member.roles
-                 if role.name != '@everyone']
+        roles = [role.mention for role in member.roles if role.name != '@everyone']
         embed = discord.Embed(colour=member.colour)
         embed.add_field(name='Name', value=member.name)
         embed.add_field(name='Tag', value=member.discriminator)
         embed.add_field(name='ID', value=member.id)
         embed.add_field(name='Joined Server', value=fancy_time(member.joined_at)[::-1].replace(' ', '\n', 1)[::-1])
         embed.add_field(name='Joined Discord', value=fancy_time(member.created_at)[::-1].replace(' ', '\n', 1)[::-1])
-        embed.add_field(name='Roles', value=', '.join(roles))
+        embed.add_field(name='Roles', value=' '.join(roles))
         embed.set_image(url=member.avatar_url)
-        await self.bot.say(embed=embed)
+        await ctx.send(embed=embed)
 
     @commands.command()
-    async def charinfo(self, *, chars):
+    async def charinfo(self, ctx, *, chars):
         """Get unicode character info."""
         if not chars:
             return
         chars = unicodedata.normalize('NFC', chars)
         if len(chars) > 25:
-            await self.bot.say('Too many emoji.')
+            await ctx.send('Too many emoji.')
             return
         embed = discord.Embed()
         for char in chars:
@@ -224,16 +223,16 @@ class Misc(BaseCog):
             embed.add_field(name=name,
                             value='{char} [{code}]({url})'.format(
                                 char=char, code=code, url=UNILINK.format(uc)))
-        await self.bot.say(embed=embed)
+        await ctx.send(embed=embed)
 
-    @commands.command(pass_context=True, aliases=['fullwidth'])
+    @commands.command(aliases=['fullwidth', 'fw'])
     async def meme(self, ctx, *, chars):
         """Turn your lame normal text into full-width text."""
         try:
-            await self.bot.delete_message(ctx.message)
+            await ctx.message.delete()
         except:
             pass
-        await self.bot.say(zenhan.h2z(chars))
+        await ctx.send(zenhan.h2z(chars))
 
 
 def setup(bot):

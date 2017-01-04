@@ -41,8 +41,7 @@ HERO_INFO = {'ana': {'color': 0xCCC2AE, 'name': 'Ana'},
              'widowmaker': {'color': 0x6F6FAE, 'name': 'Widowmaker'},
              'winston': {'color': 0x4C505C, 'name': 'Winston'},
              'zarya': {'color': 0xF571A8, 'name': 'Zarya'},
-             'zenyatta': {'color': 0xC79C00, 'name': 'Zenyatta'}
-             }
+             'zenyatta': {'color': 0xC79C00, 'name': 'Zenyatta'}}
 
 
 class NotPlayed(Exception):
@@ -61,8 +60,7 @@ class Rank:
              'platinum': 4,
              'diamond': 5,
              'master': 6,
-             'grandmaster': 7
-             }
+             'grandmaster': 7}
 
     @classmethod
     def get(cls, rank):
@@ -171,7 +169,7 @@ class Overwatch(BaseCog):
         btag = api_to_btag(tag)
         status, data = await self.bot.request(end.format(btag=tag), timeout=15)
         if status == 500:
-            await self.bot.send_message(self.bot.owner, 'Blizzard broke OWAPI.\n' + data['exc'])
+            await self.bot.owner.send('Blizzard broke OWAPI.\n' + data['exc'])
             raise ServerError('Blizzard broke something. Please wait a bit before trying again.')
         elif status != 200:
             raise NotFound("Couldn't get stats for {}.".format(btag))
@@ -229,7 +227,7 @@ class Overwatch(BaseCog):
         return data['stats'].get(mode), data['heroes']['playtime'][mode], \
             tag, mode, data['region']
 
-    @commands.group(aliases=['ow'], pass_context=True, invoke_without_command=True)
+    @commands.group(aliases=['ow'], invoke_without_command=True)
     async def overwatch(self, ctx, tag='', mode=None):
         """See stats of yourself or another player.
 
@@ -252,46 +250,46 @@ class Overwatch(BaseCog):
             * BattleTags are case-sensitive.
             * To get stats by Discord mention, the person must be in the DB.
         """
-        await self.bot.type()
-        try:
-            stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode)
-        except (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag) as e:
-            await self.bot.say(e)
-            return
+        with ctx.typing():
+            try:
+                stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode)
+            except (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag) as e:
+                await ctx.send(e)
+                return
 
-        mp_hero, mp_time = next(most_played(heroes))
-        embed = discord.Embed(colour=HERO_INFO[mp_hero]['color'])
-        links = stat_links(tag, region)
-        embed.description = '**{} Stats** ([raw]({}))'.format(mode.title(), links['owapi'])
-        author_icon = stats['overall_stats']['avatar']
-        embed.set_thumbnail(url=Portrait.get(mp_hero))
-        embed.add_field(name='Time Played', value=time_str(stats['game_stats']['time_played']))
-        embed.add_field(name='Level', value=ow_level(stats['overall_stats']))
-        if stats['competitive']:
-            tier = stats['overall_stats']['tier']
-            if tier is not None:
-                rank = '{0[tier]} {0[comprank]}'.format(stats['overall_stats']).title()
-                author_icon = Rank.get(tier)
+            mp_hero, mp_time = next(most_played(heroes))
+            embed = discord.Embed(colour=HERO_INFO[mp_hero]['color'])
+            links = stat_links(tag, region)
+            embed.description = '**{} Stats** ([raw]({}))'.format(mode.title(), links['owapi'])
+            author_icon = stats['overall_stats']['avatar']
+            embed.set_thumbnail(url=Portrait.get(mp_hero))
+            embed.add_field(name='Time Played', value=time_str(stats['game_stats']['time_played']))
+            embed.add_field(name='Level', value=ow_level(stats['overall_stats']))
+            if stats['competitive']:
+                tier = stats['overall_stats']['tier']
+                if tier is not None:
+                    rank = '{0[tier]} {0[comprank]}'.format(stats['overall_stats']).title()
+                    author_icon = Rank.get(tier)
+                else:
+                    rank = 'Unranked'
+                embed.add_field(name='Competitive Rank', value=rank)
+            embed.add_field(name='Most Played Hero', value=' - '.join([HERO_INFO[mp_hero]['name'], mp_time]))
+            if stats['overall_stats'].get('games'):
+                embed.add_field(name='Games Played', value=stats['overall_stats']['games'])
+                embed.add_field(name='Games Won', value=stats['overall_stats']['wins'])
+                embed.add_field(name='Games Tied', value=stats['overall_stats']['ties'])
+                embed.add_field(name='Win Rate', value='{}%'.format(stats['overall_stats']['win_rate']))
             else:
-                rank = 'Unranked'
-            embed.add_field(name='Competitive Rank', value=rank)
-        embed.add_field(name='Most Played Hero', value=' - '.join([HERO_INFO[mp_hero]['name'], mp_time]))
-        if stats['overall_stats'].get('games'):
-            embed.add_field(name='Games Played', value=stats['overall_stats']['games'])
-            embed.add_field(name='Games Won', value=stats['overall_stats']['wins'])
-            embed.add_field(name='Games Tied', value=stats['overall_stats']['ties'])
-            embed.add_field(name='Win Rate', value='{}%'.format(stats['overall_stats']['win_rate']))
-        else:
-            embed.add_field(name='Games Won', value=stats['overall_stats']['wins'])
-        embed.add_field(name='Kill/Death', value=round(stats['game_stats']['kpd'], 2))
-        embed.add_field(name='Environmental Deaths',
-                        value=int(stats['game_stats'].get('environmental_deaths', 0)))
-        embed.set_author(name=api_to_btag(tag),
-                         icon_url=author_icon,
-                         url=links['official'])
-        await self.bot.say(embed=embed)
+                embed.add_field(name='Games Won', value=stats['overall_stats']['wins'])
+            embed.add_field(name='Kill/Death', value=round(stats['game_stats']['kpd'], 2))
+            embed.add_field(name='Environmental Deaths',
+                            value=int(stats['game_stats'].get('environmental_deaths', 0)))
+            embed.set_author(name=api_to_btag(tag),
+                             icon_url=author_icon,
+                             url=links['official'])
+            await ctx.send(embed=embed)
 
-    @overwatch.command(pass_context=True)
+    @overwatch.command()
     async def heroes(self, ctx, tag='', mode=None):
         """Get playtime for each played hero.
 
@@ -299,38 +297,38 @@ class Overwatch(BaseCog):
         [mode] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
              * Defaults to competitive stats, falls back to quickplay.
         """
-        await self.bot.type()
-        try:
-            stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode)
-        except (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag) as e:
-            await self.bot.say(e)
-            return
+        with ctx.typing():
+            try:
+                stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode)
+            except (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag) as e:
+                await ctx.send(e)
+                return
 
-        message = ['{} hero stats:'.format(mode.title())]
-        width = max(len(HERO_INFO[hero]['name']) for hero in heroes.keys())
-        message.append('```ocaml')
-        ordered = list(most_played(heroes))
-        for hero, played in ordered:
-            if played:
-                message.append('{0:<{width}} : {1}'.format(
-                    HERO_INFO[hero]['name'],
-                    played,
-                    width=width))
-        message.append('```')
-        hero = ordered[0][0]
-        links = stat_links(tag, region)
-        embed = discord.Embed(colour=HERO_INFO[hero]['color'])
-        tier = stats['overall_stats']['tier']
-        if stats['competitive'] and tier is not None:
-            author_icon = Rank.get(tier)
-        else:
-            author_icon = stats['overall_stats']['avatar']
-        embed.set_author(name=api_to_btag(tag),
-                         icon_url=author_icon,
-                         url=links['official'])
-        await self.bot.say('\n'.join(message), embed=embed)
+            message = ['{} hero stats:'.format(mode.title())]
+            width = max(len(HERO_INFO[hero]['name']) for hero in heroes.keys())
+            message.append('```ocaml')
+            ordered = list(most_played(heroes))
+            for hero, played in ordered:
+                if played:
+                    message.append('{0:<{width}} : {1}'.format(
+                        HERO_INFO[hero]['name'],
+                        played,
+                        width=width))
+            message.append('```')
+            hero = ordered[0][0]
+            links = stat_links(tag, region)
+            embed = discord.Embed(colour=HERO_INFO[hero]['color'])
+            tier = stats['overall_stats']['tier']
+            if stats['competitive'] and tier is not None:
+                author_icon = Rank.get(tier)
+            else:
+                author_icon = stats['overall_stats']['avatar']
+            embed.set_author(name=api_to_btag(tag),
+                             icon_url=author_icon,
+                             url=links['official'])
+            await ctx.send('\n'.join(message), embed=embed)
 
-    @overwatch.command(name='set', aliases=['save'], pass_context=True)
+    @overwatch.command(name='set', aliases=['save'])
     async def ow_set(self, ctx, tag, mode=None):
         """Set your BattleTag and default gamemode.
 
@@ -355,7 +353,7 @@ class Overwatch(BaseCog):
             else:
                 new_tag = validate_btag(tag)
                 if new_tag is None:
-                    await self.bot.say('Invalid BattleTag or mode.')
+                    await ctx.send('Invalid BattleTag or mode.')
                     return
                 if mode in MODES:
                     new_mode = ow_mode(mode)
@@ -379,9 +377,9 @@ class Overwatch(BaseCog):
                 message = 'Updated BattleTag.'
         else:
             message = 'Updated BattleTag and preferred mode.'
-        await self.bot.say('\N{THUMBS UP SIGN} ' + message)
+        await ctx.send('\N{THUMBS UP SIGN} ' + message)
 
-    @overwatch.command(name='unset', aliases=['delete', 'remove'], pass_context=True)
+    @overwatch.command(name='unset', aliases=['delete', 'remove'])
     async def ow_unset(self, ctx):
         """Remove your BattleTag from the DB."""
         author = ctx.message.author
@@ -396,7 +394,7 @@ class Overwatch(BaseCog):
             message = '\N{THUMBS UP SIGN} Removed from db.'
         else:
             message = '\N{THUMBS DOWN SIGN} Not in db.'
-        await self.bot.say(message)
+        await ctx.send(message)
 
 
 def setup(bot):

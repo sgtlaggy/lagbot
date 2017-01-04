@@ -9,37 +9,37 @@ class Management(BaseCog):
     """Admin/moderation commands."""
     @commands.command(no_pm=True)
     @commands.has_permissions(kick_members=True)
-    async def kick(self, *, member: discord.Member):
+    async def kick(self, ctx, *, member: discord.Member):
         """Kick user from server if you have permission.
 
         You must have permission to kick members.
         """
         try:
-            await self.bot.kick(member)
+            await ctx.message.guild.kick(member)
         except discord.Forbidden:
-            await self.bot.say("I don't have permission to kick.")
+            await ctx.send("I don't have permission to kick.")
         except discord.HTTPException:
-            await self.bot.say('Kicking failed.')
+            await ctx.send('Kicking failed.')
         else:
-            await self.bot.say('\N{THUMBS UP SIGN}')
+            await ctx.send('\N{THUMBS UP SIGN}')
 
     @commands.command(no_pm=True)
     @commands.has_permissions(ban_members=True)
-    async def ban(self, *, member: discord.Member):
+    async def ban(self, ctx, *, member: discord.Member):
         """Ban user from server.
 
         You must have permission to ban members.
         """
         try:
-            await self.bot.ban(member)
+            await ctx.message.guild.ban(member)
         except discord.Forbidden:
-            await self.bot.say("I don't have permission to ban.")
+            await ctx.send("I don't have permission to ban.")
         except discord.HTTPException:
-            await self.bot.say('Banning failed.')
+            await ctx.send('Banning failed.')
         else:
-            await self.bot.say('\N{THUMBS UP SIGN}')
+            await ctx.send('\N{THUMBS UP SIGN}')
 
-    @commands.command(pass_context=True, no_pm=True)
+    @commands.command(no_pm=True)
     @commands.bot_has_permissions(manage_messages=True)
     async def purge(self, ctx, count: integer, *, member: discord.Member=None):
         """Purge messages from the current channel.
@@ -50,27 +50,27 @@ class Management(BaseCog):
         message = ctx.message
         author = message.author
         channel = message.channel
-        owner = ctx.message.server.get_member(self.bot.owner.id)
+        owner = ctx.message.guild.get_member(self.bot.owner.id)
         if member is None:
             member = author
 
         if member == author or \
                 channel.permissions_for(author).manage_messages or \
-                (member == ctx.message.server.me and author == owner):
+                (member == ctx.message.guild.me and author == owner):
             to_remove = []
-            async for msg in self.bot.logs_from(channel, before=message, limit=1000):
+            async for msg in channel.history(before=message, limit=1000):
                 if msg.author == member:
                     to_remove.append(msg)
                 if len(to_remove) == count:
                     break
             if len(to_remove) == 0:
-                await self.bot.say("{} hasn't sent any messages.".format(member))
+                await ctx.send("{} hasn't sent any messages.".format(member))
                 return
             elif len(to_remove) == 1:
-                await self.bot.delete_message(to_remove[0])
+                await to_remove[0].delete()
             else:
-                await self.bot.delete_messages(to_remove)
-            await self.bot.say('Removed {} message{} by {}.'.format(
+                await ctx.delete_messages(to_remove)
+            await ctx.send('Removed {} message{} by {}.'.format(
                 len(to_remove), plural(len(to_remove)), member.display_name),
                 delete_after=10)
 

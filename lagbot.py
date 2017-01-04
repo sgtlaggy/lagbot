@@ -20,9 +20,7 @@ class LagBot(commands.Bot):
         self._debug = debug
         self.config_file = config_file
         with open(config_file) as fp:
-            self.config = json.load(fp)
-        self.owner = discord.User(**self.config.pop('owner')) if 'owner' in self.config else None
-        self.client_id = self.config.pop('client_id', None)
+            self.config = json.load(fp, object_pairs_hook=OrderedDict)
         super().__init__(*args, **kwargs)
         if self._debug:
             self.command_prefix = '?!'
@@ -44,34 +42,36 @@ class LagBot(commands.Bot):
         await super().logout()
 
     def run(self, *args, **kwargs):
-        super().run(self.config.pop('bot_token'), *args, **kwargs)
+        super().run(self.config['bot_token'], *args, **kwargs)
 
     async def on_ready(self):
-        if 'start_time' not in dir(self):
-            self.start_time = datetime.datetime.utcnow()
-        if None in (self.owner, self.client_id):
+        if 'start_time' in dir(self):
+            logging.info('Ready again.')
+            return
+        self.start_time = datetime.datetime.utcnow()
+        if None in {self.config.get('client_id'), self.config.get('owner_id')}:
             app_info = await self.application_info()
             self.client_id = app_info.id
             self.owner = app_info.owner
-            config = json.load(open(self.config_file), object_pairs_hook=OrderedDict)
-            config['client_id'] = self.client_id
-            config['owner'] = OrderedDict(('username' if attr == 'name' else attr,
-                                           getattr(self.owner, attr))
-                                          for attr in self.owner.__slots__)
+            self.config['client_id'] = self.client_id
+            self.config['owner_id'] = self.owner.id
             with open(self.config_file, 'w') as fp:
-                json.dump(config, fp, indent=4)
+                json.dump(self.config, fp, indent=4)
+        else:
+            self.client_id = self.config.get('client_id')
+            self.owner = await self.get_user_info(self.config['owner_id'])
         game = self.config.get('game')
         if game is not None:
             await self.change_presence(game=discord.Game(name=game))
         if self._debug:
             logging.info('Ready.')
 
-    async def on_server_join(self, server):
+    async def on_guild_join(self, guild):
         if self._debug:
             return
         message = 'Hello, thanks for inviting me!' \
                   '\nSay `{0.command_prefix}help` to see my commands.'
-        await self.send_message(server.default_channel, message.format(self))
+        await guild.default_channel.send(message.format(self))
 
     async def on_message(self, msg):
         if msg.author.bot:
@@ -79,17 +79,17 @@ class LagBot(commands.Bot):
         await self.process_commands(msg)
 
     async def on_command_error(self, exc, ctx):
-        """Emulate default on_command_error and add server + channel info."""
+        """Emulate default on_command_error and add guild + channel info."""
         if hasattr(ctx.command, 'on_error') or isinstance(exc, commands.CommandNotFound):
             return
         logging.warning('Ignoring exception in command {}'.format(ctx.command))
-        if isinstance(ctx.message.channel, discord.PrivateChannel):
+        if isinstance(ctx.message.channel, (discord.DMChannel, discord.GroupChannel)):
             if str(ctx.message.channel.type) == 'group':
                 msg = 'Message was "{0.content}" by {0.author} in {0.channel}.'
             else:
                 msg = 'Message was "{0.content}" in {0.channel}.'
         else:
-            msg = 'Message was "{0.content}" by {0.author} in "{0.channel}" on "{0.server}".'
+            msg = 'Message was "{0.content}" by {0.author} in "{0.channel}" on "{0.guild}".'
         msg = msg.format(ctx.message)
 
         exc = getattr(exc, 'original', exc)
@@ -98,7 +98,7 @@ class LagBot(commands.Bot):
 
         if not self._debug:
             try:
-                await self.send_message(self.owner, '{}\n```py\n{}\n```'.format(msg, tb))
+                await self.owner.send('{}\n```py\n{}\n```'.format(msg, tb))
             except:
                 pass
 

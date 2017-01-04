@@ -67,7 +67,7 @@ class Tags(BaseCog):
                 DO UPDATE SET uses = tagusers.uses + 1
                 ''', user.id)
 
-    @commands.group(pass_context=True, invoke_without_command=True)
+    @commands.group(invoke_without_command=True)
     async def tag(self, ctx, *, name: lower):
         """Get a tag.
 
@@ -76,23 +76,23 @@ class Tags(BaseCog):
         try:
             tag = await self.get_tag(name)
         except NotInDB as e:
-            await self.bot.say(e)
+            await ctx.send(e)
             return
-        await self.bot.say(decode(tag['content']))
+        await ctx.send(decode(tag['content']))
         await self.update_uses(tag, ctx.message.author)
 
-    @tag.command(pass_context=True)
+    @tag.command()
     async def random(self, ctx):
         tag = await self.bot.db.fetchrow('''
             SELECT * FROM tags ORDER BY random() LIMIT 1
             ''')
         if tag is None:
-            await self.bot.say('No tags in db.')
+            await ctx.send('No tags in db.')
             return
-        await self.bot.say(decode(tag['content']))
+        await ctx.send(decode(tag['content']))
         await self.update_uses(tag, ctx.message.author)
 
-    @tag.command(pass_context=True)
+    @tag.command()
     async def create(self, ctx, name: lower, *, text):
         """Create a new tag.
 
@@ -101,7 +101,7 @@ class Tags(BaseCog):
         try:
             self.verify_name(name)
         except ValueError as e:
-            await self.bot.say(e)
+            await ctx.send(e)
             return
         try:
             async with self.bot.db.transaction():
@@ -110,11 +110,11 @@ class Tags(BaseCog):
                     VALUES ($1, $2, $3)
                     ''', name, encode(text), ctx.message.author.id)
         except asyncpg.UniqueViolationError:
-            await self.bot.say('A tag with that name already exists!')
+            await ctx.send('A tag with that name already exists!')
             return
-        await self.bot.say('Created tag "{}".'.format(name))
+        await ctx.send('Created tag "{}".'.format(name))
 
-    @tag.command(pass_context=True)
+    @tag.command()
     async def rename(self, ctx, name: lower, *, new_name: lower):
         """Rename a tag you created.
 
@@ -124,18 +124,18 @@ class Tags(BaseCog):
             tag = await self.get_tag(name)
             self.verify_name(new_name)
         except (NotInDB, ValueError) as e:
-            await self.bot.say(e)
+            await ctx.send(e)
             return
         if ctx.message.author.id != tag['owner_id']:
-            await self.bot.say("You don't own that tag.")
+            await ctx.send("You don't own that tag.")
             return
         async with self.bot.db.transaction():
             await self.bot.db.execute('''
                 UPDATE tags SET name = $1 WHERE name = $2
                 ''', new_name, name)
-        await self.bot.say('Renamed tag "{}" to "{}".'.format(name, new_name))
+        await ctx.send('Renamed tag "{}" to "{}".'.format(name, new_name))
 
-    @tag.command(pass_context=True)
+    @tag.command()
     async def edit(self, ctx, name: lower, *, new_text):
         """Edit a tag you created.
 
@@ -144,37 +144,37 @@ class Tags(BaseCog):
         try:
             tag = await self.get_tag(name)
         except NotInDB as e:
-            await self.bot.say(e)
+            await ctx.send(e)
             return
         if ctx.message.author.id != tag['owner_id']:
-            await self.bot.say("You don't own that tag.")
+            await ctx.send("You don't own that tag.")
             return
         async with self.bot.db.transaction():
             await self.bot.db.execute('''
                 UPDATE tags SET (content, modified_at) = ($1, $2)
                 WHERE name = $3
                 ''', encode(new_text), ctx.message.timestamp, name)
-        await self.bot.say('Updated tag "{}".'.format(name))
+        await ctx.send('Updated tag "{}".'.format(name))
 
-    @tag.command(pass_context=True)
+    @tag.command()
     async def remove(self, ctx, *, name: lower):
         """Remove a tag you created."""
         try:
             tag = await self.get_tag(name)
         except NotInDB as e:
-            await self.bot.say(e)
+            await ctx.send(e)
             return
         if ctx.message.author.id != tag['owner_id']:
-            await self.bot.say("You don't own that tag.")
+            await ctx.send("You don't own that tag.")
             return
         async with self.bot.db.transaction():
             await self.bot.db.execute('''
                 DELETE FROM tags WHERE name = $1
                 ''', name)
-        await self.bot.say('Removed tag "{}".'.format(name))
+        await ctx.send('Removed tag "{}".'.format(name))
 
     @tag.command()
-    async def info(self, *, name: lower = None):
+    async def info(self, ctx, *, name: lower = None):
         """Get info about a tag or the tag DB.
 
         Get DB info by not specifying tag name.
@@ -183,7 +183,7 @@ class Tags(BaseCog):
             try:
                 tag = await self.get_tag(name)
             except NotInDB as e:
-                await self.bot.say(e)
+                await ctx.send(e)
                 return
             embed = discord.Embed(title=name)
             owner = await self.bot.get_user_info(tag['owner_id'])
@@ -200,9 +200,9 @@ class Tags(BaseCog):
             embed.add_field(name='Total Uses', value=await self.bot.db.fetchval('''
                 SELECT sum(uses) FROM tagusers
                 ''') or 0)
-        await self.bot.say(embed=embed)
+        await ctx.send(embed=embed)
 
-    @tag.command(pass_context=True)
+    @tag.command()
     async def stats(self, ctx, *, member: discord.Member = None):
         """See stats about your own or another person's tag usage."""
         if member is None:
@@ -217,9 +217,9 @@ class Tags(BaseCog):
         embed.set_author(name=str(member), icon_url=member.avatar_url)
         embed.add_field(name='Tags Created', value=tags)
         embed.add_field(name='Tags Used', value=uses)
-        await self.bot.say(embed=embed)
+        await ctx.send(embed=embed)
 
-    @tag.command(name='list', pass_context=True)
+    @tag.command(name='list')
     async def _list(self, ctx, *, member: discord.Member = None):
         """See tags you or another person created."""
         if member is None:
@@ -231,7 +231,7 @@ class Tags(BaseCog):
             SELECT name FROM tags WHERE owner_id = $1
             ''', member.id)
         if not tags:
-            await self.bot.say(mention + ' no tags.')
+            await ctx.send(mention + ' no tags.')
             return
         messages = [['{} {} tag{}:'.format(mention, len(tags), plural(len(tags))), '']]
         for tag in tags:
@@ -239,8 +239,10 @@ class Tags(BaseCog):
                 messages.append([tag])
             else:
                 messages[-1][-1] += ', ' + tag
+        for message in messages:
+            await ctx.send(message)
 
-    @tag.command(pass_context=True)
+    @tag.command()
     async def leaderboard(self, ctx):
         """See leaderboard of most used tags and largest users of tags."""
         tags = await self.bot.db.fetch('''
@@ -257,7 +259,7 @@ class Tags(BaseCog):
                                                        for user, uses in users]) or 'None')
         embed.add_field(name='Tags', value='\n'.join(['{0[name]} - {0[uses]}'.format(r)
                                                       for r in tags]) or 'None')
-        await self.bot.say(embed=embed)
+        await ctx.send(embed=embed)
 
     async def on_message(self, message):
         if message.content.startswith(TAG_PREFIX):

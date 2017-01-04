@@ -46,8 +46,8 @@ async def say_and_pm(ctx, content):
     author = ctx.message.author
     to_say = content.format(channel='')
     to_pm = content.format(channel='in %s' % channel.mention)
-    await ctx.bot.send_message(channel, to_say)
-    await ctx.bot.send_message(author, to_pm)
+    return (await ctx.send(to_say),
+            await author.send(to_pm))
 
 
 def tb_args(exc):
