@@ -9,7 +9,7 @@ import discord
 import zenhan
 import dice
 
-from .utils.utils import integer, plural, say_and_pm
+from .utils.utils import integer, pluralize, say_and_pm
 from .utils.emoji import digits, clocks
 from .base import BaseCog
 
@@ -24,9 +24,9 @@ def fancy_time(orig_time, utc=False):
     nice = ''
     if diff.days >= 365:
         years = diff.days // 365
-        nice += f'{years} year{plural(years)}, '
+        nice += pluralize(f'{years} year{{}}, ')
     days = diff.days % 365
-    nice += f'{days} day{plural(days)} ago'
+    nice += pluralize(f'{days} day{{}} ago')
     if utc:
         nice += f' ({orig_time} UTC)'
     else:
@@ -180,11 +180,11 @@ class Misc(BaseCog):
                     winners.append(options[ind - 1])
             win_score -= 1
             if len(winners) == 1:
-                await say_and_pm(ctx, '"{[0]}" won the poll "{}" {{channel}} with {} vote{}.'.format(
-                    winners, title, win_score, plural(win_score)))
+                await say_and_pm(ctx, pluralize('"{[0]}" won the poll "{}" {{channel}} with {} vote{{}}.'.format(
+                    winners, title, win_score)))
             else:
-                await say_and_pm(ctx, 'The poll "{}" {{channel}} was a tie at {} vote{} between:\n{}'.format(
-                    title, win_score, plural(win_score), '\n'.join(winners)))
+                await say_and_pm(ctx, pluralize('The poll "{}" {{channel}} was a tie at {} vote{{}} between:\n{}'.format(
+                    title, win_score, '\n'.join(winners))))
 
     @commands.command(no_pm=True)
     async def info(self, ctx, *, member: discord.Member = None):

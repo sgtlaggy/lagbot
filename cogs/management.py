@@ -1,7 +1,7 @@
 from discord.ext import commands
 import discord
 
-from .utils.utils import plural, integer
+from .utils.utils import pluralize, integer
 from .base import BaseCog
 
 
@@ -70,8 +70,8 @@ class Management(BaseCog):
                 await to_remove[0].delete()
             else:
                 await ctx.delete_messages(to_remove)
-            await ctx.send('Removed {} message{} by {}.'.format(
-                len(to_remove), plural(len(to_remove)), member.display_name),
+            await ctx.send(
+                pluralize(f'Removed {len(to_remove)} message{{}} by {member.display_name}.'),
                 delete_after=10)
 
 

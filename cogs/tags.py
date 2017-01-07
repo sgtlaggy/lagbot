@@ -6,7 +6,7 @@ import asyncpg
 import discord
 
 from .utils.errors import NotInDB
-from .utils.utils import plural
+from .utils.utils import pluralize
 from .base import BaseCog
 
 
@@ -233,7 +233,7 @@ class Tags(BaseCog):
         if not tags:
             await ctx.send(mention + ' no tags.')
             return
-        messages = [[f'{mention} {len(tags)} tag{plural(len(tags))}:', '']]
+        messages = [[pluralize(f'{mention} {len(tags)} tag{{}}:'), '']]
         for tag in tags:
             if sum(len(m) for m in messages[-1]) + len(', ' + tag['name']) > 2000:
                 messages.append([tag['name']])

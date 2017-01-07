@@ -9,7 +9,7 @@ import discord
 import aiohttp
 import asyncpg
 
-from cogs.utils.utils import plural, TIME_BRIEF, TIME_LONG, tb_args
+from cogs.utils.utils import pluralize, TIME_BRIEF, TIME_LONG, tb_args
 
 
 Response = namedtuple('Response', 'status data')
@@ -129,8 +129,5 @@ class LagBot(commands.Bot):
             elif time is None:
                 fmt = [fmt[3]]
 
-        return joiner.join(fmt).format(
-            d=days, dp=plural(days),
-            h=hours, hp=plural(hours),
-            m=minutes, mp=plural(minutes),
-            s=seconds, sp=plural(seconds))
+        return pluralize(joiner.join(fmt).format(
+            d=days, h=hours, m=minutes, s=seconds))
