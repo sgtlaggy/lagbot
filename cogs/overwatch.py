@@ -81,8 +81,8 @@ class Portrait:
 
 
 def stat_links(tag, region):
-    return dict(official='https://playoverwatch.com/en-us/career/pc/{}/{}'.format(region, tag),
-                owapi='http://lag.b0ne.com/owapi/v3/u/{}/blob?format=json_pretty'.format(tag),
+    return dict(official=f'https://playoverwatch.com/en-us/career/pc/{region}/{tag}',
+                owapi='http://lag.b0ne.com/owapi/v3/u/{tag}/blob?format=json_pretty',
                 webapp='http://lag.b0ne.com/ow/')
 
 
@@ -172,10 +172,10 @@ class Overwatch(BaseCog):
             await self.bot.owner.send('Blizzard broke OWAPI.\n' + data['exc'])
             raise ServerError('Blizzard broke something. Please wait a bit before trying again.')
         elif status != 200:
-            raise NotFound("Couldn't get stats for {}.".format(btag))
+            raise NotFound(f"Couldn't get stats for {btag}.")
         region = ow_region(data)
         if region is None:
-            raise NotPlayed('{} has not played Overwatch.'.format(btag))
+            raise NotPlayed(f'{btag} has not played Overwatch.')
         data[region]['region'] = region
         return data[region]
 
@@ -260,7 +260,7 @@ class Overwatch(BaseCog):
             mp_hero, mp_time = next(most_played(heroes))
             embed = discord.Embed(colour=HERO_INFO[mp_hero]['color'])
             links = stat_links(tag, region)
-            embed.description = '**{} Stats** ([raw]({}))'.format(mode.title(), links['owapi'])
+            embed.description = f'**{mode.title()} Stats** ([raw]({links["owapi"]}))'
             author_icon = stats['overall_stats']['avatar']
             embed.set_thumbnail(url=Portrait.get(mp_hero))
             embed.add_field(name='Time Played', value=time_str(stats['game_stats']['time_played']))
@@ -278,7 +278,7 @@ class Overwatch(BaseCog):
                 embed.add_field(name='Games Played', value=stats['overall_stats']['games'])
                 embed.add_field(name='Games Won', value=stats['overall_stats']['wins'])
                 embed.add_field(name='Games Tied', value=stats['overall_stats']['ties'])
-                embed.add_field(name='Win Rate', value='{}%'.format(stats['overall_stats']['win_rate']))
+                embed.add_field(name='Win Rate', value=f'{stats["overall_stats"]["win_rate"]}%')
             else:
                 embed.add_field(name='Games Won', value=stats['overall_stats']['wins'])
             embed.add_field(name='Kill/Death', value=round(stats['game_stats']['kpd'], 2))

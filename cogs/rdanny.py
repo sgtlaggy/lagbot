@@ -106,15 +106,15 @@ class RoboDanny:
                         result = await result
             except Exception as e:
                 value = stdout.getvalue()
-                fmt = '```py\n{}{}\n```'.format(value, traceback.format_exc())
+                fmt = f'```py\n{value}{traceback.format_exc()}\n```'
             else:
                 value = stdout.getvalue()
                 variables['__'] = result
                 if result is not None:
-                    fmt = '```py\n{}{}\n```'.format(value, result)
+                    fmt = f'```py\n{value}{result}\n```'
                     variables['last'] = result
                 elif value:
-                    fmt = '```py\n{}\n```'.format(value)
+                    fmt = f'```py\n{value}\n```'
 
             try:
                 if fmt is not None:
@@ -125,7 +125,7 @@ class RoboDanny:
             except discord.Forbidden:
                 pass
             except discord.HTTPException as e:
-                await msg.channel.send('Unexpected error: `{}`'.format(e))
+                await msg.channel.send(f'Unexpected error: `{e}`')
 
     @commands.command(hidden=True)
     @checks.is_owner()

@@ -64,7 +64,7 @@ class Management(BaseCog):
                 if len(to_remove) == count:
                     break
             if len(to_remove) == 0:
-                await ctx.send("{} hasn't sent any messages.".format(member))
+                await ctx.send(f"{member.display_name} hasn't sent any messages.")
                 return
             elif len(to_remove) == 1:
                 await to_remove[0].delete()

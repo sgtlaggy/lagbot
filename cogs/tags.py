@@ -133,7 +133,7 @@ class Tags(BaseCog):
             await self.bot.db.execute('''
                 UPDATE tags SET name = $1 WHERE name = $2
                 ''', new_name, name)
-        await ctx.send('Renamed tag "{}" to "{}".'.format(name, new_name))
+        await ctx.send(f'Renamed tag "{name}" to "{new_name}".')
 
     @tag.command()
     async def edit(self, ctx, name: lower, *, new_text):
@@ -154,7 +154,7 @@ class Tags(BaseCog):
                 UPDATE tags SET (content, modified_at) = ($1, $2)
                 WHERE name = $3
                 ''', encode(new_text), ctx.message.timestamp, name)
-        await ctx.send('Updated tag "{}".'.format(name))
+        await ctx.send(f'Updated tag "{name}".')
 
     @tag.command()
     async def remove(self, ctx, *, name: lower):
@@ -171,7 +171,7 @@ class Tags(BaseCog):
             await self.bot.db.execute('''
                 DELETE FROM tags WHERE name = $1
                 ''', name)
-        await ctx.send('Removed tag "{}".'.format(name))
+        await ctx.send(f'Removed tag "{name}".')
 
     @tag.command()
     async def info(self, ctx, *, name: lower = None):
@@ -226,21 +226,23 @@ class Tags(BaseCog):
             member = ctx.message.author
             mention = 'You have'
         else:
-            mention = '{.mention} has'.format(member)
+            mention = f'{member.mention} has'
         tags = await self.bot.db.fetch('''
             SELECT name FROM tags WHERE owner_id = $1
             ''', member.id)
         if not tags:
             await ctx.send(mention + ' no tags.')
             return
-        messages = [['{} {} tag{}:'.format(mention, len(tags), plural(len(tags))), '']]
+        messages = [[f'{mention} {len(tags)} tag{plural(len(tags))}:', '']]
         for tag in tags:
-            if sum(messages[-1], key=len) + len(', ' + tag) > 2000:
-                messages.append([tag])
+            if sum(len(m) for m in messages[-1]) + len(', ' + tag['name']) > 2000:
+                messages.append([tag['name']])
+            elif len(messages[-1][-1]) == 0:
+                messages[-1][-1] = tag['name']
             else:
-                messages[-1][-1] += ', ' + tag
+                messages[-1][-1] += ', ' + tag['name']
         for message in messages:
-            await ctx.send(message)
+            await ctx.send('\n'.join(message))
 
     @tag.command()
     async def leaderboard(self, ctx):
@@ -255,13 +257,15 @@ class Tags(BaseCog):
         for r in userstats:
             users.append((await self.bot.get_user_info(r['id']), r['uses']))
         embed = discord.Embed()
-        embed.add_field(name='Users', value='\n'.join(['{.mention} - {}'.format(user, uses)
+        embed.add_field(name='Users', value='\n'.join([f'{user.mention} - {uses}'
                                                        for user, uses in users]) or 'None')
-        embed.add_field(name='Tags', value='\n'.join(['{0[name]} - {0[uses]}'.format(r)
+        embed.add_field(name='Tags', value='\n'.join([f'{r["name"]} - {r["uses"]}'
                                                       for r in tags]) or 'None')
         await ctx.send(embed=embed)
 
     async def on_message(self, message):
+        if self.bot._debug:
+            return
         if message.content.startswith(TAG_PREFIX):
             tag = message.content[len(TAG_PREFIX):]
             ctx = commands.Context(bot=self.bot,

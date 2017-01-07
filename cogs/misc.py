@@ -24,13 +24,13 @@ def fancy_time(orig_time, utc=False):
     nice = ''
     if diff.days >= 365:
         years = diff.days // 365
-        nice += '{} year{}, '.format(years, plural(years))
+        nice += f'{years} year{plural(years)}, '
     days = diff.days % 365
-    nice += '{} day{} ago'.format(days, plural(days))
+    nice += f'{days} day{plural(days)} ago'
     if utc:
-        nice += ' ({} UTC)'.format(orig_time)
+        nice += f' ({orig_time} UTC)'
     else:
-        nice += ' ({})'.format(orig_time.strftime('%Y-%m-%d'))
+        nice += f' ({orig_time:%Y-%m-%d})'
     return nice
 
 
@@ -61,7 +61,7 @@ class Misc(BaseCog):
         for roll, result in rolls:
             if isinstance(result, list):
                 result = ', '.join(map(str, result))
-            msg.append('{}: {}'.format(roll, result))
+            msg.append(f'{roll}: {result}')
         await ctx.send('\n'.join(msg))
 
     @roll_dice.error
@@ -92,7 +92,7 @@ class Misc(BaseCog):
                 if coins == 1:
                     message.append(f)
                     break
-                message.append('{}: {}'.format(f, c))
+                message.append(f'{f}: {c}')
         message = '\n'.join(message)
         await ctx.send(message)
 
@@ -140,7 +140,7 @@ class Misc(BaseCog):
 
         msg = ['__' + title + '__']
         for num, opt in zip(digits[1:], options):
-            msg.append('{} {}'.format(num, opt))
+            msg.append(f'{num} {opt}')
         poll_msg = await ctx.send('\n'.join(msg))
         for ind in range(len(options)):
             await poll_msg.add_reaction(digits[ind + 1])
@@ -170,7 +170,7 @@ class Misc(BaseCog):
         reactions = [r for r in poll_msg.reactions if r.emoji in digits[1:]]
         win_score = max(r.count for r in reactions)
         if win_score == 1:
-            await say_and_pm(ctx, 'No one voted on "{}" {{channel}}'.format(title))
+            await say_and_pm(ctx, f'No one voted on "{title}" {{channel}}')
             return
         else:
             winners = []
@@ -190,7 +190,7 @@ class Misc(BaseCog):
     async def info(self, ctx, *, member: discord.Member = None):
         """Display information of specific user."""
         member = member or ctx.message.author
-        roles = [role.mention for role in member.roles if role.name != '@everyone']
+        roles = [f'@{role}' for role in member.roles if role.name != '@everyone']
         embed = discord.Embed(colour=member.colour)
         embed.add_field(name='Name', value=member.name)
         embed.add_field(name='Tag', value=member.discriminator)
@@ -217,12 +217,11 @@ class Misc(BaseCog):
             if name in {'SPACE', 'EM QUAD', 'EN QUAD'} or ' SPACE' in name:
                 char = '" "'
             if len(uc) <= 4:
-                code = '`\\u%s`' % uc.lower().zfill(4)
+                code = f'`\\u{uc.lower().zfill(4)}`'
             else:
-                code = '`\\U%s`' % uc.upper().zfill(8)
+                code = f'`\\U{uc.upper().zfill(8)}`'
             embed.add_field(name=name,
-                            value='{char} [{code}]({url})'.format(
-                                char=char, code=code, url=UNILINK.format(uc)))
+                            value=f'{char} [{code}]({UNILINK.format(uc)})')
         await ctx.send(embed=embed)
 
     @commands.command(aliases=['fullwidth', 'fw'])

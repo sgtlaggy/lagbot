@@ -25,7 +25,7 @@ config_file = os.path.join(app_path, 'config.json')
 # Discord Client/Bot
 command_prefix = '!'
 help_attrs = {'hidden': True}
-initial_cogs = ['cogs.{}'.format(cog) for cog in [
+initial_cogs = [f'cogs.{cog}' for cog in [
     'cog', 'images', 'management', 'meta',
     'misc', 'overwatch', 'rdanny', 'tags']]
 
@@ -41,11 +41,11 @@ if __name__ == '__main__':
         try:
             bot.load_extension(cog)
         except Exception as e:
-            logging.exception("Couldn't load cog {}".format(cog))
+            logging.exception(f"Couldn't load cog {cog}")
 
     bot.run()
     status = getattr(bot, 'exit_status', 0)
     if status:
-        logging.critical('Exiting with {}'.format(status))
+        logging.critical(f'Exiting with {status}.')
     logging.shutdown()
     sys.exit(status)

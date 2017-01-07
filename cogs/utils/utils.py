@@ -45,7 +45,7 @@ async def say_and_pm(ctx, content):
     channel = ctx.message.channel
     author = ctx.message.author
     to_say = content.format(channel='')
-    to_pm = content.format(channel='in %s' % channel.mention)
+    to_pm = content.format(channel=f'in {channel.mention}')
     return (await ctx.send(to_say),
             await author.send(to_pm))
 

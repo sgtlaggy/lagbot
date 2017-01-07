@@ -122,7 +122,7 @@ class Meta(BaseCog):
         embed.add_field(name='Documentation', value=docs.format(self.bot))
         source = self.bot.config.get('source')
         if source:
-            embed.add_field(name='Source', value='See [here]({}).'.format(source))
+            embed.add_field(name='Source', value=f'See [here]({source}).')
         embed.set_footer(text='Made with discord.py | Online Since', icon_url='http://i.imgur.com/5BFecvA.png')
         embed.timestamp = self.bot.start_time
         await ctx.send(embed=embed)
@@ -132,7 +132,7 @@ class Meta(BaseCog):
         """Display bot uptime."""
         uptime = '\n'.join(self.bot.get_uptime().split(', '))
         embed = discord.Embed(
-            description='```ocaml\nUptime:\n{}\n```'.format(uptime),
+            description=f'```ocaml\nUptime:\n{uptime}\n```',
             timestamp=self.bot.start_time)
         embed.set_footer(text='Online Since')
         await ctx.send(embed=embed)

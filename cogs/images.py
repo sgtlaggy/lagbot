@@ -31,6 +31,14 @@ CATEGORIES = {'hats', 'space', 'funny', 'sunglasses', 'boxes',
 REACTIONS = ('\N{PILE OF POO}', *digits[1:], '\N{HEAVY BLACK HEART}')
 
 
+def xkcd_date(data):
+    if 'date' in data:
+        date = data['date']
+    else:
+        date = datetime.date(*map(int, (data['year'], data['month'], data['day'])))
+    return date
+
+
 class MostRecent(Exception):
     pass
 
@@ -52,15 +60,6 @@ class Images(BaseCog):
             raise NotFound('Could not get comic.')
         else:
             return data
-
-    def xkcd_date(self, data):
-        if 'date' in data:
-            date = data['date']
-        else:
-            date = datetime.date(*map(int, (data['year'],
-                                            data['month'],
-                                            data['day'])))
-        return date
 
     async def xkcd_insert(self, data):
         async with self.bot.db.transaction():
@@ -104,8 +103,9 @@ class Images(BaseCog):
             except MostRecent:
                 pass
 
-            description = '**Date:** {:%m/%d/%Y}\n{[alt]}'.format(self.xkcd_date(data), data)
-            embed = discord.Embed(title='{0[num]}: {0[safe_title]}'.format(data),
+            description = f'**Date:** {xkcd_date(data):%m/%d/%Y}\n{data["alt"]}'
+            # embed = discord.Embed(title='{0[num]}: {0[safe_title]}'.format(data),
+            embed = discord.Embed(title=f'{data["num"]}: {data["safe_title"]}',
                                   url=self.make_xkcd_url(data['num'], api=False),
                                   description=description)
             embed.set_image(url=data['img'])
@@ -271,7 +271,7 @@ class Images(BaseCog):
         if len(facts) > 1:
             msg = commands.Paginator(prefix='', suffix='')
             for ind, fact in enumerate(facts):
-                msg.add_line('{}. {}'.format(ind + 1, fact))
+                msg.add_line(f'{ind + 1}. {fact}')
             for page in msg.pages:
                 await ctx.send(page)
         else:
@@ -301,8 +301,8 @@ class Images(BaseCog):
                 await ctx.send("You haven't rated any images.")
                 return
             msg = commands.Paginator(prefix='', suffix='')
-            for s, i, u in zip(scores, ids, urls):
-                msg.add_line('{score}/10 {id}: {url}.'.format(score=s, id=i, url=u))
+            for score, id, url in zip(scores, ids, urls):
+                msg.add_line(f'{score}/10 {id}: <{url}>')
             for page in msg.pages:
                 await ctx.send(page)
 
@@ -358,8 +358,8 @@ class Images(BaseCog):
                 await ctx.send('\N{THUMBS UP SIGN} Removed favorite.')
                 return
             msg = commands.Paginator(prefix='', suffix='')
-            for i, u in zip(ids, urls):
-                msg.add_line('`{id}`: {url}.'.format(id=i, url=u))
+            for id, url in zip(ids, urls):
+                msg.add_line(f'`{id}`: <{url}>')
             for page in msg.pages:
                 await ctx.send(page)
 

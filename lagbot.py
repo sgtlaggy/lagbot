@@ -66,13 +66,6 @@ class LagBot(commands.Bot):
         if self._debug:
             logging.info('Ready.')
 
-    async def on_guild_join(self, guild):
-        if self._debug:
-            return
-        message = 'Hello, thanks for inviting me!' \
-                  '\nSay `{0.command_prefix}help` to see my commands.'
-        await guild.default_channel.send(message.format(self))
-
     async def on_message(self, msg):
         if msg.author.bot:
             return
@@ -82,7 +75,7 @@ class LagBot(commands.Bot):
         """Emulate default on_command_error and add guild + channel info."""
         if hasattr(ctx.command, 'on_error') or isinstance(exc, commands.CommandNotFound):
             return
-        logging.warning('Ignoring exception in command {}'.format(ctx.command))
+        logging.warning(f'Ignoring exception in command {ctx.command}')
         if isinstance(ctx.message.channel, (discord.DMChannel, discord.GroupChannel)):
             if str(ctx.message.channel.type) == 'group':
                 msg = 'Message was "{0.content}" by {0.author} in {0.channel}.'
@@ -98,7 +91,7 @@ class LagBot(commands.Bot):
 
         if not self._debug:
             try:
-                await self.owner.send('{}\n```py\n{}\n```'.format(msg, tb))
+                await self.owner.send(f'{msg}\n```py\n{tb}\n```'.format(msg, tb))
             except:
                 pass
 
@@ -112,7 +105,7 @@ class LagBot(commands.Bot):
             try:
                 data = await getattr(resp, _type)()
             except:
-                logging.exception('Failed getting type {} from "{}".'.format(_type, url))
+                logging.exception(f'Failed getting type {_type} from "{url}".')
             return Response(resp.status, data)
 
     def get_uptime(self, brief=False):

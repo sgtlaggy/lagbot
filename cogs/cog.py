@@ -9,12 +9,12 @@ from .base import BaseCog
 
 class CogManagement(BaseCog):
     """Cog management commands, owner only."""
-    async def reload_ext_helper(self, ext):
+    async def reload_ext_helper(self, ctx, ext):
         try:
-            self.bot.unload_extension('cogs.{}'.format(ext))
-            self.bot.load_extension('cogs.{}'.format(ext))
+            self.bot.unload_extension(f'cogs.{ext}')
+            self.bot.load_extension(f'cogs.{ext}')
         except:
-            await ctx.send("Couldn't reload cog {}.".format(ext))
+            await ctx.send(f"Couldn't reload cog {ext}.")
 
     @commands.command(name='cogs', hidden=True)
     @checks.is_owner()
@@ -29,20 +29,20 @@ class CogManagement(BaseCog):
         for ext in exts:
             mod = 'cogs.' + ext
             if mod not in self.bot.extensions:
-                await ctx.send('Cog {} is not loaded.'.format(ext))
+                await ctx.send(f'Cog {ext} is not loaded.')
                 return
             try:
-                await self.reload_ext_helper(ext)
-                await ctx.send('Reloaded cog {}.'.format(ext))
+                await self.reload_ext_helper(ctx, ext)
+                await ctx.send(f'Reloaded cog {ext}.')
             except Exception as e:
-                await ctx.send("Couldn't reload cog {}.".format(ext))
-                logging.error("Couldn't reload cog {}.".format(ext))
+                await ctx.send(f"Couldn't reload cog {ext}.")
+                logging.error(f"Couldn't reload cog {ext}.")
 
     @reload_ext.command(name='all')
     @checks.is_owner()
     async def reload_all_exts(self, ctx):
         exts = [e.split('.')[1] for e in self.bot.extensions.keys()]
-        await asyncio.gather(*[self.reload_ext_helper(ext) for ext in exts])
+        await asyncio.gather(*[self.reload_ext_helper(ctx, ext) for ext in exts])
         await ctx.send('Reloaded all cogs.')
 
     @commands.command(name='load', hidden=True)
@@ -51,14 +51,14 @@ class CogManagement(BaseCog):
         for ext in exts:
             mod = 'cogs.' + ext
             if mod in self.bot.extensions:
-                await ctx.send('Cog {} is already loaded.'.format(ext))
+                await ctx.send(f'Cog {ext} is already loaded.')
                 return
             try:
                 self.bot.load_extension(mod)
-                await ctx.send('Loaded cog {}.'.format(ext))
+                await ctx.send(f'Loaded cog {ext}.')
             except Exception as e:
-                await ctx.send("Couldn't load cog {}.".format(ext))
-                logging.error("Couldn't load cog {}.".format(ext))
+                await ctx.send(f"Couldn't load cog {ext}.")
+                logging.error(f"Couldn't load cog {ext}.")
 
     @commands.command(name='unload', hidden=True)
     @checks.is_owner()
@@ -66,14 +66,14 @@ class CogManagement(BaseCog):
         for ext in exts:
             mod = 'cogs.' + ext
             if mod not in self.bot.extensions:
-                await ctx.send('Cog {} is not loaded.'.format(ext))
+                await ctx.send(f'Cog {ext} is not loaded.')
                 return
             try:
                 self.bot.unload_extension(mod)
-                await ctx.send('Unloaded cog {}.'.format(ext))
+                await ctx.send(f'Unloaded cog {ext}.')
             except Exception as e:
-                await ctx.send("Couldn't unload cog {}.".format(ext))
-                logging.error("Couldn't unload cog {}.".format(ext))
+                await ctx.send(f"Couldn't unload cog {ext}.")
+                logging.error(f"Couldn't unload cog {ext}.")
 
 
 def setup(bot):
