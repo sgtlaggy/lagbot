@@ -216,12 +216,9 @@ class Misc(BaseCog):
             name = unicodedata.name(char, 'unknown')
             if name in {'SPACE', 'EM QUAD', 'EN QUAD'} or ' SPACE' in name:
                 char = '" "'
-            if len(uc) <= 4:
-                code = f'`\\u{uc.lower().zfill(4)}`'
-            else:
-                code = f'`\\U{uc.upper().zfill(8)}`'
-            embed.add_field(name=name,
-                            value=f'{char} [{code}]({UNILINK.format(uc)})')
+            short = len(uc) <= 4
+            code = f'`\\{"u" if short else "U"}{uc.lower().zfill(4 if short else 8)}`'
+            embed.add_field(name=name, value=f'{char} [{code}]({UNILINK.format(uc)})')
         await ctx.send(embed=embed)
 
     @commands.command(aliases=['fullwidth', 'fw'])

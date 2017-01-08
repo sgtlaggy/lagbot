@@ -41,7 +41,7 @@ class RoboDanny:
         return content.strip('` \n')
 
     def get_syntax_error(self, e):
-        return '```py\n{0.text}{1:>{0.offset}}\n{2}: {0}```'.format(e, '^', type(e).__name__)
+        return f'```py\n{e.text}{"^":>{e.offset}}\n{type(e).__name__}: {e}```'
 
     @commands.command(hidden=True)
     @checks.is_owner()

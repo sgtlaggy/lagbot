@@ -12,10 +12,9 @@ from .base import BaseCog
 
 TAG_PREFIX = '%'
 
+
 # postgres keeps seeing `b64encode(text.encode())` as `text` even though it's
 # `bytea`, so the `.encode()).decode()` is to store base64 with no headaches
-
-
 def encode(text):
     return base64.b64encode(text.encode()).decode()
 
@@ -112,7 +111,7 @@ class Tags(BaseCog):
         except asyncpg.UniqueViolationError:
             await ctx.send('A tag with that name already exists!')
             return
-        await ctx.send('Created tag "{}".'.format(name))
+        await ctx.send(f'Created tag "{name}".')
 
     @tag.command()
     async def rename(self, ctx, name: lower, *, new_name: lower):

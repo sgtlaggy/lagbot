@@ -309,10 +309,7 @@ class Overwatch(BaseCog):
             ordered = list(most_played(heroes))
             for hero, played in ordered:
                 if played:
-                    message.append('{0:<{width}} : {1}'.format(
-                        HERO_INFO[hero]['name'],
-                        played,
-                        width=width))
+                    message.append(f'{HERO_INFO[hero]["name"]:<{width}} : {played}')
             message.append('```')
             hero = ordered[0][0]
             links = stat_links(tag, region)

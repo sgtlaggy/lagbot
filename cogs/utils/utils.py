@@ -2,7 +2,6 @@ from discord.ext.commands import BadArgument
 
 
 TIME_BRIEF = ('{d}d', '{h}h', '{m}m', '{s}s')
-# TIME_LONG = ('{d} day{dp}', '{h} hour{hp}', '{m} minute{mp}', '{s} second{sp}')
 TIME_LONG = ('{d} day{{}}', '{h} hour{{}}', '{m} minute{{}}', '{s} second{{}}')
 
 
