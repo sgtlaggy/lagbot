@@ -129,5 +129,4 @@ class LagBot(commands.Bot):
             elif time is None:
                 fmt = [fmt[3]]
 
-        return pluralize(joiner.join(fmt).format(
-            d=days, h=hours, m=minutes, s=seconds))
+        return pluralize(joiner.join(fmt).format(d=days, h=hours, m=minutes, s=seconds))

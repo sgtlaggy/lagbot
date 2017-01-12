@@ -24,6 +24,10 @@ def date(argument):
     raise commands.BadArgument('Cannot convert to date. Expected YYYY/MM/DD or YYYY-MM-DD.')
 
 
+def exception_signature():
+    return traceback.format_exc().split('\n')[-2]
+
+
 class RoboDanny:
     """Commands I stole from Robodanny (https://github.com/Rapptz/RoboDanny)."""
     def __init__(self, bot):
@@ -155,7 +159,7 @@ class RoboDanny:
             if inspect.isawaitable(result):
                 result = await result
         except Exception as e:
-            await ctx.send(python.format(type(e).__name__ + ': ' + str(e)))
+            await ctx.send(python.format(exception_signature()))
             return
         self.last_eval = result
         await ctx.send(python.format(result))
