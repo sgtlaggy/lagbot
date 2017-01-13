@@ -1,4 +1,5 @@
 import string
+import enum
 import re
 
 from discord.ext import commands
@@ -16,8 +17,15 @@ HEROES = endpoint + "heroes"
 
 BTAG_RE = re.compile(r'<@!?([0-9]+)>$')
 
-MODES = ('quick', 'quickplay', 'qp', 'unranked',
-         'comp', 'competitive', 'ranked')
+class Mode(enum.Enum):
+    quickplay = 0
+    unranked = 0
+    quick = 0
+    qp = 0
+    competitive = 1
+    ranked = 1
+    comp = 1
+    default = 1
 
 HERO_INFO = {'ana': {'color': 0xCCC2AE, 'name': 'Ana'},
              'bastion': {'color': 0x6E994D, 'name': 'Bastion'},
@@ -82,7 +90,7 @@ class Portrait:
 
 def stat_links(tag, region):
     return dict(official=f'https://playoverwatch.com/en-us/career/pc/{region}/{tag}',
-                owapi='http://lag.b0ne.com/owapi/v3/u/{tag}/blob?format=json_pretty',
+                owapi=f'http://lag.b0ne.com/owapi/v3/u/{tag}/blob?format=json_pretty',
                 webapp='http://lag.b0ne.com/ow/')
 
 
@@ -109,10 +117,7 @@ def api_player_tag(arg):
     match = BTAG_RE.match(arg)
     if match is not None:
         return match.group(1)
-    elif arg in MODES:
-        return arg
-    else:
-        return validate_btag(arg)
+    return validate_btag(arg)
 
 
 def api_to_btag(tag):
@@ -120,9 +125,10 @@ def api_to_btag(tag):
 
 
 def ow_mode(arg):
-    if arg in MODES[:4]:
-        return 'quickplay'
-    return 'competitive'
+    try:
+        return Mode[arg.lower()]
+    except KeyError:
+        raise NotFound(f'{arg} is not a valid mode.')
 
 
 def ow_level(overall_stats):
@@ -168,7 +174,7 @@ class Overwatch(BaseCog):
         btag = api_to_btag(tag)
         status, data = await self.bot.request(end.format(btag=tag), timeout=15)
         if status == 500:
-            await self.bot.owner.send('Blizzard broke OWAPI.\n' + data['exc'])
+            await self.bot.owner.send(f'Blizzard broke OWAPI.\n{data["exc"]}')
             raise ServerError('Blizzard broke something. Please wait a bit before trying again.')
         elif status != 200:
             raise NotFound(f"Couldn't get stats for {btag}.")
@@ -201,29 +207,33 @@ class Overwatch(BaseCog):
             mode = await self.bot.db.fetchval('''
                 SELECT mode FROM overwatch WHERE id = $1
                 ''', member_id)
-        return mode
+        return Mode[mode]
 
     async def get_tag_mode(self, ctx, tag, mode):
-        if tag in MODES:
-            mode = ow_mode(tag)
-            tag, member_id = await self.get_tag(ctx, '')
-        else:
+        try:
+            Mode[tag.lower()]
+        except KeyError:
             tag, member_id = await self.get_tag(ctx, tag)
             if mode is not None:
                 mode = ow_mode(mode)
             else:
                 mode = await self.get_mode(tag) or \
                     await self.get_mode(member_id) or \
-                    'competitive'
+                    Mode.default
+        else:
+            mode = ow_mode(tag)
+            tag, member_id = await self.get_tag(ctx, '')
         return tag, mode, member_id
 
     async def get_all(self, ctx, tag, mode, end=BLOB):
         tag, mode, _ = await self.get_tag_mode(ctx, tag, mode)
         data = await self.fetch_stats(tag, end)
-        if mode == 'competitive' and not data['stats'].get(mode) and \
-                not data['heroes']['stats'][mode]:
-            mode = 'quickplay'
-        return data['stats'].get(mode), data['heroes']['playtime'][mode], \
+        if mode is Mode.competitive and \
+                not data['stats'].get(mode.name) and \
+                not data['heroes']['stats'][mode.name]:
+            mode = Mode.quickplay
+        return data['stats'].get(mode.name), \
+            data['heroes']['playtime'][mode.name], \
             tag, mode, data['region']
 
     @commands.group(aliases=['ow'], invoke_without_command=True)
@@ -259,7 +269,7 @@ class Overwatch(BaseCog):
             mp_hero, mp_time = next(most_played(heroes))
             embed = discord.Embed(colour=HERO_INFO[mp_hero]['color'])
             links = stat_links(tag, region)
-            embed.description = f'**{mode.title()} Stats** ([raw]({links["owapi"]}))'
+            embed.description = f'**{mode.name.title()} Stats** ([raw]({links["owapi"]}))'
             author_icon = stats['overall_stats']['avatar']
             embed.set_thumbnail(url=Portrait.get(mp_hero))
             embed.add_field(name='Time Played', value=time_str(stats['game_stats']['time_played']))
@@ -303,7 +313,7 @@ class Overwatch(BaseCog):
                 await ctx.send(e)
                 return
 
-            message = ['{} hero stats:'.format(mode.title())]
+            message = [f'{mode.name.title()} hero stats:']
             width = max(len(HERO_INFO[hero]['name']) for hero in heroes.keys())
             message.append('```ocaml')
             ordered = list(most_played(heroes))
@@ -354,7 +364,7 @@ class Overwatch(BaseCog):
                 if mode in MODES:
                     new_mode = ow_mode(mode)
                 else:
-                    new_mode = rec['mode']
+                    new_mode = Mode[rec['mode']]
         else:
             new_tag = validate_btag(tag)
             new_mode = ow_mode(mode)
@@ -363,7 +373,7 @@ class Overwatch(BaseCog):
                 INSERT INTO overwatch (id, btag, mode) VALUES ($1, $2, $3)
                 ON CONFLICT (id)
                 DO UPDATE SET (btag, mode) = ($2, $3)
-                ''', author.id, new_tag, new_mode)
+                ''', author.id, new_tag, new_mode.name)
         if not rec:
             message = 'Added to db.'
         elif mode is None:
