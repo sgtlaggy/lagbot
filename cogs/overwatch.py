@@ -296,7 +296,7 @@ class Overwatch(BaseCog):
             embed.set_author(name=api_to_btag(tag),
                              icon_url=author_icon,
                              url=links['official'])
-            await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
 
     @overwatch.command()
     async def heroes(self, ctx, tag='', mode=None):
@@ -332,7 +332,7 @@ class Overwatch(BaseCog):
             embed.set_author(name=api_to_btag(tag),
                              icon_url=author_icon,
                              url=links['official'])
-            await ctx.send('\n'.join(message), embed=embed)
+        await ctx.send('\n'.join(message), embed=embed)
 
     @overwatch.command(name='set', aliases=['save'])
     async def ow_set(self, ctx, tag, mode=None):
@@ -349,11 +349,17 @@ class Overwatch(BaseCog):
             set <tag> [mode] - change BattleTag and preferred mode
         """
         author = ctx.message.author
+        try:
+            Mode[tag.lower()]
+        except KeyError:
+            tag_is_mode = False
+        else:
+            tag_is_mode = True
         rec = await self.bot.db.fetchrow('''
             SELECT * FROM overwatch WHERE id = $1
             ''', author.id)
         if rec is not None:
-            if mode is None and tag in MODES:
+            if mode is None and tag_is_mode:
                 new_tag = rec['btag']
                 new_mode = ow_mode(tag)
             else:
@@ -361,9 +367,9 @@ class Overwatch(BaseCog):
                 if new_tag is None:
                     await ctx.send('Invalid BattleTag or mode.')
                     return
-                if mode in MODES:
-                    new_mode = ow_mode(mode)
-                else:
+                try:
+                    new_mode = Mode[mode.lower()]
+                except (KeyError, AttributeError):
                     new_mode = Mode[rec['mode']]
         else:
             new_tag = validate_btag(tag)
@@ -377,7 +383,7 @@ class Overwatch(BaseCog):
         if not rec:
             message = 'Added to db.'
         elif mode is None:
-            if tag in MODES:
+            if tag_is_mode:
                 message = 'Updated preferred mode.'
             else:
                 message = 'Updated BattleTag.'

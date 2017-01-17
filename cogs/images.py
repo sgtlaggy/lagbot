@@ -109,7 +109,7 @@ class Images(BaseCog):
                                   url=self.make_xkcd_url(data['num'], api=False),
                                   description=description)
             embed.set_image(url=data['img'])
-            await ctx.send(embed=embed)
+        await ctx.send(embed=embed)
 
     async def fetch_facts(self, count):
         status, j = await self.bot.request(FACTS.format(count=count))
@@ -231,7 +231,7 @@ class Images(BaseCog):
 
             embed.colour = discord.Colour.red()
             embed._fields = None
-            await msg.edit(embed=embed)
+        await msg.edit(embed=embed)
 
         for reaction in REACTIONS[1:]:
             await msg.remove_reaction(reaction, self.bot.user)
@@ -360,8 +360,8 @@ class Images(BaseCog):
             msg = commands.Paginator(prefix='', suffix='')
             for id, url in zip(ids, urls):
                 msg.add_line(f'`{id}`: <{url}>')
-            for page in msg.pages:
-                await ctx.send(page)
+        for page in msg.pages:
+            await ctx.send(page)
 
 
 def setup(bot):
