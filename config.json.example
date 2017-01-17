@@ -1,0 +1,7 @@
+{
+    "source": "https://github.com/mikevb1/discordbot",
+    "userdocs": "https://github.com/mikevb1/discordbot/tree/master/docs",
+    "game": "playing game",
+    "cat_api": "TheCatAPI api key",
+    "bot_token": "bot application token"
+}
