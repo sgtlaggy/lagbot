@@ -23,8 +23,7 @@ def pluralize(s):
     for word in s.split():
         if word.isdigit():
             last_num = int(word)
-            continue
-        elif word.endswith('{}'):
+        elif '{}' in word:
             if last_num is None:
                 last_num = 1
             plurals.append(plural(last_num))
