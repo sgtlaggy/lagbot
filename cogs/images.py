@@ -215,8 +215,7 @@ class Images(BaseCog):
                 reported = True
                 actions.append(self.fetch_cat(REPORT, sub_id=sub_id, image_id=image_id))
                 return True
-            if len(actions) + len(votes) == 20:
-                return True
+            return len(actions) + len(votes) == 20
 
         await self.bot.wait_for_reaction(REACTIONS, timeout=25,
                                          message=msg, check=vote_check)
@@ -225,7 +224,7 @@ class Images(BaseCog):
                                              message=msg, check=vote_check)
 
             if reported:
-                await msg.delete_message()
+                await msg.delete()
                 await actions[-1]
                 return
 
