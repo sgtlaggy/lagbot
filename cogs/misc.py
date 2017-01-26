@@ -144,14 +144,21 @@ class Misc(BaseCog):
         poll_msg = await ctx.send('\n'.join(msg))
         for ind in range(len(options)):
             await poll_msg.add_reaction(digits[ind + 1])
-        res = await self.bot.wait_for_reaction([*CLOCKS, '\N{CROSS MARK}'],
-                                               user=ctx.message.author,
-                                               message=poll_msg, timeout=30)
+
+        def react_check(reactions):
+            def check(reaction, user):
+                return (reaction.emoji in reactions and
+                        reaction.message.id == poll_msg.id and
+                        user.id == ctx.message.author.id)
+            return check
+
+        res = await self.bot.wait_for('reaction_add', timeout=30,
+                                      check=react_check([*CLOCKS, '\N{CROSS MARK}']))
         if res is not None:
-            if res.reaction.emoji == '\N{CROSS MARK}':
+            if res[0].emoji == '\N{CROSS MARK}':
                 await poll_msg.delete()
                 return
-            time_ind = CLOCKS.index(res.reaction.emoji)
+            time_ind = CLOCKS.index(res[0].emoji)
             if time_ind % 2 == 1:
                 poll_time = (int(time_ind / 2) + 1) * 60
             else:
@@ -161,9 +168,9 @@ class Misc(BaseCog):
                     time_ind -= 2
         else:
             poll_time = 60
-        res = await self.bot.wait_for_reaction('\N{CROSS MARK}', message=poll_msg,
-                                               user=ctx.message.author,
-                                               timeout=(poll_time * 60) - 30)
+        res = await self.bot.wait_for('reaction_add',
+                                      check=react_check(['\N{CROSS MARK}']),
+                                      timeout=(poll_time * 60) - 30)
         if res is not None:
             await asyncio.sleep(30)
         poll_msg = await poll_msg.edit('***POLL IS CLOSED***\n' + poll_msg.content)

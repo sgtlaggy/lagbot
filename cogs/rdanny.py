@@ -70,9 +70,14 @@ class RoboDanny:
 
         self.sessions.add(msg.channel.id)
         await ctx.send('Enter code to execute or evaluate. `exit()` or `quit` to exit.')
+
+        def response_check(response):
+            return (response.channel == msg.channel and
+                    response.message.author == msg.author and
+                    response.content.startswith('`'))
+
         while True:
-            response = await self.bot.wait_for_message(author=msg.author, channel=msg.channel,
-                                                       check=lambda m: m.content.startswith('`'))
+            response = await self.bot.wait_for('message', check=response_check)
 
             cleaned = self.cleanup_code(response.content)
 

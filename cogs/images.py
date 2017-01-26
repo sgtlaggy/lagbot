@@ -43,6 +43,10 @@ class MostRecent(Exception):
     pass
 
 
+class Reported(Exception):
+    pass
+
+
 class Images(BaseCog):
     """Commands to fetch images from various sources."""
     def make_xkcd_url(self, num='', api=True):
@@ -198,9 +202,10 @@ class Images(BaseCog):
         actions = []
         votes = {}
         faved = set()
-        reported = False
 
         def vote_check(reaction, user):
+            if reaction.emoji not in REACTIONS or reaction.message.id != msg.id:
+                return False
             sub_id = user.id
             score = REACTIONS.index(reaction.emoji)
             if 1 <= score <= 10:
@@ -211,25 +216,26 @@ class Images(BaseCog):
                                               image_id=image_id,
                                               act='add'))
             else:
-                nonlocal reported
-                reported = True
                 actions.append(self.fetch_cat(REPORT, sub_id=sub_id, image_id=image_id))
-                return True
+                raise Reported
             return len(actions) + len(votes) == 20
 
-        await self.bot.wait_for_reaction(REACTIONS, timeout=25,
-                                         message=msg, check=vote_check)
-        with ctx.typing():
-            await self.bot.wait_for_reaction(REACTIONS, timeout=5,
-                                             message=msg, check=vote_check)
+        def unfavorite_check(reaction, user):
+            if reaction.emoji != REACTIONS[-1] or reaction.message.id != msg.id:
+                return False
+            faved.discard(user.id)
 
-            if reported:
-                await msg.delete()
-                await actions[-1]
-                return
+        try:
+            await asyncio.gather(
+                self.bot.wait_for('reaction_add', check=vote_check, timeout=30),
+                self.bot.wait_for('reaction_remove', check=unfavorite_check, timeout=30))
+        except Reported:
+            await msg.delete()
+            await actions[-1]
+            return
 
-            embed.colour = discord.Colour.red()
-            embed._fields = None
+        embed.colour = discord.Colour.red()
+        embed._fields = None
         await msg.edit(embed=embed)
 
         for reaction in REACTIONS[1:]:
