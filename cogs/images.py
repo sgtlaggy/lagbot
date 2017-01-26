@@ -70,7 +70,7 @@ class Images(BaseCog):
             return await self.bot.db.execute('''
                 INSERT INTO xkcd VALUES ($1, $2, $3, $4, $5)
                 ''', data['num'], data['safe_title'],
-                data['alt'], data['img'], self.xkcd_date(data))
+                data['alt'], data['img'], xkcd_date(data))
 
     @commands.command()
     async def xkcd(self, ctx, comic=''):
