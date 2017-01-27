@@ -1,8 +1,8 @@
 from discord.ext import commands
 import discord
 
-from .utils.utils import pluralize, integer
-from .base import BaseCog
+from utils.utils import pluralize, integer
+from cogs.base import BaseCog
 
 
 class Management(BaseCog):

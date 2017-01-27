@@ -5,9 +5,9 @@ import re
 from discord.ext import commands
 import discord
 
-from .utils.errors import NotFound, ServerError, NotInDB
-from .utils.utils import pluralize
-from .base import BaseCog
+from utils.errors import NotFound, ServerError, NotInDB
+from utils.utils import pluralize
+from cogs.base import BaseCog
 
 
 endpoint = "http://127.0.0.1:4444/owapi/v3/u/{btag}/"

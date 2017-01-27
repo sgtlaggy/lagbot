@@ -1,8 +1,8 @@
 from discord.ext import commands
 import discord
 
-from .utils import checks
-from .base import BaseCog
+from cogs.base import BaseCog
+from utils import checks
 
 
 class Meta(BaseCog):

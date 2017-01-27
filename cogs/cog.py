@@ -3,8 +3,8 @@ import logging
 
 from discord.ext import commands
 
-from .utils import checks
-from .base import BaseCog
+from cogs.base import BaseCog
+from utils import checks
 
 
 class CogManagement(BaseCog):

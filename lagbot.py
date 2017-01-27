@@ -9,7 +9,7 @@ import discord
 import aiohttp
 import asyncpg
 
-from cogs.utils.utils import pluralize, TIME_BRIEF, TIME_LONG, tb_args
+from utils.utils import pluralize, TIME_BRIEF, TIME_LONG, tb_args
 
 
 Response = namedtuple('Response', 'status data')

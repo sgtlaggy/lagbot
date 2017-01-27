@@ -5,9 +5,9 @@ from discord.ext import commands
 import asyncpg
 import discord
 
-from .utils.errors import NotInDB
-from .utils.utils import pluralize
-from .base import BaseCog
+from utils.errors import NotInDB
+from utils.utils import pluralize
+from cogs.base import BaseCog
 
 
 TAG_PREFIX = '%'

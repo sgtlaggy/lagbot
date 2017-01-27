@@ -9,9 +9,9 @@ import discord
 import zenhan
 import dice
 
-from .utils.utils import integer, pluralize, say_and_pm
-from .utils.emoji import digits, clocks
-from .base import BaseCog
+from utils.utils import integer, pluralize, say_and_pm
+from utils.emoji import digits, clocks
+from cogs.base import BaseCog
 
 
 CLOCKS = (clocks[-1], *clocks[:-1])

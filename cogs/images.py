@@ -8,11 +8,11 @@ from discord.ext import commands
 import discord
 import aiohttp
 
-from .utils.checks import bot_config_attr
-from .utils.errors import NotFound
-from .utils.utils import between
-from .utils.emoji import digits
-from .base import BaseCog
+from utils.checks import bot_config_attr
+from utils.errors import NotFound
+from utils.utils import between
+from utils.emoji import digits
+from cogs.base import BaseCog
 
 
 FACTS = 'http://catfacts-api.appspot.com/api/facts?number={count}'
