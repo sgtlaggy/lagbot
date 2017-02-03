@@ -137,12 +137,6 @@ def ow_level(overall_stats):
     return total
 
 
-def ow_region(data):
-    for region in {'us', 'kr', 'eu', 'any'}:
-        if data.get(region) is not None:
-            return region
-
-
 def time_str(decimal):
     hours, minutes = divmod(round(decimal * 60), 60)
     if hours:
@@ -178,11 +172,22 @@ class Overwatch(BaseCog):
             raise ServerError('Blizzard broke something. Please wait a bit before trying again.')
         elif status != 200:
             raise NotFound(f"Couldn't get stats for {btag}.")
-        region = ow_region(data)
-        if region is None:
-            raise NotPlayed(f'{btag} has not played Overwatch.')
-        data[region]['region'] = region
-        return data[region]
+        return data
+
+    async def get_region(self, tag, region, data):
+        if region is not None and data.get(region.lower()) is not None:
+            return region.lower()
+        elif region is not None:
+            raise NotFound(f'{api_to_btag(tag)} has not played in {region}.')
+        available = [r for r in ('us', 'eu', 'kr', 'any') if data.get(r) is not None]
+        rec = await self.bot.db.fetchrow('''
+            SELECT region FROM overwatch WHERE btag = $1
+            ''', tag)
+        if rec is None:
+            if available:
+                return available[0]
+            raise NotPlayed(f'{api_to_btag(tag)} has not played Overwatch.')
+        return rec['region']
 
     async def get_tag(self, ctx, tag):
         member_id = ctx.message.author.id
@@ -225,19 +230,21 @@ class Overwatch(BaseCog):
             tag, member_id = await self.get_tag(ctx, '')
         return tag, mode, member_id
 
-    async def get_all(self, ctx, tag, mode, end=BLOB):
+    async def get_all(self, ctx, tag, mode, reg, end=BLOB):
         tag, mode, _ = await self.get_tag_mode(ctx, tag, mode)
         data = await self.fetch_stats(tag, end)
+        region = await self.get_region(tag, reg, data)
+        data = data[region]
         if mode is Mode.competitive and \
                 not data['stats'].get(mode.name) and \
                 not data['heroes']['stats'][mode.name]:
             mode = Mode.quickplay
         return data['stats'].get(mode.name), \
             data['heroes']['playtime'][mode.name], \
-            tag, mode, data['region']
+            tag, mode, region
 
     @commands.group(aliases=['ow'], invoke_without_command=True)
-    async def overwatch(self, ctx, tag='', mode=None):
+    async def overwatch(self, ctx, tag='', mode=None, region=None):
         """See stats of yourself or another player.
 
         [tag] can be either BattleTag or a mention to someone in the db
@@ -261,7 +268,7 @@ class Overwatch(BaseCog):
         """
         with ctx.typing():
             try:
-                stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode)
+                stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode, region)
             except (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag) as e:
                 await ctx.send(e)
                 return
@@ -299,7 +306,7 @@ class Overwatch(BaseCog):
         await ctx.send(embed=embed)
 
     @overwatch.command()
-    async def heroes(self, ctx, tag='', mode=None):
+    async def heroes(self, ctx, tag='', mode=None, region=None):
         """Get playtime for each played hero.
 
         [tag] can be either BattleTag or a mention to someone in the db
@@ -308,7 +315,7 @@ class Overwatch(BaseCog):
         """
         with ctx.typing():
             try:
-                stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode)
+                stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode, region)
             except (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag) as e:
                 await ctx.send(e)
                 return
@@ -335,7 +342,7 @@ class Overwatch(BaseCog):
         await ctx.send('\n'.join(message), embed=embed)
 
     @overwatch.command(name='set', aliases=['save'])
-    async def ow_set(self, ctx, tag, mode=None):
+    async def ow_set(self, ctx, tag, mode=None, region='us'):
         """Set your BattleTag and default gamemode.
 
         <tag> is your BattleTag
@@ -374,12 +381,13 @@ class Overwatch(BaseCog):
         else:
             new_tag = validate_btag(tag)
             new_mode = ow_mode(mode)
+        new_region = await self.get_region(tag, region, {})
         async with self.bot.db.transaction():
             await self.bot.db.execute('''
-                INSERT INTO overwatch (id, btag, mode) VALUES ($1, $2, $3)
+                INSERT INTO overwatch (id, btag, mode, region) VALUES ($1, $2, $3, $4)
                 ON CONFLICT (id)
-                DO UPDATE SET (btag, mode) = ($2, $3)
-                ''', author.id, new_tag, new_mode.name)
+                DO UPDATE SET (btag, mode, region) = ($2, $3, $4)
+                ''', author.id, new_tag, new_mode.name, new_region)
         if not rec:
             message = 'Added to db.'
         elif mode is None:
