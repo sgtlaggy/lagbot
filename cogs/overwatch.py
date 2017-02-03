@@ -3,6 +3,7 @@ import enum
 import re
 
 from discord.ext import commands
+import asyncpg
 import discord
 
 from utils.errors import NotFound, ServerError, NotInDB
@@ -17,6 +18,9 @@ HEROES = endpoint + "heroes"
 
 BTAG_RE = re.compile(r'<@!?([0-9]+)>$')
 
+REGIONS = ('us', 'eu', 'kr', 'any')
+
+
 class Mode(enum.Enum):
     quickplay = 0
     unranked = 0
@@ -26,6 +30,7 @@ class Mode(enum.Enum):
     ranked = 1
     comp = 1
     default = 1
+
 
 HERO_INFO = {'ana': {'color': 0xCCC2AE, 'name': 'Ana'},
              'bastion': {'color': 0x6E994D, 'name': 'Bastion'},
@@ -97,6 +102,24 @@ def stat_links(tag, region):
 SYMBOLS = string.punctuation + ' '
 
 
+def fix_arg_order(*args):
+    tag, mode, region = '', None, None
+    for arg in args:
+        if arg is None or isinstance(arg, Mode):
+            continue
+        elif any(char in arg for char in {'#', '@'}):
+            tag = arg
+        elif arg.lower() in REGIONS:
+            region = arg.lower()
+        else:
+            try:
+                Mode[arg.lower()]
+                mode = arg.lower()
+            except KeyError:
+                pass
+    return tag, mode, region
+
+
 def validate_btag(btag):
     if btag == '' or '-' in btag:
         return btag
@@ -161,8 +184,8 @@ class Overwatch(BaseCog):
     """Commands for getting Overwatch stats.
 
     Any command argument named "tag" is a case-sensitive BattleTag.
-    If you have your BattleTag in the DB, you can specify gamemode instead of BattleTag to get your own stats in a different gamemode than you have saved.
     Any command argument named "mode" is a gamemode (qp, comp, quickplay, competitive, unranked, ranked).
+    Any command argument named "region" is a region (us, eu, kr).
     """
     async def fetch_stats(self, tag, end=BLOB):
         btag = api_to_btag(tag)
@@ -179,7 +202,7 @@ class Overwatch(BaseCog):
             return region.lower()
         elif region is not None:
             raise NotFound(f'{api_to_btag(tag)} has not played in {region}.')
-        available = [r for r in ('us', 'eu', 'kr', 'any') if data.get(r) is not None]
+        available = [r for r in REGIONS if data.get(r) is not None]
         rec = await self.bot.db.fetchrow('''
             SELECT region FROM overwatch WHERE btag = $1
             ''', tag)
@@ -247,10 +270,12 @@ class Overwatch(BaseCog):
     async def overwatch(self, ctx, tag='', mode=None, region=None):
         """See stats of yourself or another player.
 
+        [tag], [mode], and [region] can be specified in any order.
         [tag] can be either BattleTag or a mention to someone in the db
         [mode] can be 'quick', 'quickplay', 'qp', 'unranked',
                       'comp', 'competitive', 'ranked'
              * Defaults to competitive stats, falls back to quickplay.
+        [region] can be 'us', 'eu', or 'kr'
 
         Stats by BattleTag            : !ow BattleTag#1234
         Stats by Discord mention      : !ow @DiscordName
@@ -266,6 +291,7 @@ class Overwatch(BaseCog):
             * BattleTags are case-sensitive.
             * To get stats by Discord mention, the person must be in the DB.
         """
+        tag, mode, region = fix_arg_order(tag, mode, region)
         with ctx.typing():
             try:
                 stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode, region)
@@ -309,10 +335,14 @@ class Overwatch(BaseCog):
     async def heroes(self, ctx, tag='', mode=None, region=None):
         """Get playtime for each played hero.
 
+        [tag], [mode], and [region] can be specified in any order.
         [tag] can be either BattleTag or a mention to someone in the db
-        [mode] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
+        [mode] can be 'quick', 'quickplay', 'qp', 'unranked',
+                      'comp', 'competitive', 'ranked'
              * Defaults to competitive stats, falls back to quickplay.
+        [region] can be 'us', 'eu', or 'kr'
         """
+        tag, mode, region = fix_arg_order(tag, mode, region)
         with ctx.typing():
             try:
                 stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode, region)
@@ -341,13 +371,16 @@ class Overwatch(BaseCog):
                              url=links['official'])
         await ctx.send('\n'.join(message), embed=embed)
 
-    @overwatch.command(name='set', aliases=['save'])
+    @overwatch.group(name='set', aliases=['save'], invoke_without_command=True)
     async def ow_set(self, ctx, tag, mode=None, region='us'):
         """Set your BattleTag and default gamemode.
 
-        <tag> is your BattleTag
-        [mode] can be 'quick', 'quickplay', 'qp', 'comp', or 'competitive'
+        <tag>, [mode], and [region] can be specified in any order.
+        <tag> can be either BattleTag or a mention to someone in the db
+        [mode] can be 'quick', 'quickplay', 'qp', 'unranked',
+                      'comp', 'competitive', 'ranked'
              * Defaults to competitive stats, falls back to quickplay.
+        [region] can be 'us', 'eu', or 'kr'
 
         Note:
         If you're already in the db, you can use this command again as follows:
@@ -356,65 +389,79 @@ class Overwatch(BaseCog):
             set <tag> [mode] - change BattleTag and preferred mode
         """
         author = ctx.message.author
+        tag, mode, region = fix_arg_order(tag, mode, region)
+        new_tag = validate_btag(tag)
+        new_mode = ow_mode(mode)
+        new_region = region.lower() if region.lower() in REGIONS else 'us'
         try:
-            Mode[tag.lower()]
-        except KeyError:
-            tag_is_mode = False
+            async with self.bot.db.transaction():
+                await self.bot.db.execute('''
+                    INSERT INTO overwatch (id, btag, mode, region) VALUES ($1, $2, $3, $4)
+                    ''', author.id, new_tag, new_mode.name, new_region)
+        except asyncpg.UniqueViolationError:
+            await ctx.send("You're already in the db. Use subcommands to change your info.")
         else:
-            tag_is_mode = True
-        rec = await self.bot.db.fetchrow('''
-            SELECT * FROM overwatch WHERE id = $1
-            ''', author.id)
-        if rec is not None:
-            if mode is None and tag_is_mode:
-                new_tag = rec['btag']
-                new_mode = ow_mode(tag)
-            else:
-                new_tag = validate_btag(tag)
-                if new_tag is None:
-                    await ctx.send('Invalid BattleTag or mode.')
-                    return
-                try:
-                    new_mode = Mode[mode.lower()]
-                except (KeyError, AttributeError):
-                    new_mode = Mode[rec['mode']]
-        else:
-            new_tag = validate_btag(tag)
-            new_mode = ow_mode(mode)
-        new_region = await self.get_region(tag, region, {})
+            await ctx.send('\N{THUMBS UP SIGN} Added to the db.')
+
+    @ow_set.command(name='tag', aliases=['btag', 'battletag'])
+    async def set_tag(self, ctx, tag):
+        new_tag = validate_btag(tag)
+        if new_tag is None:
+            await ctx.send(f'{tag} is not a valid BattleTag.')
+            return
         async with self.bot.db.transaction():
-            await self.bot.db.execute('''
-                INSERT INTO overwatch (id, btag, mode, region) VALUES ($1, $2, $3, $4)
-                ON CONFLICT (id)
-                DO UPDATE SET (btag, mode, region) = ($2, $3, $4)
-                ''', author.id, new_tag, new_mode.name, new_region)
-        if not rec:
-            message = 'Added to db.'
-        elif mode is None:
-            if tag_is_mode:
-                message = 'Updated preferred mode.'
-            else:
-                message = 'Updated BattleTag.'
+            res = await self.bot.db.execute('''
+                UPDATE overwatch SET btag = $1 WHERE id = $2
+                ''', new_tag, ctx.message.author.id)
+        if res[-1] == '0':
+            await ctx.send("\N{THUMBS DOWN SIGN} You're not in the db.")
         else:
-            message = 'Updated BattleTag and preferred mode.'
-        await ctx.send('\N{THUMBS UP SIGN} ' + message)
+            await ctx.send('\N{THUMBS UP SIGN} Updated your BattleTag.')
+
+    @ow_set.command(name='mode')
+    async def set_mode(self, ctx, mode):
+        try:
+            new_mode = ow_mode(mode)
+        except NotFound as e:
+            await ctx.send(e)
+            return
+        async with self.bot.db.transaction():
+            res = await self.bot.db.execute('''
+                UPDATE overwatch SET mode = $1 WHERE id = $2
+                ''', new_mode.name, ctx.message.author.id)
+        if res[-1] == '0':
+            await ctx.send("\N{THUMBS DOWN SIGN} You're not in the db.")
+        else:
+            await ctx.send('\N{THUMBS UP SIGN} Updated your preferred mode.')
+
+    @ow_set.command(name='region')
+    async def set_region(self, ctx, region):
+        if region.lower() in REGIONS:
+            new_region = region.lower()
+        else:
+            await ctx.send(f'{region} is not a valid region.')
+            return
+        async with self.bot.db.transaction():
+            res = await self.bot.db.execute('''
+                UPDATE overwatch SET region = $1 WHERE id = $2
+                ''', new_region, ctx.message.author.id)
+        if res[-1] == '0':
+            await ctx.send("\N{THUMBS DOWN SIGN} You're not in the db.")
+        else:
+            await ctx.send('\N{THUMBS UP SIGN} Updated your region.')
 
     @overwatch.command(name='unset', aliases=['delete', 'remove'])
     async def ow_unset(self, ctx):
         """Remove your BattleTag from the DB."""
         author = ctx.message.author
-        in_db = bool(await self.bot.db.fetchval('''
-            SELECT id FROM overwatch WHERE id = $1
-            ''', author.id))
-        if in_db:
-            async with self.bot.db.transaction():
-                await self.bot.db.execute('''
-                    DELETE FROM overwatch WHERE id = $1
-                    ''', author.id)
-            message = '\N{THUMBS UP SIGN} Removed from db.'
+        async with self.bot.db.transaction():
+            res = await self.bot.db.execute('''
+                DELETE FROM overwatch WHERE id = $1
+                ''', author.id)
+        if res[-1] == '0':
+            await ctx.send("\N{THUMBS DOWN SIGN} You're not in the db.")
         else:
-            message = '\N{THUMBS DOWN SIGN} Not in db.'
-        await ctx.send(message)
+            await ctx.send('\N{THUMBS UP SIGN} Removed from the db.')
 
 
 def setup(bot):
