@@ -15,6 +15,9 @@ If the user you're getting stats for is in the db, their stats will be in whatev
 * [Overwatch](#overwatchow)
 * [- Heroes](#heroes)
 * [- Set](#set)
+* [-- tag](#tag)
+* [-- mode](#mode)
+* [-- region](#region)
 * [- Unset](#unset)
 
 ---
@@ -22,10 +25,11 @@ If the user you're getting stats for is in the db, their stats will be in whatev
 ## Overwatch/OW
 #### Get your own or another user's stats.
 This command can be used with `!ow` or `!overwatch`
+Arguments can be given in any order.
 
 Usage:
 
-    !ow [BattleTag/mention] [tier]
+    !ow [BattleTag/mention] [mode] [region]
 
     If you're added to the DB:
         !ow                        : Get your own stats in your saved tier
@@ -41,9 +45,10 @@ Usage:
 
 ### Heroes
 #### Get your own or another user's playtime with each hero.
+Arguments can be given in any order.
 Usage:
 
-    !ow heroes [BattleTag/Mention] [tier]
+    !ow heroes [BattleTag/Mention] [mode] [region]
 
     If you're added to the DB:
         !ow heroes                        : Get your own hero time in your saved tier
@@ -58,21 +63,39 @@ Usage:
         !ow heroes Battletag#1234 qp/comp : Get BattleTag#1234's hero time and force tier
 
 ### Set
-#### Add your BattleTag and whether you prefer quickplay or competitive stats be shown for yourself to the DB.
+#### Add your BattleTag, preferred gamemode, and region to the DB.
+Aliases: `save`
 Usage:
 
-    !ow set [BattleTag/Mention] [tier]
+    !ow set <BattleTag/Mention> [mode] [region]
+    !ow set MyTag#1234 qp eu
 
-    If you're added to the DB:
-        !ow set BattleTag#1234         : Change your BattleTag in the DB
-        !ow set qp/comp                : Change the tier your have saved in the DB
+#### Tag
+##### Change your BattleTag in the DB.
+Aliases: `btag`, `battletag`
+Usage:
 
-    If person is not in DB/same discord server:
-        !ow set BattleTag#1234         : Set your BattleTag in the DB
-        !ow set Battletag#1234 qp/comp : Set your BattleTag and preferred tier
+    !ow set tag <new tag>
+    !ow set tag NewBattleTag#1234
+
+#### Mode
+##### Change your preferred mode in the DB.
+Usage:
+
+    !ow set mode <new mode>
+    !ow set mode qp
+
+#### Region
+##### Change your preferred region in the DB.
+Accepted regions: `us`, `kr`, `eu`
+Usage:
+
+    !ow set region <new region>
+    !ow set region kr
 
 ### Unset
 #### Remove your BattleTag from the DB.
+Aliases: `delete`, `remove`
 Usage:
 
     !ow unset
