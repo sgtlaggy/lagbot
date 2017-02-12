@@ -372,7 +372,7 @@ class Overwatch(BaseCog):
         await ctx.send('\n'.join(message), embed=embed)
 
     @overwatch.group(name='set', aliases=['save'], invoke_without_command=True)
-    async def ow_set(self, ctx, tag, mode=None, region='us'):
+    async def ow_set(self, ctx, tag, mode=None, region=None):
         """Set your BattleTag and default gamemode.
 
         <tag>, [mode], and [region] can be specified in any order.
@@ -384,15 +384,15 @@ class Overwatch(BaseCog):
 
         Note:
         If you're already in the db, you can use this command again as follows:
-            set [mode] - change preferred mode
-            set <tag>  - change BattleTag
-            set <tag> [mode] - change BattleTag and preferred mode
+            set tag <tag>   - change BattleTag
+            set mode <mode> - change preferred mode
+            set region <region> - change preffered region
         """
         author = ctx.message.author
         tag, mode, region = fix_arg_order(tag, mode, region)
         new_tag = validate_btag(tag)
         new_mode = ow_mode(mode)
-        new_region = region.lower() if region.lower() in REGIONS else 'us'
+        new_region = region or 'us'
         try:
             async with self.bot.db.transaction():
                 await self.bot.db.execute('''
@@ -405,6 +405,7 @@ class Overwatch(BaseCog):
 
     @ow_set.command(name='tag', aliases=['btag', 'battletag'])
     async def set_tag(self, ctx, tag):
+        """Change your BattleTag in the db."""
         new_tag = validate_btag(tag)
         if new_tag is None:
             await ctx.send(f'{tag} is not a valid BattleTag.')
@@ -420,6 +421,7 @@ class Overwatch(BaseCog):
 
     @ow_set.command(name='mode')
     async def set_mode(self, ctx, mode):
+        """Change your preferred mode in the db."""
         try:
             new_mode = ow_mode(mode)
         except NotFound as e:
@@ -436,6 +438,7 @@ class Overwatch(BaseCog):
 
     @ow_set.command(name='region')
     async def set_region(self, ctx, region):
+        """Change your preferred region in the db."""
         if region.lower() in REGIONS:
             new_region = region.lower()
         else:
