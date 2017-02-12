@@ -266,8 +266,8 @@ class Overwatch(BaseCog):
             data['heroes']['playtime'][mode.name], \
             tag, mode, region
 
-    @commands.group(aliases=['ow'], invoke_without_command=True)
-    async def overwatch(self, ctx, tag='', mode=None, region=None):
+    @commands.group(aliases=['ow'], usage='[tag] [mode] [region]', invoke_without_command=True)
+    async def overwatch(self, ctx, *args):
         """See stats of yourself or another player.
 
         [tag], [mode], and [region] can be specified in any order.
@@ -291,7 +291,7 @@ class Overwatch(BaseCog):
             * BattleTags are case-sensitive.
             * To get stats by Discord mention, the person must be in the DB.
         """
-        tag, mode, region = fix_arg_order(tag, mode, region)
+        tag, mode, region = fix_arg_order(*args)
         with ctx.typing():
             try:
                 stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode, region)
@@ -331,8 +331,8 @@ class Overwatch(BaseCog):
                              url=links['official'])
         await ctx.send(embed=embed)
 
-    @overwatch.command()
-    async def heroes(self, ctx, tag='', mode=None, region=None):
+    @overwatch.command(usage='[tag] [mode] [region]')
+    async def heroes(self, ctx, *args):
         """Get playtime for each played hero.
 
         [tag], [mode], and [region] can be specified in any order.
@@ -342,7 +342,7 @@ class Overwatch(BaseCog):
              * Defaults to competitive stats, falls back to quickplay.
         [region] can be 'us', 'eu', or 'kr'
         """
-        tag, mode, region = fix_arg_order(tag, mode, region)
+        tag, mode, region = fix_arg_order(*args)
         with ctx.typing():
             try:
                 stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode, region)
