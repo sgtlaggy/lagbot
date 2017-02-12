@@ -219,7 +219,7 @@ class Tags(BaseCog):
         await ctx.send(embed=embed)
 
     @tag.command(name='list')
-    async def _list(self, ctx, *, member: discord.Member = None):
+    async def list_(self, ctx, *, member: discord.Member = None):
         """See tags you or another person created."""
         if member is None:
             member = ctx.message.author

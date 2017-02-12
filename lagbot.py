@@ -28,7 +28,7 @@ class LagBot(commands.Bot):
         source = self.config.get('source')
         if source is not None:
             useragent += ' ' + source
-        self._http = aiohttp.ClientSession(
+        self.http_ = aiohttp.ClientSession(
             loop=self.loop,
             headers={'User-Agent': useragent})
         self.db = self.loop.run_until_complete(
@@ -37,11 +37,11 @@ class LagBot(commands.Bot):
                 loop=self.loop))
 
     async def logout(self):
-        await self._http.close()
+        await self.http_.close()
         await self.db.close()
         await super().logout()
 
-    def _logout(self):
+    def logout_(self):
         self.loop.create_task(self.logout())
 
     def run(self, *args, **kwargs):
@@ -98,17 +98,17 @@ class LagBot(commands.Bot):
             except:
                 pass
 
-    async def request(self, url, _type='json', *, timeout=10, method='GET', **kwargs):
-        if _type not in {'json', 'read', 'text'}:
+    async def request(self, url, type_='json', *, timeout=10, method='GET', **kwargs):
+        if type_ not in {'json', 'read', 'text'}:
             return
         if kwargs.get('data') and method == 'GET':
             method = 'POST'
-        async with self._http.request(method, url, timeout=timeout, **kwargs) as resp:
+        async with self.http_.request(method, url, timeout=timeout, **kwargs) as resp:
             data = None
             try:
-                data = await getattr(resp, _type)()
+                data = await getattr(resp, type_)()
             except:
-                logging.exception(f'Failed getting type {_type} from "{url}".')
+                logging.exception(f'Failed getting type {type_} from "{url}".')
             return Response(resp.status, data)
 
     def get_uptime(self, brief=False):

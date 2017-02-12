@@ -35,7 +35,7 @@ if __name__ == '__main__':
     bot = LagBot(command_prefix=command_prefix, help_attrs=help_attrs,
                  config_file=config_file, debug=debug)
 
-    bot.loop.add_signal_handler(signal.SIGTERM, bot._logout)
+    bot.loop.add_signal_handler(signal.SIGTERM, bot.logout_)
 
     for cog in initial_cogs:
         try:
