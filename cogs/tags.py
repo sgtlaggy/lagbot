@@ -263,7 +263,7 @@ class Tags(BaseCog):
         await ctx.send(embed=embed)
 
     async def on_message(self, message):
-        if self.bot._debug:
+        if self.bot._debug or message.guild.id == 110373943822540800:  # DiscordBots server
             return
         if message.content.startswith(TAG_PREFIX):
             tag = message.content[len(TAG_PREFIX):]

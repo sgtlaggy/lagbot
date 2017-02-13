@@ -12,6 +12,31 @@ class Meta(BaseCog):
         """Manage bot user attributes."""
         pass
 
+    @manage.group(invoke_without_command=True)
+    @commands.has_permissions(manage_guild=True)
+    async def prefix(self, ctx, new_prefix: str, allow_default=False):
+        guild = ctx.message.guild
+        async with self.bot.db.transaction():
+            await self.bot.db.execute('''
+                INSERT INTO prefixes (guild_id, prefix, allow_default) VALUES ($1, $2, $3)
+                ON CONFLICT (guild_id)
+                DO UPDATE SET (prefix, allow_default) = ($2, $3)
+                ''', guild.id, new_prefix, allow_default)
+        await ctx.send(f'Set custom prefix to "{new_prefix}".')
+
+    @prefix.command()
+    @commands.has_permissions(manage_guild=True)
+    async def reset(self, ctx):
+        guild = ctx.message.guild
+        async with self.bot.db.transaction():
+            res = await self.bot.db.execute('''
+                DELETE FROM prefixes WHERE guild_id = $1
+                ''', guild.id)
+        if res[-1] == '0':
+            await ctx.send("A custom prefix hasn't been set for this guild.")
+        else:
+            await ctx.send('Removed custom prefix for this guild.')
+
     @manage.command(pass_context=False)
     @checks.is_owner()
     async def name(self, *, new_name=None):

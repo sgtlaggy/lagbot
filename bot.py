@@ -25,14 +25,14 @@ app_path = os.path.dirname(os.path.abspath(sys.argv[0]))
 config_file = os.path.join(app_path, 'config.json')
 
 # Discord Client/Bot
-command_prefix = '!'
+default_prefix = '!'
 help_attrs = {'hidden': True}
 initial_cogs = [f'cogs.{cog}' for cog in [
     'cog', 'images', 'management', 'meta',
     'misc', 'overwatch', 'rdanny', 'tags']]
 
 if __name__ == '__main__':
-    bot = LagBot(command_prefix=command_prefix, help_attrs=help_attrs,
+    bot = LagBot(command_prefix=default_prefix, help_attrs=help_attrs,
                  config_file=config_file, debug=debug)
 
     bot.loop.add_signal_handler(signal.SIGTERM, bot.logout_)

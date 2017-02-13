@@ -3,5 +3,6 @@
     "userdocs": "https://github.com/mikevb1/discordbot/tree/master/docs",
     "game": "playing game",
     "cat_api": "TheCatAPI api key",
+    "debug_channel": "channel_id",
     "bot_token": "bot application token"
 }

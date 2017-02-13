@@ -17,6 +17,7 @@ These are the commands to run in the psql prompt to do this:
 4. `CREATE TABLE xkcd (num integer PRIMARY KEY, safe_title text, alt text, img text, date date);`
 5. `CREATE TABLE tags (name text PRIMARY KEY, content text, uses integer DEFAULT 0, owner_id text, modified_at timestamp without time zone DEFAULT (now() at time zone 'utc'));`
 6. `CREATE TABLE tagusers (id text PRIMARY KEY, uses integer DEFAULT 1);`
+7. `CREATE TABLE prefixes (guild_id text PRIMARY KEY, prefix text, allow_default boolean);`
 
 ##### For Overwatch stats, you have 2 options:
 
