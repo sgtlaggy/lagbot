@@ -227,8 +227,10 @@ class Images(BaseCog):
 
         try:
             await asyncio.gather(
-                self.bot.wait_for('reaction_add', check=vote_check, timeout=30),
-                self.bot.wait_for('reaction_remove', check=unfavorite_check, timeout=30))
+                self.bot.wait_for('reaction_add', check=vote_check,
+                                  timeout=30, ignore_timeout=True),
+                self.bot.wait_for('reaction_remove', check=unfavorite_check,
+                                  timeout=30, ignore_timeout=True))
         except Reported:
             await msg.delete()
             await actions[-1]

@@ -146,6 +146,16 @@ class LagBot(commands.Bot):
             except:
                 pass
 
+    async def wait_for(self, *args, ignore_timeout=False, **kwargs):
+        """Override default wait_for to allow ignoring TimeoutError."""
+        if ignore_timeout:
+            try:
+                return await super().wait_for(*args, **kwargs)
+            except asyncio.TimeoutError:
+                return None
+        else:
+            return await super().wait_for(*args, **kwargs)
+
     async def request(self, url, type_='json', *, timeout=10, method='GET', **kwargs):
         if type_ not in {'json', 'read', 'text'}:
             return

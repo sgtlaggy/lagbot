@@ -152,7 +152,7 @@ class Misc(BaseCog):
                         user.id == ctx.message.author.id)
             return check
 
-        res = await self.bot.wait_for('reaction_add', timeout=30,
+        res = await self.bot.wait_for('reaction_add', timeout=30, ignore_timeout=True,
                                       check=react_check([*CLOCKS, '\N{CROSS MARK}']))
         if res is not None:
             if res[0].emoji == '\N{CROSS MARK}':
@@ -170,7 +170,8 @@ class Misc(BaseCog):
             poll_time = 60
         res = await self.bot.wait_for('reaction_add',
                                       check=react_check(['\N{CROSS MARK}']),
-                                      timeout=(poll_time * 60) - 30)
+                                      timeout=(poll_time * 60) - 30,
+                                      ignore_timeout=True)
         if res is not None:
             await asyncio.sleep(30)
         poll_msg = await poll_msg.edit('***POLL IS CLOSED***\n' + poll_msg.content)
