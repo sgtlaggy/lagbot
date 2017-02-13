@@ -15,6 +15,12 @@ class Meta(BaseCog):
     @manage.group(invoke_without_command=True)
     @commands.has_permissions(manage_guild=True)
     async def prefix(self, ctx, new_prefix: str, allow_default=False):
+        """Set a custom prefix for this guild.
+
+        Manage Server permission is required to use this.
+        [allow_default] should be enabled if you want to also
+                        be able to use the default prefix
+        """
         guild = ctx.message.guild
         async with self.bot.db.transaction():
             await self.bot.db.execute('''
@@ -27,6 +33,7 @@ class Meta(BaseCog):
     @prefix.command()
     @commands.has_permissions(manage_guild=True)
     async def reset(self, ctx):
+        """Remove this guild's custom prefix."""
         guild = ctx.message.guild
         async with self.bot.db.transaction():
             res = await self.bot.db.execute('''
