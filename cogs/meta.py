@@ -1,6 +1,7 @@
 from discord.ext import commands
 import discord
 
+from utils.utils import db_encode, db_decode
 from cogs.base import BaseCog
 from utils import checks
 
@@ -27,7 +28,7 @@ class Meta(BaseCog):
                 INSERT INTO prefixes (guild_id, prefix, allow_default) VALUES ($1, $2, $3)
                 ON CONFLICT (guild_id)
                 DO UPDATE SET (prefix, allow_default) = ($2, $3)
-                ''', guild.id, new_prefix, allow_default)
+                ''', guild.id, db_encode(new_prefix), allow_default)
         await ctx.send(f'Set custom prefix to "{new_prefix}".')
 
     @prefix.command()
@@ -43,6 +44,31 @@ class Meta(BaseCog):
             await ctx.send("A custom prefix hasn't been set for this guild.")
         else:
             await ctx.send('Removed custom prefix for this guild.')
+
+    @prefix.command()
+    async def show(self, ctx):
+        """Show the prefix set for this guild, and whether or not it allows the default prefix."""
+        rec = await self.bot.db.fetchrow('''
+            SELECT * FROM prefixes WHERE guild_id = $1
+            ''', str(ctx.message.guild.id))
+        if rec is None:
+            await ctx.send("A custom prefix hasn't been set for this guild.")
+            return
+
+        prefix, allow_default = rec['prefix'], rec['allow_default']
+        valid = [db_decode(rec['prefix'])]
+        default = self.bot.default_prefix
+        if allow_default:
+            if isinstance(default, (tuple, list)):
+                valid.extend(default)
+            else:
+                valid.append(default)
+
+        embed = discord.Embed()
+        embed.add_field(name='Custom Prefix', value=valid[0])
+        embed.add_field(name='Allow Default', value=str(rec['allow_default']))
+        embed.add_field(name='Valid Prefixes', value='\n'.join(valid))
+        await ctx.send(embed=embed)
 
     @manage.command(pass_context=False)
     @checks.is_owner()

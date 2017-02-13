@@ -1,26 +1,15 @@
 import difflib
-import base64
 
 from discord.ext import commands
 import asyncpg
 import discord
 
+from utils.utils import pluralize, db_encode, db_decode
 from utils.errors import NotInDB
-from utils.utils import pluralize
 from cogs.base import BaseCog
 
 
 TAG_PREFIX = '%'
-
-
-# postgres keeps seeing `b64encode(text.encode())` as `text` even though it's
-# `bytea`, so the `.encode()).decode()` is to store base64 with no headaches
-def encode(text):
-    return base64.b64encode(text.encode()).decode()
-
-
-def decode(text):
-    return base64.b64decode(text.encode()).decode()
 
 
 def lower(arg):
@@ -77,7 +66,7 @@ class Tags(BaseCog):
         except NotInDB as e:
             await ctx.send(e)
             return
-        await ctx.send(decode(tag['content']))
+        await ctx.send(db_decode(tag['content']))
         await self.update_uses(tag, ctx.message.author)
 
     @tag.command()
@@ -88,7 +77,7 @@ class Tags(BaseCog):
         if tag is None:
             await ctx.send('No tags in db.')
             return
-        await ctx.send(decode(tag['content']))
+        await ctx.send(db_decode(tag['content']))
         await self.update_uses(tag, ctx.message.author)
 
     @tag.command()
@@ -107,7 +96,7 @@ class Tags(BaseCog):
                 await self.bot.db.execute('''
                     INSERT INTO tags (name, content, owner_id)
                     VALUES ($1, $2, $3)
-                    ''', name, encode(text), ctx.message.author.id)
+                    ''', name, db_encode(text), ctx.message.author.id)
         except asyncpg.UniqueViolationError:
             await ctx.send('A tag with that name already exists!')
             return
@@ -152,7 +141,7 @@ class Tags(BaseCog):
             await self.bot.db.execute('''
                 UPDATE tags SET (content, modified_at) = ($1, $2)
                 WHERE name = $3
-                ''', encode(new_text), ctx.message.timestamp, name)
+                ''', db_encode(new_text), ctx.message.timestamp, name)
         await ctx.send(f'Updated tag "{name}".')
 
     @tag.command()

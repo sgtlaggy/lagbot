@@ -1,3 +1,5 @@
+import base64
+
 from discord.ext.commands import BadArgument
 
 
@@ -73,3 +75,15 @@ async def say_and_pm(ctx, content):
 
 def tb_args(exc):
     return (type(exc), exc, exc.__traceback__)
+
+
+# Postgres keeps seeing `b64encode(text.encode())` as `text` even though it's
+# `bytea`, so the `.encode()).decode()` is to store base64 with no headaches
+# These functions are mainly for not destroying terminal output when viewing
+# table contents that may contain emoji.
+def db_encode(text):
+    return base64.b64encode(text.encode()).decode()
+
+
+def db_decode(text):
+    return base64.b64decode(text.encode()).decode()

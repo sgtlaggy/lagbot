@@ -12,7 +12,7 @@ import discord
 import aiohttp
 import asyncpg
 
-from utils.utils import pluralize, TIME_BRIEF, TIME_LONG, tb_args
+from utils.utils import pluralize, TIME_BRIEF, TIME_LONG, tb_args, db_decode
 
 
 Response = namedtuple('Response', 'status data')
@@ -26,7 +26,7 @@ async def command_prefix(bot, message):
     if settings is None:
         return default
     prefix, allow_default = settings['prefix'], settings['allow_default']
-    valid = [prefix]
+    valid = [db_decode(prefix)]
     if allow_default:
         if isinstance(default, (tuple, list)):
             valid.extend(default)
