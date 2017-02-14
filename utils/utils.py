@@ -33,6 +33,10 @@ def pluralize(s):
 
 
 def between(num, num_min, num_max, inclusive=True):
+    """Make sure `num` is between `num_min` and `num_max`.
+
+    Returns `num_max` if `num` is higher, `num_min` if `num` is lower.
+    """
     if inclusive:
         if num > num_max:
             return num_max
@@ -47,6 +51,11 @@ def between(num, num_min, num_max, inclusive=True):
 
 
 def integer(arg):
+    """Attempts to return the arg converted to `int`.
+
+    Returns nearest whole number if arg represents a `float`.
+    Mainly to be used as typehint in commands.
+    """
     try:
         int(arg)
     except ValueError:
@@ -65,6 +74,7 @@ def integer(arg):
 
 
 async def say_and_pm(ctx, content):
+    """Send message to current channel as well as the command message's author."""
     channel = ctx.message.channel
     author = ctx.message.author
     to_say = content.format(channel='')
@@ -74,6 +84,7 @@ async def say_and_pm(ctx, content):
 
 
 def tb_args(exc):
+    """Easily format arguments for `traceback` functions."""
     return (type(exc), exc, exc.__traceback__)
 
 

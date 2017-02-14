@@ -19,6 +19,7 @@ Response = namedtuple('Response', 'status data')
 
 
 async def command_prefix(bot, message):
+    """Custom prefix function for guild-specific prefixes."""
     default = bot.default_prefix
     settings = await bot.db.fetchrow('''
         SELECT * FROM prefixes WHERE guild_id = $1
@@ -87,13 +88,14 @@ class LagBot(commands.Bot):
         await super().logout()
 
     def logout_(self):
+        """Mainly for use in signal handler, may have other uses."""
         self.loop.create_task(self.logout())
 
     def run(self, *args, **kwargs):
         super().run(self.config['bot_token'], *args, **kwargs)
 
     async def on_ready(self):
-        if 'start_time' in dir(self):
+        if hasattr(self, 'start_time'):
             logging.info('Ready again.')
             return
         self.start_time = datetime.datetime.utcnow()
@@ -157,6 +159,10 @@ class LagBot(commands.Bot):
             return await super().wait_for(*args, **kwargs)
 
     async def request(self, url, type_='json', *, timeout=10, method='GET', **kwargs):
+        """Utility request function.
+
+        type_ is the method to get data from response
+        """
         if type_ not in {'json', 'read', 'text'}:
             return
         if kwargs.get('data') and method == 'GET':

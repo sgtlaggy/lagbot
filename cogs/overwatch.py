@@ -89,7 +89,7 @@ class Portrait:
             return cls.default.format(hero, '')
         elif hero == 'soldier76':
             return cls.default.format('soldier-76', '')
-        elif hero == 'sombra':
+        elif hero == 'sombra':  # blame Blizzard
             return cls.default.format(hero, '-d5121256f71c9d7dc7a434ac75be95d99942e8386ba7f8462f3e15d91223854c9b9adde42a3aca70715ab24326a7c27848151e8ab92a259ac7744d7f15a6d91b')
 
 
@@ -198,10 +198,11 @@ class Overwatch(BaseCog):
         return data
 
     async def get_region(self, tag, region, data):
-        if region is not None and data.get(region.lower()) is not None:
-            return region.lower()
-        elif region is not None:
-            raise NotFound(f'{api_to_btag(tag)} has not played in {region}.')
+        if region is not None:
+            if data.get(region.lower()) is not None:
+                return region.lower()
+            else:
+                raise NotFound(f'{api_to_btag(tag)} has not played in {region}.')
         available = [r for r in REGIONS if data.get(r) is not None]
         rec = await self.bot.db.fetchrow('''
             SELECT region FROM overwatch WHERE btag = $1

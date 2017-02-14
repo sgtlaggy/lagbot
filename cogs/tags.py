@@ -71,6 +71,7 @@ class Tags(BaseCog):
 
     @tag.command()
     async def random(self, ctx):
+        """Get a random tag."""
         tag = await self.bot.db.fetchrow('''
             SELECT * FROM tags ORDER BY random() LIMIT 1
             ''')

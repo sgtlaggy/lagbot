@@ -32,9 +32,9 @@ REACTIONS = ('\N{PILE OF POO}', *digits[1:], '\N{HEAVY BLACK HEART}')
 
 
 def xkcd_date(data):
-    if 'date' in data:
+    if 'date' in data:  # data is an asyncpg record
         date = data['date']
-    else:
+    else:  # data is a dict from xkcd api
         date = datetime.date(*map(int, (data['year'], data['month'], data['day'])))
     return date
 
@@ -253,12 +253,9 @@ class Images(BaseCog):
     async def cat_facts(self, ctx, count: float = 1):
         """Get cat facts.
 
-        0 < [count] <= 20
+        1 <= [count] <= 20
         """
-        if count < 0:
-            count = 1
-        else:
-            count = between(count, 0, 20)
+        count = between(count, 1, 20)
         partial = count - int(count)
         count = int(count)
         if partial:

@@ -14,7 +14,7 @@ class Meta(BaseCog):
         pass
 
     @manage.group(invoke_without_command=True)
-    @commands.has_permissions(manage_guild=True)
+    @checks.owner_or_permissions(manage_guild=True)
     async def prefix(self, ctx, new_prefix: str, allow_default=False):
         """Set a custom prefix for this guild.
 
@@ -32,7 +32,7 @@ class Meta(BaseCog):
         await ctx.send(f'Set custom prefix to "{new_prefix}".')
 
     @prefix.command()
-    @commands.has_permissions(manage_guild=True)
+    @checks.owner_or_permissions(manage_guild=True)
     async def reset(self, ctx):
         """Remove this guild's custom prefix."""
         guild = ctx.message.guild
@@ -56,7 +56,7 @@ class Meta(BaseCog):
             return
 
         prefix, allow_default = rec['prefix'], rec['allow_default']
-        valid = [db_decode(rec['prefix'])]
+        valid = [db_decode(prefix)]
         default = self.bot.default_prefix
         if allow_default:
             if isinstance(default, (tuple, list)):
