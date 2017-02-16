@@ -236,7 +236,8 @@ class Overwatch(BaseCog):
             mode = await self.bot.db.fetchval('''
                 SELECT mode FROM overwatch WHERE id = $1
                 ''', member_id)
-        return Mode[mode]
+        if mode is not None:
+            return Mode[mode]
 
     async def get_tag_mode(self, ctx, tag, mode):
         try:
