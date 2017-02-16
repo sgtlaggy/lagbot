@@ -16,7 +16,7 @@ BLOB = endpoint + "blob"
 STATS = endpoint + "stats"
 HEROES = endpoint + "heroes"
 
-BTAG_RE = re.compile(r'<@!?([0-9]+)>$')
+ID_RE = re.compile(r'<@!?([0-9]+)>$')
 
 REGIONS = ('us', 'eu', 'kr', 'any')
 
@@ -107,7 +107,7 @@ def fix_arg_order(*args):
     for arg in args:
         if arg is None or isinstance(arg, Mode):
             continue
-        elif any(char in arg for char in {'#', '@'}):
+        elif '#' in arg or '@' in arg:
             tag = arg
         elif arg.lower() in REGIONS:
             region = arg.lower()
@@ -120,12 +120,28 @@ def fix_arg_order(*args):
     return tag, mode, region
 
 
+def mention_id(mention):
+    match = ID_RE.match(mention)
+    if match is not None:
+        return int(match.group(1))
+
+
 def validate_btag(btag):
-    if btag == '' or '-' in btag:
-        return btag
     split = btag.split('#')
     if len(split) != 2:
-        return None
+        return False
+    tag, disc = split
+    if 3 <= len(tag) <= 12 and \
+            not any(s in tag for s in SYMBOLS) and \
+            not tag[0].isdigit() and disc.isdigit():
+        return True
+    return False
+
+
+def btag_to_api(btag):
+    split = btag.split('#')
+    if len(split) != 2:
+        raise InvalidBTag('Invalid BattleTag')
     tag, disc = split
     if 3 <= len(tag) <= 12 and \
             not any(s in tag for s in SYMBOLS) and \
@@ -133,14 +149,7 @@ def validate_btag(btag):
             disc.isdigit():
         return '-'.join([tag, disc])
     else:
-        return None
-
-
-def api_player_tag(arg):
-    match = BTAG_RE.match(arg)
-    if match is not None:
-        return match.group(1)
-    return validate_btag(arg)
+        raise InvalidBTag('Invalid BattleTag')
 
 
 def api_to_btag(tag):
@@ -214,49 +223,42 @@ class Overwatch(BaseCog):
         return rec['region']
 
     async def get_tag(self, ctx, tag):
-        member_id = ctx.author.id
-        tag = api_player_tag(tag)
-        if tag is None:
-            raise InvalidBTag('Invalid BattleTag')
-        if tag == '' or '-' not in tag:
-            member_id = tag or member_id
+        if tag != '' and validate_btag(tag):
+            tag = btag_to_api(tag)
+        else:
+            member_id = mention_id(tag) or ctx.author.id
             tag = await self.bot.db.fetchval('''
                 SELECT btag FROM overwatch WHERE id = $1
                 ''', member_id)
         if tag is None:
             raise NotInDB('Not in the db.')
-        return tag, member_id
+        return tag
 
-    async def get_mode(self, member_id):
-        if '-' in member_id:
-            mode = await self.bot.db.fetchval('''
-                SELECT mode FROM overwatch WHERE btag = $1
-                ''', member_id)
-        else:
+    async def get_mode(self, btag_or_id):
+        if isinstance(btag_or_id, int):
             mode = await self.bot.db.fetchval('''
                 SELECT mode FROM overwatch WHERE id = $1
-                ''', member_id)
+                ''', btag_or_id)
+        else:
+            mode = await self.bot.db.fetchval('''
+                SELECT mode FROM overwatch WHERE btag = $1
+                ''', btag_or_id)
         if mode is not None:
             return Mode[mode]
 
     async def get_tag_mode(self, ctx, tag, mode):
-        try:
-            Mode[tag.lower()]
-        except KeyError:
-            tag, member_id = await self.get_tag(ctx, tag)
-            if mode is not None:
-                mode = ow_mode(mode)
-            else:
-                mode = await self.get_mode(tag) or \
-                    await self.get_mode(member_id) or \
-                    Mode.default
+        tag = await self.get_tag(ctx, tag)
+        member_id = ctx.author.id
+        if mode is not None:
+            mode = ow_mode(mode)
         else:
-            mode = ow_mode(tag)
-            tag, member_id = await self.get_tag(ctx, '')
-        return tag, mode, member_id
+            mode = await self.get_mode(tag) or \
+                await self.get_mode(member_id) or \
+                Mode.default
+        return tag, mode
 
     async def get_all(self, ctx, tag, mode, reg, end=BLOB):
-        tag, mode, _ = await self.get_tag_mode(ctx, tag, mode)
+        tag, mode = await self.get_tag_mode(ctx, tag, mode)
         data = await self.fetch_stats(tag, end)
         region = await self.get_region(tag, reg, data)
         data = data[region]
@@ -384,7 +386,7 @@ class Overwatch(BaseCog):
         """
         author = ctx.author
         tag, mode, region = fix_arg_order(tag, mode, region)
-        new_tag = validate_btag(tag)
+        new_tag = btag_to_api(tag)
         new_mode = ow_mode(mode)
         new_region = region or 'us'
         try:
@@ -400,7 +402,7 @@ class Overwatch(BaseCog):
     @ow_set.command(name='tag', aliases=['btag', 'battletag'])
     async def set_tag(self, ctx, tag):
         """Change your BattleTag in the db."""
-        new_tag = validate_btag(tag)
+        new_tag = btag_to_api(tag)
         if new_tag is None:
             await ctx.send(f'{tag} is not a valid BattleTag.')
             return
