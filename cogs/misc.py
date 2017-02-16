@@ -149,7 +149,7 @@ class Misc(BaseCog):
             def check(reaction, user):
                 return (reaction.emoji in reactions and
                         reaction.message.id == poll_msg.id and
-                        user.id == ctx.message.author.id)
+                        user.id == ctx.author.id)
             return check
 
         res = await self.bot.wait_for('reaction_add', timeout=30, ignore_timeout=True,
@@ -197,7 +197,7 @@ class Misc(BaseCog):
     @commands.command(no_pm=True)
     async def info(self, ctx, *, member: discord.Member = None):
         """Display information of specific user."""
-        member = member or ctx.message.author
+        member = member or ctx.author
         roles = [f'@{role}' for role in member.roles if role.name != '@everyone']
         embed = discord.Embed(colour=member.colour)
         embed.add_field(name='Name', value=member.name)

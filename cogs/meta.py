@@ -22,7 +22,10 @@ class Meta(BaseCog):
         [allow_default] should be enabled if you want to also
                         be able to use the default prefix
         """
-        guild = ctx.message.guild
+        guild = ctx.guild
+        if len(new_prefix) > 25:
+            await ctx.send('That prefix is too long, please choose a new one.')
+            return
         async with self.bot.db.transaction():
             await self.bot.db.execute('''
                 INSERT INTO prefixes (guild_id, prefix, allow_default) VALUES ($1, $2, $3)
@@ -35,7 +38,7 @@ class Meta(BaseCog):
     @checks.owner_or_permissions(manage_guild=True)
     async def reset(self, ctx):
         """Remove this guild's custom prefix."""
-        guild = ctx.message.guild
+        guild = ctx.guild
         async with self.bot.db.transaction():
             res = await self.bot.db.execute('''
                 DELETE FROM prefixes WHERE guild_id = $1
@@ -47,10 +50,13 @@ class Meta(BaseCog):
 
     @prefix.command()
     async def show(self, ctx):
-        """Show the prefix set for this guild, and whether or not it allows the default prefix."""
+        """Show the prefix set for this guild.
+
+        Also shows whether or not the default prefix can be used.
+        """
         rec = await self.bot.db.fetchrow('''
             SELECT * FROM prefixes WHERE guild_id = $1
-            ''', str(ctx.message.guild.id))
+            ''', str(ctx.guild.id))
         if rec is None:
             await ctx.send("A custom prefix hasn't been set for this guild.")
             return
@@ -119,7 +125,7 @@ class Meta(BaseCog):
     @checks.owner_or_permissions(manage_nicknames=True)
     async def nick(self, ctx, *, new_nick=None):
         """Change bot's nickname."""
-        await ctx.message.guild.me.edit(nick=new_nick or None)
+        await ctx.guild.me.edit(nick=new_nick or None)
 
     @commands.command(aliases=['restart', 'kill'], hidden=True)
     @checks.is_owner()

@@ -182,7 +182,7 @@ class RoboDanny:
         """
 
         if channel is None:
-            channel = ctx.message.channel
+            channel = ctx.channel
         if date is None:
             date = channel.created_at
 

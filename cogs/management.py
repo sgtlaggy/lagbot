@@ -15,7 +15,7 @@ class Management(BaseCog):
         You must have permission to kick members.
         """
         try:
-            await ctx.message.guild.kick(member)
+            await ctx.guild.kick(member)
         except discord.Forbidden:
             await ctx.send("I don't have permission to kick.")
         except discord.HTTPException:
@@ -31,7 +31,7 @@ class Management(BaseCog):
         You must have permission to ban members.
         """
         try:
-            await ctx.message.guild.ban(member)
+            await ctx.guild.ban(member)
         except discord.Forbidden:
             await ctx.send("I don't have permission to ban.")
         except discord.HTTPException:
@@ -50,13 +50,13 @@ class Management(BaseCog):
         message = ctx.message
         author = message.author
         channel = message.channel
-        owner = ctx.message.guild.get_member(self.bot.owner.id)
+        owner = ctx.guild.get_member(self.bot.owner.id)
         if member is None:
             member = author
 
         if member == author or \
                 channel.permissions_for(author).manage_messages or \
-                (member == ctx.message.guild.me and author == owner):
+                (member == ctx.guild.me and author == owner):
             to_remove = []
             async for msg in channel.history(before=message, limit=1000):
                 if msg.author == member:

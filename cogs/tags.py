@@ -67,7 +67,7 @@ class Tags(BaseCog):
             await ctx.send(e)
             return
         await ctx.send(db_decode(tag['content']))
-        await self.update_uses(tag, ctx.message.author)
+        await self.update_uses(tag, ctx.author)
 
     @tag.command()
     async def random(self, ctx):
@@ -79,7 +79,7 @@ class Tags(BaseCog):
             await ctx.send('No tags in db.')
             return
         await ctx.send(db_decode(tag['content']))
-        await self.update_uses(tag, ctx.message.author)
+        await self.update_uses(tag, ctx.author)
 
     @tag.command()
     async def create(self, ctx, name: lower, *, text):
@@ -97,7 +97,7 @@ class Tags(BaseCog):
                 await self.bot.db.execute('''
                     INSERT INTO tags (name, content, owner_id)
                     VALUES ($1, $2, $3)
-                    ''', name, db_encode(text), ctx.message.author.id)
+                    ''', name, db_encode(text), ctx.author.id)
         except asyncpg.UniqueViolationError:
             await ctx.send('A tag with that name already exists!')
             return
@@ -115,7 +115,7 @@ class Tags(BaseCog):
         except (NotInDB, ValueError) as e:
             await ctx.send(e)
             return
-        if ctx.message.author.id != tag['owner_id']:
+        if ctx.author.id != tag['owner_id']:
             await ctx.send("You don't own that tag.")
             return
         async with self.bot.db.transaction():
@@ -135,7 +135,7 @@ class Tags(BaseCog):
         except NotInDB as e:
             await ctx.send(e)
             return
-        if ctx.message.author.id != tag['owner_id']:
+        if ctx.author.id != tag['owner_id']:
             await ctx.send("You don't own that tag.")
             return
         async with self.bot.db.transaction():
@@ -153,7 +153,7 @@ class Tags(BaseCog):
         except NotInDB as e:
             await ctx.send(e)
             return
-        if ctx.message.author.id != tag['owner_id']:
+        if ctx.author.id != tag['owner_id']:
             await ctx.send("You don't own that tag.")
             return
         async with self.bot.db.transaction():
@@ -195,7 +195,7 @@ class Tags(BaseCog):
     async def stats(self, ctx, *, member: discord.Member = None):
         """See stats about your own or another person's tag usage."""
         if member is None:
-            member = ctx.message.author
+            member = ctx.author
         tags = await self.bot.db.fetchval('''
             SELECT count(*) FROM tags WHERE owner_id = $1
             ''', member.id)
@@ -212,7 +212,7 @@ class Tags(BaseCog):
     async def list_(self, ctx, *, member: discord.Member = None):
         """See tags you or another person created."""
         if member is None:
-            member = ctx.message.author
+            member = ctx.author
             mention = 'You have'
         else:
             mention = f'{member.mention} has'

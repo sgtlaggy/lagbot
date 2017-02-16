@@ -214,7 +214,7 @@ class Overwatch(BaseCog):
         return rec['region']
 
     async def get_tag(self, ctx, tag):
-        member_id = ctx.message.author.id
+        member_id = ctx.author.id
         tag = api_player_tag(tag)
         if tag is None:
             raise InvalidBTag('Invalid BattleTag')
@@ -389,7 +389,7 @@ class Overwatch(BaseCog):
             set mode <mode> - change preferred mode
             set region <region> - change preffered region
         """
-        author = ctx.message.author
+        author = ctx.author
         tag, mode, region = fix_arg_order(tag, mode, region)
         new_tag = validate_btag(tag)
         new_mode = ow_mode(mode)
@@ -414,7 +414,7 @@ class Overwatch(BaseCog):
         async with self.bot.db.transaction():
             res = await self.bot.db.execute('''
                 UPDATE overwatch SET btag = $1 WHERE id = $2
-                ''', new_tag, ctx.message.author.id)
+                ''', new_tag, ctx.author.id)
         if res[-1] == '0':
             await ctx.send("\N{THUMBS DOWN SIGN} You're not in the db.")
         else:
@@ -431,7 +431,7 @@ class Overwatch(BaseCog):
         async with self.bot.db.transaction():
             res = await self.bot.db.execute('''
                 UPDATE overwatch SET mode = $1 WHERE id = $2
-                ''', new_mode.name, ctx.message.author.id)
+                ''', new_mode.name, ctx.author.id)
         if res[-1] == '0':
             await ctx.send("\N{THUMBS DOWN SIGN} You're not in the db.")
         else:
@@ -448,7 +448,7 @@ class Overwatch(BaseCog):
         async with self.bot.db.transaction():
             res = await self.bot.db.execute('''
                 UPDATE overwatch SET region = $1 WHERE id = $2
-                ''', new_region, ctx.message.author.id)
+                ''', new_region, ctx.author.id)
         if res[-1] == '0':
             await ctx.send("\N{THUMBS DOWN SIGN} You're not in the db.")
         else:
@@ -457,7 +457,7 @@ class Overwatch(BaseCog):
     @overwatch.command(name='unset', aliases=['delete', 'remove'])
     async def ow_unset(self, ctx):
         """Remove your BattleTag from the DB."""
-        author = ctx.message.author
+        author = ctx.author
         async with self.bot.db.transaction():
             res = await self.bot.db.execute('''
                 DELETE FROM overwatch WHERE id = $1

@@ -159,7 +159,7 @@ class Images(BaseCog):
             category = '&category=' + category
         elif category:
             await ctx.send('Invalid category. Try one of: ' + ', '.join(CATEGORIES))
-        sub_id = ctx.message.author.id
+        sub_id = ctx.author.id
         with ctx.typing():
             try:
                 while True:
@@ -189,7 +189,7 @@ class Images(BaseCog):
             embed.add_field(name='Favorite: ' + REACTIONS[11],
                             value='Report: ' + REACTIONS[0])
 
-            if not ctx.message.channel.permissions_for(ctx.message.guild.me).add_reactions:
+            if not ctx.channel.permissions_for(ctx.guild.me).add_reactions:
                 await ctx.send(embed=embed)
                 return
 
@@ -295,7 +295,7 @@ class Images(BaseCog):
 
         To change your rating of an image, see the "rerate" command.
         """
-        sub_id = ctx.message.author.id
+        sub_id = ctx.author.id
         with ctx.typing():
             root = XMLTree.fromstring(await self.fetch_cat(GET_VOTES, sub_id=sub_id))
             ids = [i.text for i in root.iter('id')]
@@ -316,7 +316,7 @@ class Images(BaseCog):
 
         <new_score> can be either just a number or "X/10"
         """
-        sub_id = ctx.message.author.id
+        sub_id = ctx.author.id
         with ctx.typing():
             root = XMLTree.fromstring(await self.fetch_cat(GET_VOTES, sub_id=sub_id))
             ids = [i.text for i in root.iter('id')]
@@ -343,7 +343,7 @@ class Images(BaseCog):
         Images are posted in format "ID: url".
         [to_remove] is an ID of the image you want to unfavorite.
         """
-        sub_id = ctx.message.author.id
+        sub_id = ctx.author.id
         with ctx.typing():
             root = XMLTree.fromstring(await self.fetch_cat(GET_FAVES, sub_id=sub_id))
             ids = [i.text for i in root.iter('id')]

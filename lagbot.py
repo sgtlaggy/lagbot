@@ -129,8 +129,8 @@ class LagBot(commands.Bot):
         if hasattr(ctx.command, 'on_error') or isinstance(exc, commands.CommandNotFound):
             return
         logging.warning(f'Ignoring exception in command {ctx.command}')
-        if isinstance(ctx.message.channel, (discord.DMChannel, discord.GroupChannel)):
-            if str(ctx.message.channel.type) == 'group':
+        if isinstance(ctx.channel, (discord.DMChannel, discord.GroupChannel)):
+            if str(ctx.channel.type) == 'group':
                 msg = 'Message was "{0.content}" by {0.author} in {0.channel}.'
             else:
                 msg = 'Message was "{0.content}" in {0.channel}.'

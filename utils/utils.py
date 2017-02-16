@@ -75,8 +75,8 @@ def integer(arg):
 
 async def say_and_pm(ctx, content):
     """Send message to current channel as well as the command message's author."""
-    channel = ctx.message.channel
-    author = ctx.message.author
+    channel = ctx.channel
+    author = ctx.author
     to_say = content.format(channel='')
     to_pm = content.format(channel=f'in {channel.mention}')
     return (await ctx.send(to_say),
