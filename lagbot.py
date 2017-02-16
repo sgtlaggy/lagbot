@@ -18,6 +18,9 @@ from utils.utils import pluralize, TIME_BRIEF, TIME_LONG, tb_args, db_decode
 Response = namedtuple('Response', 'status data')
 
 
+IGNORE_EXCS = (commands.CommandNotFound, commands.MissingRequiredArgument)
+
+
 async def command_prefix(bot, message):
     """Custom prefix function for guild-specific prefixes."""
     default = bot.default_prefix
@@ -128,23 +131,15 @@ class LagBot(commands.Bot):
         """Emulate default on_command_error and add guild + channel info."""
         if hasattr(ctx.command, 'on_error') or \
                 getattr(exc, 'handled', False) or \
-                isinstance(exc, commands.CommandNotFound):
+                isinstance(exc, IGNORE_EXCS):
             return
         logging.warning(f'Ignoring exception in command {ctx.command}')
-        if isinstance(ctx.channel, (discord.DMChannel, discord.GroupChannel)):
-            if str(ctx.channel.type) == 'group':
-                msg = 'Message was "{0.content}" by {0.author} in {0.channel}.'
-            else:
-                msg = 'Message was "{0.content}" in {0.channel}.'
-        else:
-            msg = 'Message was "{0.content}" by {0.author} in "{0.channel}" on "{0.guild}".'
-        msg = msg.format(ctx.message)
-
-        exc = getattr(exc, 'original', exc)
-        tb = ''.join(traceback.format_exception(*tb_args(exc)))
+        msg = f'Message was "{ctx.message.content}".'
+        original = getattr(exc, 'original', exc)
+        tb = ''.join(traceback.format_exception(*tb_args(original)))
         logging.error('\n'.join((msg, tb)))
 
-        if not self._debug:
+        if not self._debug and isinstance(exc, commands.CommandInvokeError):
             try:
                 await self.owner.send(f'{msg}\n```py\n{tb}\n```'.format(msg, tb))
             except:
