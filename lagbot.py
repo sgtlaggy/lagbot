@@ -126,7 +126,9 @@ class LagBot(commands.Bot):
 
     async def on_command_error(self, exc, ctx):
         """Emulate default on_command_error and add guild + channel info."""
-        if hasattr(ctx.command, 'on_error') or isinstance(exc, commands.CommandNotFound):
+        if hasattr(ctx.command, 'on_error') or \
+                getattr(exc, 'handled', False) or \
+                isinstance(exc, commands.CommandNotFound):
             return
         logging.warning(f'Ignoring exception in command {ctx.command}')
         if isinstance(ctx.channel, (discord.DMChannel, discord.GroupChannel)):

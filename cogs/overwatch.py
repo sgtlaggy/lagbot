@@ -294,11 +294,7 @@ class Overwatch(BaseCog):
         """
         tag, mode, region = fix_arg_order(*args)
         with ctx.typing():
-            try:
-                stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode, region)
-            except (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag) as e:
-                await ctx.send(e)
-                return
+            stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode, region)
 
             mp_hero, mp_time = next(most_played(heroes))
             embed = discord.Embed(colour=HERO_INFO[mp_hero]['color'])
@@ -345,11 +341,7 @@ class Overwatch(BaseCog):
         """
         tag, mode, region = fix_arg_order(*args)
         with ctx.typing():
-            try:
-                stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode, region)
-            except (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag) as e:
-                await ctx.send(e)
-                return
+            stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode, region)
 
             message = [f'{mode.name.title()} hero stats:']
             width = max(len(HERO_INFO[hero]['name']) for hero in heroes.keys())
@@ -423,11 +415,7 @@ class Overwatch(BaseCog):
     @ow_set.command(name='mode')
     async def set_mode(self, ctx, mode):
         """Change your preferred mode in the db."""
-        try:
-            new_mode = ow_mode(mode)
-        except NotFound as e:
-            await ctx.send(e)
-            return
+        new_mode = ow_mode(mode)
         async with self.bot.db.transaction():
             res = await self.bot.db.execute('''
                 UPDATE overwatch SET mode = $1 WHERE id = $2
@@ -466,6 +454,15 @@ class Overwatch(BaseCog):
             await ctx.send("\N{THUMBS DOWN SIGN} You're not in the db.")
         else:
             await ctx.send('\N{THUMBS UP SIGN} Removed from the db.')
+
+    async def __error(self, exc, ctx):
+        if not isinstance(exc, commands.CommandInvokeError):
+            exc.handled = False
+            return
+        if isinstance(exc.original, (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag)):
+            exc.handled = True
+            await ctx.send(exc.original)
+            return
 
 
 def setup(bot):
