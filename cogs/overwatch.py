@@ -11,7 +11,7 @@ from utils.utils import pluralize
 from cogs.base import BaseCog
 
 
-endpoint = "http://127.0.0.1:4444/owapi/v3/u/{btag}/"
+endpoint = "http://127.0.0.1:4444/api/v3/u/{btag}/"
 BLOB = endpoint + "blob"
 STATS = endpoint + "stats"
 HEROES = endpoint + "heroes"
@@ -85,12 +85,12 @@ class Portrait:
 
     @classmethod
     def get(cls, hero):
-        if hero not in {'soldier76', 'sombra'}:
-            return cls.default.format(hero, '')
-        elif hero == 'soldier76':
+        if hero == 'soldier76':
             return cls.default.format('soldier-76', '')
         elif hero == 'sombra':  # blame Blizzard
             return cls.default.format(hero, '-d5121256f71c9d7dc7a434ac75be95d99942e8386ba7f8462f3e15d91223854c9b9adde42a3aca70715ab24326a7c27848151e8ab92a259ac7744d7f15a6d91b')
+        else:
+            return cls.default.format(hero, '')
 
 
 def stat_links(tag, region):
@@ -302,7 +302,7 @@ class Overwatch(BaseCog):
             mp_hero, mp_time = next(most_played(heroes))
             embed = discord.Embed(colour=HERO_INFO[mp_hero]['color'])
             links = stat_links(tag, region)
-            embed.description = f'**{mode.name.title()} Stats** ([raw]({links["owapi"]}))'
+            embed.description = f'{region.upper()} **{mode.name.title()}** Stats ([raw]({links["owapi"]}))'
             author_icon = stats['overall_stats']['avatar']
             embed.set_thumbnail(url=Portrait.get(mp_hero))
             embed.add_field(name='Time Played', value=time_str(stats['game_stats']['time_played']))
