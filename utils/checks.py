@@ -1,6 +1,12 @@
 from discord.ext import commands
 
 
+def need_db(command):
+    """Decorator, not check, to mark the command as needing a DB connection."""
+    command._db = True
+    return command
+
+
 def bot_config_attr(attr):
     return commands.check(lambda ctx: attr in ctx.bot.config)
 

@@ -2,6 +2,7 @@ from discord.ext import commands
 import discord
 
 from utils.utils import db_encode, db_decode
+from utils.checks import need_db
 from cogs.base import BaseCog
 from utils import checks
 
@@ -13,6 +14,7 @@ class Meta(BaseCog):
         """Manage bot user attributes."""
         pass
 
+    @need_db
     @manage.group(invoke_without_command=True)
     @checks.owner_or_permissions(manage_guild=True)
     async def prefix(self, ctx, new_prefix: str, allow_default=False):
@@ -26,21 +28,22 @@ class Meta(BaseCog):
         if len(new_prefix) > 25:
             await ctx.send('That prefix is too long, please choose a new one.')
             return
-        async with self.bot.db.transaction():
-            await self.bot.db.execute('''
+        async with ctx.con.transaction():
+            await ctx.con.execute('''
                 INSERT INTO prefixes (guild_id, prefix, allow_default) VALUES ($1, $2, $3)
                 ON CONFLICT (guild_id)
                 DO UPDATE SET (prefix, allow_default) = ($2, $3)
                 ''', guild.id, db_encode(new_prefix), allow_default)
         await ctx.send(f'Set custom prefix to "{new_prefix}".')
 
+    @need_db
     @prefix.command()
     @checks.owner_or_permissions(manage_guild=True)
     async def reset(self, ctx):
         """Remove this guild's custom prefix."""
         guild = ctx.guild
-        async with self.bot.db.transaction():
-            res = await self.bot.db.execute('''
+        async with ctx.con.transaction():
+            res = await ctx.con.execute('''
                 DELETE FROM prefixes WHERE guild_id = $1
                 ''', guild.id)
         if res[-1] == '0':
@@ -48,13 +51,14 @@ class Meta(BaseCog):
         else:
             await ctx.send('Removed custom prefix for this guild.')
 
+    @need_db
     @prefix.command()
     async def show(self, ctx):
         """Show the prefix set for this guild.
 
         Also shows whether or not the default prefix can be used.
         """
-        rec = await self.bot.db.fetchrow('''
+        rec = await ctx.con.fetchrow('''
             SELECT * FROM prefixes WHERE guild_id = $1
             ''', str(ctx.guild.id))
         if rec is None:

@@ -8,7 +8,7 @@ from discord.ext import commands
 import discord
 import aiohttp
 
-from utils.checks import bot_config_attr
+from utils.checks import bot_config_attr, need_db
 from utils.errors import NotFound
 from utils.utils import between
 from utils.emoji import digits
@@ -65,13 +65,14 @@ class Images(BaseCog):
         else:
             return data
 
-    async def xkcd_insert(self, data):
-        async with self.bot.db.transaction():
-            return await self.bot.db.execute('''
+    async def xkcd_insert(self, ctx, data):
+        async with ctx.con.transaction():
+            return await ctx.con.execute('''
                 INSERT INTO xkcd VALUES ($1, $2, $3, $4, $5)
                 ''', data['num'], data['safe_title'],
                 data['alt'], data['img'], xkcd_date(data))
 
+    @need_db
     @commands.command()
     async def xkcd(self, ctx, comic=''):
         """Get xkcd comics.
@@ -83,9 +84,9 @@ class Images(BaseCog):
             try:
                 if comic in {'r', 'rand', 'random'} or not comic:
                     data = await self.fetch_xkcd()
-                    await self.bot.db.fetchrow('''
+                    await ctx.con.fetchrow('''
                         SELECT * FROM xkcd WHERE num = $1
-                        ''', data['num']) or await self.xkcd_insert(data)
+                        ''', data['num']) or await self.xkcd_insert(ctx, data)
                     if not comic:
                         raise MostRecent
                     while True:
@@ -96,11 +97,11 @@ class Images(BaseCog):
                     if not comic.isdigit():
                         return
                     comic = int(comic)
-                data = await self.bot.db.fetchrow('''
+                data = await ctx.con.fetchrow('''
                     SELECT * FROM xkcd WHERE num = $1
                     ''', comic) or await self.fetch_xkcd(comic)
                 if isinstance(data, dict):
-                    await self.xkcd_insert(data)
+                    await self.xkcd_insert(ctx, data)
             except NotFound as e:
                 await ctx.send(e)
                 return

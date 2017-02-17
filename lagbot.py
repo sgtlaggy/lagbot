@@ -26,9 +26,10 @@ async def command_prefix(bot, message):
     default = bot.default_prefix
     if message.guild is None:
         return default
-    settings = await bot.db.fetchrow('''
-        SELECT * FROM prefixes WHERE guild_id = $1
-        ''', str(message.guild.id))
+    async with bot.db_pool.acquire() as con:
+        settings = await con.fetchrow('''
+            SELECT * FROM prefixes WHERE guild_id = $1
+            ''', str(message.guild.id))
     if settings is None:
         return default
     prefix, allow_default = settings['prefix'], settings['allow_default']
@@ -46,6 +47,8 @@ class LagBot(commands.Bot):
         self._debug = debug
         self.config_file = config_file
         super().__init__(*args, **kwargs)
+        self._before_invoke = self._before_invoke_
+        self._after_invoke = self._after_invoke_
         self.config_lock = asyncio.Lock(loop=self.loop)
         self.loop.run_until_complete(self.load_config())
         self.default_prefix = self.command_prefix
@@ -60,9 +63,10 @@ class LagBot(commands.Bot):
         self.http_ = aiohttp.ClientSession(
             loop=self.loop,
             headers={'User-Agent': useragent})
-        self.db = self.loop.run_until_complete(
-            asyncpg.connect(
+        self.db_pool = self.loop.run_until_complete(
+            asyncpg.create_pool(
                 database='lagbot',
+                command_timeout=10,
                 loop=self.loop))
 
     def _config_to_file(self):
@@ -89,7 +93,7 @@ class LagBot(commands.Bot):
 
     async def logout(self):
         await self.http_.close()
-        await self.db.close()
+        await self.db_pool.close()
         await super().logout()
 
     def logout_(self):
@@ -128,6 +132,14 @@ class LagBot(commands.Bot):
             if debug_channel is None or msg.channel.id != int(debug_channel):
                 return
         await self.process_commands(msg)
+
+    async def _before_invoke_(self, ctx):
+        if getattr(ctx.command, '_db', False):
+            ctx.con = await self.db_pool.acquire()
+
+    async def _after_invoke_(self, ctx):
+        if hasattr(ctx, 'con'):
+            await self.db_pool.release(ctx.con)
 
     async def on_command_error(self, exc, ctx):
         """Emulate default on_command_error and add guild + channel info."""
@@ -177,11 +189,11 @@ class LagBot(commands.Bot):
         """
         if ignore_timeout:
             try:
-                return await _request(*args, **kwargs)
+                return await self._request(*args, **kwargs)
             except asyncio.TimeoutError:
                 return Response(None, None)
         else:
-            return await _request(*args, **kwargs)
+            return await self._request(*args, **kwargs)
 
     def get_uptime(self, brief=False):
         now = datetime.datetime.utcnow()

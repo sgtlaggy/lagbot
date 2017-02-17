@@ -8,6 +8,7 @@ import discord
 
 from utils.errors import NotFound, ServerError, NotInDB
 from utils.utils import pluralize
+from utils.checks import need_db
 from cogs.base import BaseCog
 
 
@@ -211,10 +212,10 @@ class Overwatch(BaseCog):
             raise NotFound(f"Couldn't get stats for {btag}.")
         return data
 
-    async def get_platform(self, tag, platform):
+    async def get_platform(self, ctx, tag, platform):
         if platform is not None:
             return platform
-        platform = await self.bot.db.fetchval('''
+        platform = await ctx.con.fetchval('''
             SELECT platform FROM overwatch WHERE btag = $1
             ''', tag)
         if platform is None:
@@ -222,14 +223,14 @@ class Overwatch(BaseCog):
         else:
             return platform
 
-    async def get_region(self, tag, region, data):
+    async def get_region(self, ctx, tag, region, data):
         if region is not None:
             if data.get(region.lower()) is not None:
                 return region.lower()
             else:
                 raise NotFound(f'{api_to_btag(tag)} has not played in {region}.')
         available = [r for r in REGIONS if data.get(r) is not None]
-        region = await self.bot.db.fetchval('''
+        region = await ctx.con.fetchval('''
             SELECT region FROM overwatch WHERE btag = $1
             ''', tag)
         if region is None:
@@ -243,20 +244,20 @@ class Overwatch(BaseCog):
             tag = btag_to_api(tag)
         else:
             member_id = mention_id(tag) or ctx.author.id
-            tag = await self.bot.db.fetchval('''
+            tag = await ctx.con.fetchval('''
                 SELECT btag FROM overwatch WHERE id = $1
                 ''', member_id)
         if tag is None:
             raise NotInDB('Not in the db.')
         return tag
 
-    async def get_mode(self, btag_or_id):
+    async def get_mode(self, ctx, btag_or_id):
         if isinstance(btag_or_id, int):
-            mode = await self.bot.db.fetchval('''
+            mode = await ctx.con.fetchval('''
                 SELECT mode FROM overwatch WHERE id = $1
                 ''', btag_or_id)
         else:
-            mode = await self.bot.db.fetchval('''
+            mode = await ctx.con.fetchval('''
                 SELECT mode FROM overwatch WHERE btag = $1
                 ''', btag_or_id)
         if mode is not None:
@@ -268,17 +269,17 @@ class Overwatch(BaseCog):
         if mode is not None:
             mode = ow_mode(mode)
         else:
-            mode = await self.get_mode(tag) or \
-                await self.get_mode(member_id) or \
+            mode = await self.get_mode(ctx, tag) or \
+                await self.get_mode(ctx, member_id) or \
                 Mode.default
         return tag, mode
 
     async def get_all(self, ctx, tag, mode, reg, platform, end=BLOB):
         tag, mode = await self.get_tag_mode(ctx, tag, mode)
-        platform = await self.get_platform(tag, platform)
+        platform = await self.get_platform(ctx, tag, platform)
         data = await self.fetch_stats(tag, platform, end)
         if platform == 'pc':
-            region = await self.get_region(tag, reg, data)
+            region = await self.get_region(ctx, tag, reg, data)
         else:
             region = 'any'
         data = data[region]
@@ -290,6 +291,7 @@ class Overwatch(BaseCog):
             data['heroes']['playtime'][mode.name], \
             tag, mode, region, platform
 
+    @need_db
     @commands.group(aliases=['ow'], usage='[tag] [mode] [region] [platform]', invoke_without_command=True)
     async def overwatch(self, ctx, *args):
         """See stats of yourself or another player.
@@ -352,6 +354,7 @@ class Overwatch(BaseCog):
                              url=links['official'])
         await ctx.send(embed=embed)
 
+    @need_db
     @overwatch.command(usage='[tag] [mode] [region] [platform]')
     async def heroes(self, ctx, *args):
         """Get playtime for each played hero.
@@ -389,6 +392,7 @@ class Overwatch(BaseCog):
                              url=links['official'])
         await ctx.send('\n'.join(message), embed=embed)
 
+    @need_db
     @overwatch.group(name='set', aliases=['save'], invoke_without_command=True)
     async def ow_set(self, ctx, tag, mode='comp', region='us', platform='pc'):
         """Set your BattleTag and default gamemode.
@@ -414,8 +418,8 @@ class Overwatch(BaseCog):
         new_region = region
         new_platform = platform
         try:
-            async with self.bot.db.transaction():
-                await self.bot.db.execute('''
+            async with ctx.con.transaction():
+                await ctx.con.execute('''
                     INSERT INTO overwatch (id, btag, mode, region, platform) VALUES ($1, $2, $3, $4, $5)
                     ''', author.id, new_tag, new_mode.name, new_region, new_platform)
         except asyncpg.UniqueViolationError:
@@ -423,6 +427,7 @@ class Overwatch(BaseCog):
         else:
             await ctx.send('\N{THUMBS UP SIGN} Added to the db.')
 
+    @need_db
     @ow_set.command(name='tag', aliases=['btag', 'battletag'])
     async def set_tag(self, ctx, tag):
         """Change your BattleTag in the db."""
@@ -430,8 +435,8 @@ class Overwatch(BaseCog):
         if new_tag is None:
             await ctx.send(f'{tag} is not a valid BattleTag.')
             return
-        async with self.bot.db.transaction():
-            res = await self.bot.db.execute('''
+        async with ctx.con.transaction():
+            res = await ctx.con.execute('''
                 UPDATE overwatch SET btag = $1 WHERE id = $2
                 ''', new_tag, ctx.author.id)
         if res[-1] == '0':
@@ -439,12 +444,13 @@ class Overwatch(BaseCog):
         else:
             await ctx.send('\N{THUMBS UP SIGN} Updated your BattleTag.')
 
+    @need_db
     @ow_set.command(name='mode')
     async def set_mode(self, ctx, mode):
         """Change your preferred mode in the db."""
         new_mode = ow_mode(mode)
-        async with self.bot.db.transaction():
-            res = await self.bot.db.execute('''
+        async with ctx.con.transaction():
+            res = await ctx.con.execute('''
                 UPDATE overwatch SET mode = $1 WHERE id = $2
                 ''', new_mode.name, ctx.author.id)
         if res[-1] == '0':
@@ -452,6 +458,7 @@ class Overwatch(BaseCog):
         else:
             await ctx.send('\N{THUMBS UP SIGN} Updated your preferred mode.')
 
+    @need_db
     @ow_set.command(name='region')
     async def set_region(self, ctx, region):
         """Change your preferred region in the db."""
@@ -460,8 +467,8 @@ class Overwatch(BaseCog):
         else:
             await ctx.send(f'{region} is not a valid region.')
             return
-        async with self.bot.db.transaction():
-            res = await self.bot.db.execute('''
+        async with ctx.con.transaction():
+            res = await ctx.con.execute('''
                 UPDATE overwatch SET region = $1 WHERE id = $2
                 ''', new_region, ctx.author.id)
         if res[-1] == '0':
@@ -469,6 +476,7 @@ class Overwatch(BaseCog):
         else:
             await ctx.send('\N{THUMBS UP SIGN} Updated your region.')
 
+    @need_db
     @ow_set.command(name='platform')
     async def set_platform(self, ctx, platform):
         """Change your preferred platform in the db."""
@@ -477,8 +485,8 @@ class Overwatch(BaseCog):
         else:
             await ctx.send(f'{platform} is not a valid platform.')
             return
-        async with self.bot.db.transaction():
-            res = await self.bot.db.execute('''
+        async with ctx.con.transaction():
+            res = await ctx.con.execute('''
                 UPDATE overwatch SET platform = $1 WHERE id = $2
                 ''', new_platform, ctx.author.id)
         if res[-1] == '0':
@@ -486,12 +494,13 @@ class Overwatch(BaseCog):
         else:
             await ctx.send('\N{THUMBS UP SIGN} Updated your platform.')
 
+    @need_db
     @overwatch.command(name='unset', aliases=['delete', 'remove'])
     async def ow_unset(self, ctx):
         """Remove your BattleTag from the DB."""
         author = ctx.author
-        async with self.bot.db.transaction():
-            res = await self.bot.db.execute('''
+        async with ctx.con.transaction():
+            res = await ctx.con.execute('''
                 DELETE FROM overwatch WHERE id = $1
                 ''', author.id)
         if res[-1] == '0':
