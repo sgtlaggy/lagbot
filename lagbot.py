@@ -157,11 +157,7 @@ class LagBot(commands.Bot):
         else:
             return await super().wait_for(*args, **kwargs)
 
-    async def request(self, url, type_='json', *, timeout=10, method='GET', **kwargs):
-        """Utility request function.
-
-        type_ is the method to get data from response
-        """
+    async def _request(self, url, type_='json', *, timeout=10, method='GET', **kwargs):
         if type_ not in {'json', 'read', 'text'}:
             return
         if kwargs.get('data') and method == 'GET':
@@ -173,6 +169,19 @@ class LagBot(commands.Bot):
             except:
                 logging.exception(f'Failed getting type {type_} from "{url}".')
             return Response(resp.status, data)
+
+    async def request(self, *args, ignore_timeout=True, **kwargs):
+        """Utility request function.
+
+        type_ is the method to get data from response
+        """
+        if ignore_timeout:
+            try:
+                return await _request(*args, **kwargs)
+            except asyncio.TimeoutError:
+                return Response(None, None)
+        else:
+            return await _request(*args, **kwargs)
 
     def get_uptime(self, brief=False):
         now = datetime.datetime.utcnow()

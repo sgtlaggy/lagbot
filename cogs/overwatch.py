@@ -202,7 +202,8 @@ class Overwatch(BaseCog):
     """
     async def fetch_stats(self, tag, platform, end=BLOB):
         btag = api_to_btag(tag)
-        status, data = await self.bot.request(end.format(btag=tag, platform=platform), timeout=15)
+        status, data = await self.bot.request(end.format(btag=tag, platform=platform),
+                                              timeout=15)
         if status == 500:
             await self.bot.owner.send(f'Blizzard broke OWAPI.\n{data["exc"]}')
             raise ServerError('Blizzard broke something. Please wait a bit before trying again.')
@@ -389,7 +390,7 @@ class Overwatch(BaseCog):
         await ctx.send('\n'.join(message), embed=embed)
 
     @overwatch.group(name='set', aliases=['save'], invoke_without_command=True)
-    async def ow_set(self, ctx, tag, mode=None, region='us', platform='pc'):
+    async def ow_set(self, ctx, tag, mode='comp', region='us', platform='pc'):
         """Set your BattleTag and default gamemode.
 
         <tag>, [mode], [region], and [platform] can be specified in any order.
@@ -411,11 +412,12 @@ class Overwatch(BaseCog):
         new_tag = btag_to_api(tag)
         new_mode = ow_mode(mode)
         new_region = region
+        new_platform = platform
         try:
             async with self.bot.db.transaction():
                 await self.bot.db.execute('''
                     INSERT INTO overwatch (id, btag, mode, region, platform) VALUES ($1, $2, $3, $4, $5)
-                    ''', author.id, new_tag, new_mode.name, new_region)
+                    ''', author.id, new_tag, new_mode.name, new_region, new_platform)
         except asyncpg.UniqueViolationError:
             await ctx.send("You're already in the db. Use subcommands to change your info.")
         else:
