@@ -11,14 +11,16 @@ from utils.utils import pluralize
 from cogs.base import BaseCog
 
 
-endpoint = "http://127.0.0.1:4444/api/v3/u/{btag}/"
-BLOB = endpoint + "blob"
-STATS = endpoint + "stats"
-HEROES = endpoint + "heroes"
+_platform = "?platform={platform}"
+_endpoint = "http://127.0.0.1:4444/api/v3/u/{btag}/"
+BLOB = _endpoint + "blob" + _platform
+STATS = _endpoint + "stats" + _platform
+HEROES = _endpoint + "heroes" + _platform
 
 ID_RE = re.compile(r'<@!?([0-9]+)>$')
 
-REGIONS = ('us', 'eu', 'kr', 'any')
+PLATFORMS = ('pc', 'xbl', 'psn')
+REGIONS = ('us', 'eu', 'kr')
 
 
 class Mode(enum.Enum):
@@ -93,9 +95,9 @@ class Portrait:
             return cls.default.format(hero, '')
 
 
-def stat_links(tag, region):
-    return dict(official=f'https://playoverwatch.com/en-us/career/pc/{region}/{tag}',
-                owapi=f'http://lag.b0ne.com/owapi/v3/u/{tag}/blob?format=json_pretty',
+def stat_links(tag, region, platform):
+    return dict(official=f'https://playoverwatch.com/en-us/career/{platform}/{region}/{tag}',
+                owapi=f'http://lag.b0ne.com/owapi/v3/u/{tag}/blob?platform={platform}&format=json_pretty',
                 webapp='http://lag.b0ne.com/ow/')
 
 
@@ -103,21 +105,24 @@ SYMBOLS = string.punctuation + ' '
 
 
 def fix_arg_order(*args):
-    tag, mode, region = '', None, None
+    tag, mode, region, platform = '', None, None, None
     for arg in args:
         if arg is None or isinstance(arg, Mode):
             continue
-        elif '#' in arg or '@' in arg:
+        lower = arg.lower()
+        if '#' in arg or '@' in arg:
             tag = arg
-        elif arg.lower() in REGIONS:
-            region = arg.lower()
+        elif lower in REGIONS:
+            region = lower
+        elif lower in PLATFORMS:
+            platform = lower
         else:
             try:
-                Mode[arg.lower()]
-                mode = arg.lower()
+                Mode[lower]
+                mode = lower
             except KeyError:
                 pass
-    return tag, mode, region
+    return tag, mode, region, platform
 
 
 def mention_id(mention):
@@ -131,11 +136,9 @@ def validate_btag(btag):
     if len(split) != 2:
         return False
     tag, disc = split
-    if 3 <= len(tag) <= 12 and \
-            not any(s in tag for s in SYMBOLS) and \
-            not tag[0].isdigit() and disc.isdigit():
-        return True
-    return False
+    return 3 <= len(tag) <= 12 and \
+        not any(s in tag for s in SYMBOLS) and \
+        not tag[0].isdigit() and disc.isdigit()
 
 
 def btag_to_api(btag):
@@ -195,16 +198,28 @@ class Overwatch(BaseCog):
     Any command argument named "tag" is a case-sensitive BattleTag.
     Any command argument named "mode" is a gamemode (qp, comp, quickplay, competitive, unranked, ranked).
     Any command argument named "region" is a region (us, eu, kr).
+    Any command argument named "platform" is a platform (pc, xbl, psn).
     """
-    async def fetch_stats(self, tag, end=BLOB):
+    async def fetch_stats(self, tag, platform, end=BLOB):
         btag = api_to_btag(tag)
-        status, data = await self.bot.request(end.format(btag=tag), timeout=15)
+        status, data = await self.bot.request(end.format(btag=tag, platform=platform), timeout=15)
         if status == 500:
             await self.bot.owner.send(f'Blizzard broke OWAPI.\n{data["exc"]}')
             raise ServerError('Blizzard broke something. Please wait a bit before trying again.')
         elif status != 200:
             raise NotFound(f"Couldn't get stats for {btag}.")
         return data
+
+    async def get_platform(self, tag, platform):
+        if platform is not None:
+            return platform
+        rec = await self.bot.db.fetchrow('''
+            SELECT platform FROM overwatch WHERE btag = $1
+            ''', tag)
+        if rec is None:
+            return PLATFORMS[0]
+        else:
+            return rec['platform']
 
     async def get_region(self, tag, region, data):
         if region is not None:
@@ -257,10 +272,14 @@ class Overwatch(BaseCog):
                 Mode.default
         return tag, mode
 
-    async def get_all(self, ctx, tag, mode, reg, end=BLOB):
+    async def get_all(self, ctx, tag, mode, reg, platform, end=BLOB):
         tag, mode = await self.get_tag_mode(ctx, tag, mode)
-        data = await self.fetch_stats(tag, end)
-        region = await self.get_region(tag, reg, data)
+        platform = await self.get_platform(tag, platform)
+        data = await self.fetch_stats(tag, platform, end)
+        if platform == 'pc':
+            region = await self.get_region(tag, reg, data)
+        else:
+            region = 'any'
         data = data[region]
         if mode is Mode.competitive and \
                 not data['stats'].get(mode.name) and \
@@ -268,18 +287,19 @@ class Overwatch(BaseCog):
             mode = Mode.quickplay
         return data['stats'].get(mode.name), \
             data['heroes']['playtime'][mode.name], \
-            tag, mode, region
+            tag, mode, region, platform
 
-    @commands.group(aliases=['ow'], usage='[tag] [mode] [region]', invoke_without_command=True)
+    @commands.group(aliases=['ow'], usage='[tag] [mode] [region] [platform]', invoke_without_command=True)
     async def overwatch(self, ctx, *args):
         """See stats of yourself or another player.
 
-        [tag], [mode], and [region] can be specified in any order.
+        [tag], [mode], [region], and [platform] can be specified in any order.
         [tag] can be either BattleTag or a mention to someone in the db
         [mode] can be 'quick', 'quickplay', 'qp', 'unranked',
                       'comp', 'competitive', 'ranked'
              * Defaults to competitive stats, falls back to quickplay.
         [region] can be 'us', 'eu', or 'kr'
+        [platform] can be 'pc', 'xbl', or 'psn'
 
         Stats by BattleTag            : !ow BattleTag#1234
         Stats by Discord mention      : !ow @DiscordName
@@ -295,14 +315,14 @@ class Overwatch(BaseCog):
             * BattleTags are case-sensitive.
             * To get stats by Discord mention, the person must be in the DB.
         """
-        tag, mode, region = fix_arg_order(*args)
+        tag, mode, region, platform = fix_arg_order(*args)
         with ctx.typing():
-            stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode, region)
+            stats, heroes, tag, mode, region, platform = await self.get_all(ctx, tag, mode, region, platform)
 
             mp_hero, mp_time = next(most_played(heroes))
             embed = discord.Embed(colour=HERO_INFO[mp_hero]['color'])
-            links = stat_links(tag, region)
-            embed.description = f'{region.upper()} **{mode.name.title()}** Stats ([raw]({links["owapi"]}))'
+            links = stat_links(tag, region, platform)
+            embed.description = f'{platform.upper()}/{region.upper()} **{mode.name.title()}** Stats ([raw]({links["owapi"]}))'
             author_icon = stats['overall_stats']['avatar']
             embed.set_thumbnail(url=Portrait.get(mp_hero))
             embed.add_field(name='Time Played', value=time_str(stats['game_stats']['time_played']))
@@ -331,22 +351,23 @@ class Overwatch(BaseCog):
                              url=links['official'])
         await ctx.send(embed=embed)
 
-    @overwatch.command(usage='[tag] [mode] [region]')
+    @overwatch.command(usage='[tag] [mode] [region] [platform]')
     async def heroes(self, ctx, *args):
         """Get playtime for each played hero.
 
-        [tag], [mode], and [region] can be specified in any order.
+        [tag], [mode], [region], and [platform] can be specified in any order.
         [tag] can be either BattleTag or a mention to someone in the db
         [mode] can be 'quick', 'quickplay', 'qp', 'unranked',
                       'comp', 'competitive', 'ranked'
              * Defaults to competitive stats, falls back to quickplay.
         [region] can be 'us', 'eu', or 'kr'
+        [platform] can be 'pc', 'xbl', or 'psn'
         """
-        tag, mode, region = fix_arg_order(*args)
+        tag, mode, region, platform = fix_arg_order(*args)
         with ctx.typing():
-            stats, heroes, tag, mode, region = await self.get_all(ctx, tag, mode, region)
+            stats, heroes, tag, mode, region, platform = await self.get_all(ctx, tag, mode, region, platform)
 
-            message = [f'{mode.name.title()} hero stats:']
+            message = [f'{platform.upper()}/{region.upper()} **{mode.name.title()}** hero stats:']
             width = max(len(HERO_INFO[hero]['name']) for hero in heroes.keys())
             message.append('```ocaml')
             ordered = list(most_played(heroes))
@@ -355,7 +376,7 @@ class Overwatch(BaseCog):
                     message.append(f'{HERO_INFO[hero]["name"]:<{width}} : {played}')
             message.append('```')
             hero = ordered[0][0]
-            links = stat_links(tag, region)
+            links = stat_links(tag, region, platform)
             embed = discord.Embed(colour=HERO_INFO[hero]['color'])
             tier = stats['overall_stats']['tier']
             if stats['competitive'] and tier is not None:
@@ -368,15 +389,16 @@ class Overwatch(BaseCog):
         await ctx.send('\n'.join(message), embed=embed)
 
     @overwatch.group(name='set', aliases=['save'], invoke_without_command=True)
-    async def ow_set(self, ctx, tag, mode=None, region=None):
+    async def ow_set(self, ctx, tag, mode=None, region='us', platform='pc'):
         """Set your BattleTag and default gamemode.
 
-        <tag>, [mode], and [region] can be specified in any order.
+        <tag>, [mode], [region], and [platform] can be specified in any order.
         <tag> can be either BattleTag or a mention to someone in the db
         [mode] can be 'quick', 'quickplay', 'qp', 'unranked',
                       'comp', 'competitive', 'ranked'
              * Defaults to competitive stats, falls back to quickplay.
         [region] can be 'us', 'eu', or 'kr'
+        [platform] can be 'pc', 'xbl', or 'psn'
 
         Note:
         If you're already in the db, you can use this command again as follows:
@@ -385,14 +407,14 @@ class Overwatch(BaseCog):
             set region <region> - change preffered region
         """
         author = ctx.author
-        tag, mode, region = fix_arg_order(tag, mode, region)
+        tag, mode, region, platform = fix_arg_order(tag, mode, region, platform)
         new_tag = btag_to_api(tag)
         new_mode = ow_mode(mode)
-        new_region = region or 'us'
+        new_region = region
         try:
             async with self.bot.db.transaction():
                 await self.bot.db.execute('''
-                    INSERT INTO overwatch (id, btag, mode, region) VALUES ($1, $2, $3, $4)
+                    INSERT INTO overwatch (id, btag, mode, region, platform) VALUES ($1, $2, $3, $4, $5)
                     ''', author.id, new_tag, new_mode.name, new_region)
         except asyncpg.UniqueViolationError:
             await ctx.send("You're already in the db. Use subcommands to change your info.")
@@ -444,6 +466,23 @@ class Overwatch(BaseCog):
             await ctx.send("\N{THUMBS DOWN SIGN} You're not in the db.")
         else:
             await ctx.send('\N{THUMBS UP SIGN} Updated your region.')
+
+    @ow_set.command(name='platform')
+    async def set_platform(self, ctx, platform):
+        """Change your preferred platform in the db."""
+        if platform.lower() in PLATFORMS:
+            new_platform = platform.lower()
+        else:
+            await ctx.send(f'{platform} is not a valid platform.')
+            return
+        async with self.bot.db.transaction():
+            res = await self.bot.db.execute('''
+                UPDATE overwatch SET platform = $1 WHERE id = $2
+                ''', new_platform, ctx.author.id)
+        if res[-1] == '0':
+            await ctx.send("\N{THUMBS DOWN SIGN} You're not in the db.")
+        else:
+            await ctx.send('\N{THUMBS UP SIGN} Updated your platform.')
 
     @overwatch.command(name='unset', aliases=['delete', 'remove'])
     async def ow_unset(self, ctx):

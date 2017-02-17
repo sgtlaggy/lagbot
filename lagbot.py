@@ -24,6 +24,8 @@ IGNORE_EXCS = (commands.CommandNotFound, commands.MissingRequiredArgument)
 async def command_prefix(bot, message):
     """Custom prefix function for guild-specific prefixes."""
     default = bot.default_prefix
+    if message.guild is None:
+        return default
     settings = await bot.db.fetchrow('''
         SELECT * FROM prefixes WHERE guild_id = $1
         ''', str(message.guild.id))
