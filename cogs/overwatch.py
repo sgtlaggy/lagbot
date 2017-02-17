@@ -213,13 +213,13 @@ class Overwatch(BaseCog):
     async def get_platform(self, tag, platform):
         if platform is not None:
             return platform
-        rec = await self.bot.db.fetchrow('''
+        platform = await self.bot.db.fetchval('''
             SELECT platform FROM overwatch WHERE btag = $1
             ''', tag)
-        if rec is None:
+        if platform is None:
             return PLATFORMS[0]
         else:
-            return rec['platform']
+            return platform
 
     async def get_region(self, tag, region, data):
         if region is not None:
@@ -228,14 +228,14 @@ class Overwatch(BaseCog):
             else:
                 raise NotFound(f'{api_to_btag(tag)} has not played in {region}.')
         available = [r for r in REGIONS if data.get(r) is not None]
-        rec = await self.bot.db.fetchrow('''
+        region = await self.bot.db.fetchval('''
             SELECT region FROM overwatch WHERE btag = $1
             ''', tag)
-        if rec is None:
+        if region is None:
             if available:
                 return available[0]
             raise NotPlayed(f'{api_to_btag(tag)} has not played Overwatch.')
-        return rec['region']
+        return region
 
     async def get_tag(self, ctx, tag):
         if tag != '' and validate_btag(tag):
