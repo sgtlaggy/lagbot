@@ -148,7 +148,7 @@ class LagBot(commands.Bot):
                 isinstance(exc, IGNORE_EXCS):
             return
         logging.warning(f'Ignoring exception in command {ctx.command}')
-        msg = f'Message was "{ctx.message.content}".'
+        msg = ctx.message.content
         original = getattr(exc, 'original', exc)
         tb = ''.join(traceback.format_exception(*tb_args(original)))
         logging.error('\n'.join((msg, tb)))

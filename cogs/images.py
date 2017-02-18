@@ -164,7 +164,10 @@ class Images(BaseCog):
         with ctx.typing():
             try:
                 while True:
-                    x = await self.fetch_cat(GET, category=category, sub_id=sub_id)
+                    try:
+                        x = await self.fetch_cat(GET, category=category, sub_id=sub_id)
+                    except aiohttp.ClientResponseError:
+                        continue
                     image_root = XMLTree.fromstring(x).find('data').find('images').find('image')
                     image_url = image_root.find('url').text
                     image_id = image_root.find('id').text
@@ -186,14 +189,15 @@ class Images(BaseCog):
             embed = discord.Embed(title=image_id, url=HOME_BY_ID.format(image_id=image_id),
                                   description=fact or None)
             embed.set_image(url=image_url)
-            embed.add_field(name='Rate', value='{0[1]}-{0[10]}'.format(REACTIONS))
-            embed.add_field(name='Favorite: ' + REACTIONS[11],
-                            value='Report: ' + REACTIONS[0])
 
-            if not ctx.channel.permissions_for(ctx.guild.me).add_reactions:
+            if isinstance(ctx.channel, (discord.DMChannel, discord.GroupChannel)) or \
+                    not ctx.channel.permissions_for(ctx.guild.me).add_reactions:
                 await ctx.send(embed=embed)
                 return
 
+            embed.add_field(name='Rate', value='{0[1]}-{0[10]}'.format(REACTIONS))
+            embed.add_field(name='Favorite: ' + REACTIONS[11],
+                            value='Report: ' + REACTIONS[0])
             embed.colour = discord.Colour.green()
             msg = await ctx.send(embed=embed)
 

@@ -229,8 +229,8 @@ class Misc(BaseCog):
             embed.add_field(name=name, value=f'{char} [{code}]({UNILINK.format(uc)})')
         await ctx.send(embed=embed)
 
-    @commands.command(aliases=['fullwidth', 'fw'])
-    async def meme(self, ctx, *, chars):
+    @commands.command(aliases=['fw'])
+    async def fullwidth(self, ctx, *, chars):
         """Turn your lame normal text into full-width text."""
         try:
             await ctx.message.delete()
