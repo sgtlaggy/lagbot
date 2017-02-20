@@ -47,6 +47,22 @@ class RoboDanny:
     def get_syntax_error(self, e):
         return f'```py\n{e.text}{"^":>{e.offset}}\n{type(e).__name__}: {e}```'
 
+    async def maybe_upload(self, content, cur_len=0, max_len=2000,
+                           title='Bot Eval', syntax='python3'):
+        """Upload to dpaste if result is too long."""
+        if len(str(content)) <= max_len - cur_len:
+            return content
+        data = dict(content=content,
+                    syntax=syntax,
+                    title=title,
+                    poster=str(self.bot.user),
+                    expiry_days=1)
+        resp = await self.bot.request('http://dpaste.com/api/v2/',
+                                      data=data, type_='text')
+        if resp.status == 201:
+            return resp.data
+        return 'Result too long and an error occurred while pasting.'
+
     @commands.command(hidden=True)
     @checks.is_owner()
     async def repl(self, ctx):
@@ -136,7 +152,7 @@ class RoboDanny:
             except discord.HTTPException as e:
                 await msg.channel.send(f'Unexpected error: `{e}`')
 
-    @commands.command(hidden=True)
+    @commands.command(hidden=True, aliases=['py'])
     @checks.is_owner()
     async def debug(self, ctx, *, code: str):
         """Evaluates code."""
@@ -164,9 +180,12 @@ class RoboDanny:
             if inspect.isawaitable(result):
                 result = await result
         except Exception as e:
-            await ctx.send(python.format(exception_signature()))
-            return
-        self.last_eval = result
+            result = exception_signature()
+            syntax = 'py3tb'
+        else:
+            self.last_eval = result
+            syntax = 'python3'
+        result = await self.maybe_upload(result, len(python) - 2, title=code, syntax=syntax)
         await ctx.send(python.format(result))
 
     @commands.command()

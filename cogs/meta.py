@@ -183,7 +183,14 @@ class Meta(BaseCog):
         embed = discord.Embed(description=description)
         embed.set_author(name=str(self.bot.owner),
                          icon_url=self.bot.owner.avatar_url)
-        docs = 'Say {0.command_prefix}help'
+        if callable(self.bot.command_prefix):
+            valid_prefix = await self.bot.command_prefix(self.bot, ctx.message)
+        else:
+            valid_prefix = self.bot.command_prefix
+        if isinstance(valid_prefix, list):
+            docs = 'Say ' + ' or '.join(f'{prefix}help' for prefix in valid_prefix)
+        else:
+            docs = f'Say {valid_prefix}help'
         if self.bot.config.get('userdocs'):
             docs += ' or see [here]({0.config[userdocs]})'
         docs += '.'
