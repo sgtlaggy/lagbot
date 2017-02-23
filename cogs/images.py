@@ -2,7 +2,6 @@ from xml.etree import ElementTree as XMLTree
 import datetime
 import asyncio
 import random
-import re
 
 from discord.ext import commands
 import discord
@@ -10,7 +9,7 @@ import aiohttp
 
 from utils.checks import bot_config_attr, need_db
 from utils.errors import NotFound
-from utils.utils import between
+from utils.utils import between, integer
 from utils.emoji import digits
 from cogs.base import BaseCog
 
@@ -28,7 +27,6 @@ GET_FAVES = HOME + 'api/images/getfavourites?api_key={api_key}&sub_id={sub_id}'
 
 CATEGORIES = {'hats', 'space', 'funny', 'sunglasses', 'boxes',
               'caturday', 'ties', 'dream', 'sinks', 'clothes'}
-REACTIONS = ('\N{PILE OF POO}', *digits[1:], '\N{HEAVY BLACK HEART}')
 
 
 def xkcd_date(data):
@@ -151,10 +149,8 @@ class Images(BaseCog):
             boxes, caturday, ties, dream,
             sinks, clothes
 
-        Within 30 seconds of the image being posted anyone can react with:
-            * 1-10 to rate the image.
-            * heart to favorite the image.
-            * poop to report the image.
+        Within 30 seconds of the image being posted anyone can react with :poop: to report the image.
+        Please only report images that do not contain cats.
         """
         if category in CATEGORIES:
             category = '&category=' + category
@@ -187,75 +183,28 @@ class Images(BaseCog):
                 fact = ''
 
             embed = discord.Embed(title=image_id, url=HOME_BY_ID.format(image_id=image_id),
-                                  description=fact or None)
+                                  description=fact or None, color=discord.Color.red())
             embed.set_image(url=image_url)
-
-            if isinstance(ctx.channel, (discord.DMChannel, discord.GroupChannel)) or \
-                    not ctx.channel.permissions_for(ctx.guild.me).add_reactions:
-                await ctx.send(embed=embed)
-                return
-
-            embed.add_field(name='Rate', value='{0[1]}-{0[10]}'.format(REACTIONS))
-            embed.add_field(name='Favorite: ' + REACTIONS[11],
-                            value='Report: ' + REACTIONS[0])
-            embed.colour = discord.Colour.green()
+            embed.set_footer(text='React with \N{PILE OF POO} to report this image.')
             msg = await ctx.send(embed=embed)
 
-        for reaction in REACTIONS[1:]:
-            await msg.add_reaction(reaction)
-
-        actions = []
-        votes = {}
-        faved = set()
-
-        def vote_check(reaction, user):
-            if reaction.emoji not in REACTIONS or reaction.message.id != msg.id:
-                return False
-            sub_id = user.id
-            score = REACTIONS.index(reaction.emoji)
-            if 1 <= score <= 10:
-                votes[sub_id] = score
-            elif score == 11:
-                faved.add(sub_id)
-                actions.append(self.fetch_cat(FAVE, sub_id=sub_id,
-                                              image_id=image_id,
-                                              act='add'))
-            else:
-                actions.append(self.fetch_cat(REPORT, sub_id=sub_id, image_id=image_id))
-                raise Reported
-            return len(actions) + len(votes) == 20
-
-        def unfavorite_check(reaction, user):
-            if reaction.emoji != REACTIONS[-1] or reaction.message.id != msg.id:
-                return False
-            faved.discard(user.id)
+        def report_check(reaction, user):
+            return reaction.message.id == msg.id and reaction.emoji == '\N{PILE OF POO}'
 
         try:
-            await asyncio.gather(
-                self.bot.wait_for('reaction_add', check=vote_check,
-                                  timeout=30, ignore_timeout=True),
-                self.bot.wait_for('reaction_remove', check=unfavorite_check,
-                                  timeout=30, ignore_timeout=True))
-        except Reported:
-            await msg.delete()
-            await actions[-1]
+            await self.bot.wait_for('reaction_add', check=report_check, timeout=30)
+        except asyncio.TimeoutError:
+            pass
+        else:
+            await self.fetch_cat(REPORT, sub_id=sub_id, image_id=image_id)
             return
-
-        embed.colour = discord.Colour.red()
-        embed._fields = None
-        await msg.edit(embed=embed)
-
-        for reaction in REACTIONS[1:]:
-            await msg.remove_reaction(reaction, self.bot.user)
-
-        for sub_id, score in votes.items():
-            actions.append(self.fetch_cat(VOTE, sub_id=sub_id,
-                                          image_id=image_id,
-                                          score=score))
-        await asyncio.gather(*actions)
+        finally:
+            embed.set_footer()
+            embed.color = discord.Color.default()
+            await msg.edit(embed=embed)
 
     @cat.command(name='facts', aliases=['fact'])
-    async def cat_facts(self, ctx, count: float = 1):
+    async def cat_facts(self, ctx, count: integer = 1):
         """Get cat facts.
 
         1 <= [count] <= 20
@@ -293,84 +242,6 @@ class Images(BaseCog):
         else:
             ctx.command = ctx.command.name
             await self.bot.on_command_error(exc, ctx)
-
-    @cat.command()
-    async def ratings(self, ctx):
-        """Get a list of images you've rated.
-
-        To change your rating of an image, see the "rerate" command.
-        """
-        sub_id = ctx.author.id
-        with ctx.typing():
-            root = XMLTree.fromstring(await self.fetch_cat(GET_VOTES, sub_id=sub_id))
-            ids = [i.text for i in root.iter('id')]
-            scores = [s.text for s in root.iter('score')]
-            urls = [u.text for u in root.iter('url')]
-            if not ids:
-                await ctx.send("You haven't rated any images.")
-                return
-            msg = commands.Paginator(prefix='', suffix='')
-            for score, id, url in zip(scores, ids, urls):
-                msg.add_line(f'{score}/10 {id}: <{url}>')
-            for page in msg.pages:
-                await ctx.send(page)
-
-    @cat.command()
-    async def rerate(self, ctx, image_id, new_score):
-        """Re-rate an image you've rated before.
-
-        <new_score> can be either just a number or "X/10"
-        """
-        sub_id = ctx.author.id
-        with ctx.typing():
-            root = XMLTree.fromstring(await self.fetch_cat(GET_VOTES, sub_id=sub_id))
-            ids = [i.text for i in root.iter('id')]
-            if image_id not in ids:
-                await ctx.send('Invalid image_id.')
-                return
-            if new_score.isdigit():
-                score = between(int(new_score), 1, 10)
-            elif new_score in REACTIONS[1:11]:
-                score = REACTIONS.index(new_score)
-            else:
-                score_match = re.match(r'(-?[0-9]*)/10', new_score)
-                if score_match is None:
-                    await ctx.send('Invalid score format.')
-                    return
-                score = between(int(score_match.group(1)), 1, 10)
-            await self.fetch_cat(VOTE, sub_id=sub_id, image_id=image_id, score=score)
-            await ctx.send('\N{THUMBS UP SIGN} Changed your rating.')
-
-    @cat.command(aliases=['faves', 'favourites'])
-    async def favorites(self, ctx, to_remove=None):
-        """Get a list of your favorited images.
-
-        Images are posted in format "ID: url".
-        [to_remove] is an ID of the image you want to unfavorite.
-        """
-        sub_id = ctx.author.id
-        with ctx.typing():
-            root = XMLTree.fromstring(await self.fetch_cat(GET_FAVES, sub_id=sub_id))
-            ids = [i.text for i in root.iter('id')]
-            urls = [u.text for u in root.iter('url')]
-            if not ids:
-                await ctx.send("You don't have any favorite images.")
-                return
-
-            if to_remove is not None:
-                if to_remove not in ids:
-                    await ctx.send("That's not in your favorites.")
-                    return
-                await self.fetch_cat(FAVE, sub_id=sub_id,
-                                     image_id=to_remove,
-                                     act='remove')
-                await ctx.send('\N{THUMBS UP SIGN} Removed favorite.')
-                return
-            msg = commands.Paginator(prefix='', suffix='')
-            for id, url in zip(ids, urls):
-                msg.add_line(f'`{id}`: <{url}>')
-        for page in msg.pages:
-            await ctx.send(page)
 
 
 def setup(bot):

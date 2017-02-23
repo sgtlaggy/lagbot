@@ -51,8 +51,8 @@ class RoboDanny:
                            title='Bot Eval', syntax='python3'):
         """Upload to dpaste if result is too long."""
         if len(str(content)) <= max_len - cur_len:
-            return content
-        data = dict(content=content,
+            return str(content)
+        data = dict(content=str(content),
                     syntax=syntax,
                     title=title,
                     poster=str(self.bot.user),
