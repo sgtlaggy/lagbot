@@ -30,6 +30,8 @@ help_attrs = {'hidden': True}
 initial_cogs = [f'cogs.{cog}' for cog in [
     'cog', 'images', 'management', 'meta',
     'misc', 'overwatch', 'rdanny', 'tags']]
+if not debug:
+    initial_cogs.append('cogs.botlist')
 
 if __name__ == '__main__':
     bot = LagBot(command_prefix=default_prefix, help_attrs=help_attrs,
