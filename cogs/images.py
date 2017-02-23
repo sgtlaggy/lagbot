@@ -185,7 +185,7 @@ class Images(BaseCog):
             embed = discord.Embed(title=image_id, url=HOME_BY_ID.format(image_id=image_id),
                                   description=fact or None, color=discord.Color.red())
             embed.set_image(url=image_url)
-            embed.set_footer(text='React with \N{PILE OF POO} to report this image.')
+            embed.set_footer(text='Add reaction \N{PILE OF POO} to report this image.')
             msg = await ctx.send(embed=embed)
 
         def report_check(reaction, user):
