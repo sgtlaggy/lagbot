@@ -174,7 +174,7 @@ class Misc(BaseCog):
                                       ignore_timeout=True)
         if res is not None:
             await asyncio.sleep(30)
-        poll_msg = await poll_msg.edit('***POLL IS CLOSED***\n' + poll_msg.content)
+        poll_msg = await poll_msg.edit(content='***POLL IS CLOSED***\n' + poll_msg.content)
         reactions = [r for r in poll_msg.reactions if r.emoji in digits[1:]]
         win_score = max(r.count for r in reactions)
         if win_score == 1:
