@@ -69,7 +69,7 @@ class Management(BaseCog):
             elif len(to_remove) == 1:
                 await to_remove[0].delete()
             else:
-                await ctx.delete_messages(to_remove)
+                await channel.delete_messages(to_remove)
             await ctx.send(
                 pluralize(f'Removed {len(to_remove)} message{{}} by {member.display_name}.'),
                 delete_after=10)

@@ -204,7 +204,7 @@ class Overwatch(BaseCog):
     async def fetch_stats(self, tag, platform, end=BLOB):
         btag = api_to_btag(tag)
         status, data = await self.bot.request(end.format(btag=tag, platform=platform),
-                                              timeout=15)
+                                              timeout=20)
         if status == 500:
             await self.bot.owner.send(f'Blizzard broke OWAPI.\n{data["exc"]}')
             raise ServerError('Blizzard broke something. Please wait a bit before trying again.')
