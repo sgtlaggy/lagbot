@@ -10,7 +10,6 @@ import aiohttp
 from utils.checks import bot_config_attr, need_db
 from utils.errors import NotFound
 from utils.utils import between, integer
-from utils.emoji import digits
 from cogs.base import BaseCog
 
 
@@ -107,7 +106,6 @@ class Images(BaseCog):
                 pass
 
             description = f'**Date:** {xkcd_date(data):%m/%d/%Y}\n{data["alt"]}'
-            # embed = discord.Embed(title='{0[num]}: {0[safe_title]}'.format(data),
             embed = discord.Embed(title=f'{data["num"]}: {data["safe_title"]}',
                                   url=self.make_xkcd_url(data['num'], api=False),
                                   description=description)
@@ -164,7 +162,10 @@ class Images(BaseCog):
                         x = await self.fetch_cat(GET, category=category, sub_id=sub_id)
                     except aiohttp.ClientResponseError:
                         continue
-                    image_root = XMLTree.fromstring(x).find('data').find('images').find('image')
+                    try:
+                        image_root = XMLTree.fromstring(x).find('data').find('images').find('image')
+                    except XMLTree.ParseError:
+                        continue
                     image_url = image_root.find('url').text
                     image_id = image_root.find('id').text
                     if await self.try_cat_image(image_url):
@@ -197,7 +198,6 @@ class Images(BaseCog):
             pass
         else:
             await self.fetch_cat(REPORT, sub_id=sub_id, image_id=image_id)
-            return
         finally:
             embed.set_footer()
             embed.color = discord.Color.default()

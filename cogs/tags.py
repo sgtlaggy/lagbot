@@ -149,7 +149,7 @@ class Tags(BaseCog):
             await ctx.con.execute('''
                 UPDATE tags SET (content, modified_at) = ($1, $2)
                 WHERE name = $3
-                ''', db_encode(new_text), ctx.message.timestamp, name)
+                ''', db_encode(new_text), ctx.message.created_at, name)
         await ctx.send(f'Updated tag "{name}".')
 
     @need_db

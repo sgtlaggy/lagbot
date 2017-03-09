@@ -74,7 +74,10 @@ def integer(arg):
 
 
 async def say_and_pm(ctx, content):
-    """Send message to current channel as well as the command message's author."""
+    """Send message to current channel as well as the command message's author.
+
+    `ctx` can be either `discord.Message` or `commands.Context`
+    """
     channel = ctx.channel
     author = ctx.author
     to_say = content.format(channel='')

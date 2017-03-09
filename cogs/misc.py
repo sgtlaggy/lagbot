@@ -3,17 +3,21 @@ import unicodedata
 import datetime
 import asyncio
 import random
+import re
 
 from discord.ext import commands
 import discord
 import zenhan
 import dice
 
-from utils.utils import integer, pluralize, say_and_pm
+from utils.utils import integer, pluralize, db_encode, db_decode
 from utils.emoji import digits, clocks
+from utils.checks import need_db
 from cogs.base import BaseCog
 
 
+time_re = re.compile(r"(?:(?P<days>[0-9]{1,2})d)?(?:(?P<hours>[0-9]{1,2})h)?(?:(?P<minutes>[0-9]{1,2})m)?$")
+TIMER_SLEEP = 301
 CLOCKS = (clocks[-1], *clocks[:-1])
 
 UNILINK = "http://www.fileformat.info/info/unicode/char/{}/index.htm"
@@ -34,12 +38,34 @@ def fancy_time(orig_time, utc=False):
     return nice
 
 
+def seconds(arg):
+    match = time_re.match(arg)
+    total_seconds = 0
+    if match is None or not match.group(0):
+        raise commands.BadArgument("Couldn't parse time.")
+    days, hours, minutes = match.group('days', 'hours', 'minutes')
+    if days:
+        total_seconds += int(days) * 24 * 60 * 60
+    if hours:
+        total_seconds += int(hours) * 60 * 60
+    if minutes:
+        total_seconds += int(minutes) * 60
+    if total_seconds < (TIMER_SLEEP - 1):
+        raise commands.UserInputError('Time is too short.')
+    return total_seconds
+
+
 def die(arg):
     return (arg, dice.roll(arg))
 
 
 class Misc(BaseCog):
     """Miscellaneous commands that don't fit in other categories."""
+    def __init__(self, bot):
+        super().__init__(bot)
+        if not self.bot._debug:
+            self.timer_task = self.bot.loop.create_task(self.timers())
+
     @commands.command(name='roll')
     async def roll_dice(self, ctx, *rolls: die):
         """In format CdS, rolls C dice each with S sides.
@@ -107,93 +133,6 @@ class Misc(BaseCog):
         else:
             await ctx.send(random.choice(options))
 
-    @commands.command(aliases=['poll'], no_pm=True)
-    @commands.bot_has_permissions(add_reactions=True)
-    async def vote(self, ctx, *, options):
-        """Allow users to vote on something.
-
-        Usage:
-        !poll Title Here
-        Option 1
-        Option ..
-        Option 10
-
-        For 30 seconds after creating a poll, you can add any :clockTIME: emoji to set the time.
-        :clock1230: = 30 minutes
-        :clock1:    = 1 hour
-        :clock130:  = 1.5 hours
-        :clock12:   = 12 hours
-        You can also add the :x: emoji during this time to cancel the poll.
-
-        Every vote session lasts 1 hour, unless otherwise set.
-        Allows a maximum of 10 options.
-        The poll creator can add the :x: emoji to end the poll early.
-            The poll will end 30 seconds after adding it.
-        """
-        title, *options = [opt.strip() for opt in options.split('\n')]
-        if len(options) > 10:
-            await ctx.send('Too many options.')
-            return
-        elif len(options) < 2:
-            await ctx.send('Too few options.')
-            return
-
-        msg = ['__' + title + '__']
-        for num, opt in zip(digits[1:], options):
-            msg.append(f'{num} {opt}')
-        poll_msg = await ctx.send('\n'.join(msg))
-        for ind in range(len(options)):
-            await poll_msg.add_reaction(digits[ind + 1])
-
-        def react_check(reactions):
-            def check(reaction, user):
-                return (reaction.emoji in reactions and
-                        reaction.message.id == poll_msg.id and
-                        user.id == ctx.author.id)
-            return check
-
-        res = await self.bot.wait_for('reaction_add', timeout=30, ignore_timeout=True,
-                                      check=react_check([*CLOCKS, '\N{CROSS MARK}']))
-        if res is not None:
-            if res[0].emoji == '\N{CROSS MARK}':
-                await poll_msg.delete()
-                return
-            time_ind = CLOCKS.index(res[0].emoji)
-            if time_ind % 2 == 1:
-                poll_time = (int(time_ind / 2) + 1) * 60
-            else:
-                poll_time = 30
-                while time_ind:
-                    poll_time += 60
-                    time_ind -= 2
-        else:
-            poll_time = 60
-        res = await self.bot.wait_for('reaction_add',
-                                      check=react_check(['\N{CROSS MARK}']),
-                                      timeout=(poll_time * 60) - 30,
-                                      ignore_timeout=True)
-        if res is not None:
-            await asyncio.sleep(30)
-        poll_msg = await poll_msg.edit(content='***POLL IS CLOSED***\n' + poll_msg.content)
-        reactions = [r for r in poll_msg.reactions if r.emoji in digits[1:]]
-        win_score = max(r.count for r in reactions)
-        if win_score == 1:
-            await say_and_pm(ctx, f'No one voted on "{title}" {{channel}}')
-            return
-        else:
-            winners = []
-            for r in reactions:
-                if r.count == win_score:
-                    ind = digits.index(r.emoji)
-                    winners.append(options[ind - 1])
-            win_score -= 1
-            if len(winners) == 1:
-                await say_and_pm(ctx, pluralize('"{[0]}" won the poll "{}" {{channel}} with {} vote{{}}.'.format(
-                    winners, title, win_score)))
-            else:
-                await say_and_pm(ctx, pluralize('The poll "{}" {{channel}} was a tie at {} vote{{}} between:\n{}'.format(
-                    title, win_score, '\n'.join(winners))))
-
     @commands.command(no_pm=True)
     async def info(self, ctx, *, member: discord.Member = None):
         """Display information of specific user."""
@@ -237,6 +176,241 @@ class Misc(BaseCog):
         except:
             pass
         await ctx.send(zenhan.h2z(chars))
+
+    @need_db
+    @commands.group(aliases=['vote'], no_pm=True, invoke_without_command=True,
+                    usage='[time] <title>\n<option 1>\n[option ..]\n[option 10]')
+    @commands.bot_has_permissions(add_reactions=True)
+    async def poll(self, ctx, *, options):
+        """Allow users to vote on something.
+
+        [time] must be in the form "1d2h3m" (1 day, 2 hours, 3 minutes) if provided.
+        At least one of "#d", "#h", or "#m" must be provided.
+
+        Every vote session lasts 1 hour, unless otherwise set.
+        Minimum time is 5 minutes, maximum time is 7 days.
+        Allows a maximum of 10 options.
+        """
+        title, *options = [opt.strip() for opt in options.split('\n')]
+        try:
+            time = seconds(title.split()[0])
+        except commands.BadArgument:
+            time = 60 * 60
+        else:
+            title = ' '.join(title.split()[1:])
+        if time > 7 * 24 * 60 * 60:
+            await ctx.send('Requested time too long, cancelling poll.')
+            return
+
+        if len(options) > 10:
+            await ctx.send('Too many options.')
+            return
+        elif len(options) < 2:
+            await ctx.send('Too few options.')
+            return
+
+        msg = ['__' + title + '__']
+        for num, opt in zip(digits[1:], options):
+            msg.append(f'{num} {opt}')
+        poll_msg = await ctx.send('\n'.join(msg))
+        for ind in range(len(options)):
+            await poll_msg.add_reaction(digits[ind + 1])
+        end_at = datetime.datetime.utcnow() + datetime.timedelta(seconds=time)
+        encoded_options = [db_encode(option) for option in options]
+        async with ctx.con.transaction():
+            await ctx.con.execute('''
+                INSERT INTO polls (message_id, channel_id, author_id, title, options, end_at)
+                VALUES ($1, $2, $3, $4, $5, $6)
+                ''', poll_msg.id, ctx.channel.id, ctx.author.id,
+                     db_encode(title), encoded_options, end_at)  # NOQA
+        await ctx.author.send(f'The ID for poll "{title}" in {ctx.channel.mention} is {poll_msg.id}')
+
+    @need_db
+    @poll.command()
+    async def end(self, ctx, *, poll_id: int):
+        """End a poll you created.
+
+        <poll_id> is the ID that was sent to you in a DM.
+
+        The poll will end 5 minutes after using this command.
+        """
+        rec = await ctx.con.fetchrow('''
+            SELECT * FROM polls WHERE message_id = $1
+            ''', poll_id)
+        if rec is None:
+            await ctx.send('There is no running poll with that ID.')
+            return
+        if int(rec['author_id']) != ctx.author.id:
+            await ctx.send('You did not start that poll.')
+            return
+        end_at = datetime.datetime.utcnow() + datetime.timedelta(seconds=300)
+        async with ctx.con.transaction():
+            await ctx.con.execute('''
+                UPDATE polls SET end_at = $1 WHERE message_id = $2
+                ''', end_at, poll_id)
+        title = db_decode(rec['title'])
+        await ctx.send(f'Poll "{title}" will end in 5 minutes.')
+
+    @need_db
+    @poll.command()
+    async def cancel(self, ctx, *, poll_id: int):
+        """Cancel a poll you created.
+
+        <poll_id> is the ID that was sent to you in a DM.
+        """
+        rec = await ctx.con.fetchrow('''
+            SELECT * FROM polls WHERE message_id = $1
+            ''', poll_id)
+        if rec is None:
+            await ctx.send('There is no running poll with that ID.')
+            return
+        if int(rec['author_id']) != ctx.author.id:
+            await ctx.send('You did not start that poll.')
+            return
+        async with ctx.con.transaction():
+            await ctx.con.execute('''
+                UPDATE polls SET cancelled = TRUE WHERE message_id = $1
+                ''', poll_id)
+        channel = self.bot.get_channel(int(rec['channel_id']))
+        if channel is not None:
+            message = await channel.get_message(int(rec['message_id']))
+            await message.delete()
+        title = db_decode(rec['title'])
+        await ctx.send(f'Poll "{title}" has been cancelled.')
+
+    @need_db
+    @commands.command(aliases=['remindme', 'timer'])
+    async def reminder(self, ctx, time: seconds, *, content):
+        """Set a reminder for yourself some time in the future.
+
+        <time> must be provided in the form "1d2h3m" (1 day, 2 hours, 3 minutes)
+        At least one of "#d", "#h", or "#m" must be provided.
+
+        Minimum time is 5 minutes, maximum time is 14 days.
+        """
+        if time > 14 * 24 * 60 * 60:
+            await ctx.send('Requested time too long, cancelling reminder.')
+            return
+        end_at = datetime.datetime.utcnow() + datetime.timedelta(seconds=time)
+        async with ctx.con.transaction():
+            await ctx.con.execute('''
+                INSERT INTO reminders (message_id, channel_id, author_id, content, end_at)
+                VALUES ($1, $2, $3, $4, $5)
+                ''', ctx.message.id, ctx.channel.id, ctx.author.id,
+                     db_encode(content), end_at)  # NOQA
+        await ctx.send(f"I'll remind you about \"{content}\" in {time} seconds.")
+
+    @poll.error
+    @reminder.error
+    async def reminder_error(self, exc, ctx):
+        actual_exc = getattr(exc, 'original', exc)
+        if isinstance(actual_exc, commands.UserInputError):
+            exc.handled = True
+            await ctx.send(actual_exc)
+
+    async def delete_timer(self, rec, table):
+        async with self.bot.db_pool.acquire() as con:
+            async with con.transaction():
+                res = await con.execute(f'''
+                    DELETE FROM {table} WHERE message_id = $1
+                    ''', rec['message_id'])
+        return int(res[-1])
+
+    async def get_data(self, rec):
+        channel = self.bot.get_channel(int(rec['channel_id']))
+        if isinstance(channel, discord.GroupChannel):
+            author = discord.utils.get(channel.recipients, id=int(rec['author_id']))
+        elif isinstance(channel, discord.DMChannel):
+            author = channel.recipient
+        else:
+            author = discord.utils.get(channel.members, id=int(rec['author_id']))
+        return channel, author
+
+    async def finish_reminder(self, rec):
+        try:
+            channel, author = await self.get_data(rec)
+        except AttributeError:
+            return await self.delete_timer(rec, 'reminders')
+        content = db_decode(rec['content'])
+        if author is None:
+            author = await self.bot.get_user_info(int(rec['author_id']))
+            channel = author
+        if datetime.datetime.utcnow() < rec['end_at']:
+            diff = rec['end_at'] - datetime.datetime.utcnow()
+            await asyncio.sleep(diff.total_seconds(), loop=self.bot.loop)
+        await channel.send(f'{author.mention}, you asked to be reminded about "{content}"')
+        await self.delete_timer(rec, 'reminders')
+
+    async def finish_poll(self, rec):
+        try:
+            channel, author = await self.get_data(rec)
+        except AttributeError:
+            return await self.delete_timer(rec, 'polls')
+        message = await channel.get_message(int(rec['message_id']))
+        if message is None:
+            await self.delete_timer(rec, 'polls')
+            return
+        if datetime.datetime.utcnow() < rec['end_at']:
+            diff = rec['end_at'] - datetime.datetime.utcnow()
+            await asyncio.sleep(diff.total_seconds(), loop=self.bot.loop)
+        async with self.bot.db_pool.acquire() as con:
+            rec = await con.fetchrow('''
+                SELECT * FROM polls WHERE message_id = $1
+                ''', rec['message_id'])
+        if rec['cancelled']:
+            return await self.delete_timer(rec, 'polls')
+        author = author or await self.bot.get_user_info(int(rec['author_id']))
+        await message.edit(content='***POLL IS CLOSED***\n' + message.content)
+        title = db_decode(rec['title'])
+        options = [db_decode(option) for option in rec['options']]
+        reactions = [r for r in message.reactions if r.emoji in digits[1:]]
+        win_score = max(r.count for r in reactions)
+        if win_score == 1:
+            await channel.send(f'No one voted on "{title}"')
+            await author.send(f'No one voted on "{title}" in {channel.mention}.')
+            return
+        else:
+            winners = []
+            for r in reactions:
+                if r.count == win_score:
+                    ind = digits.index(r.emoji)
+                    winners.append(options[ind - 1])
+            win_score -= 1
+            if len(winners) == 1:
+                await channel.send(pluralize('"{[0]}" won the poll "{}" with {} vote{{}}.'.format(
+                    winners, title, win_score)))
+                await author.send(pluralize('"{[0]}" won the poll "{}" in {.mention} with {} vote{{}}.'.format(
+                    winners, title, channel, win_score)))
+            else:
+                await channel.send(pluralize('The poll "{}" was a tie at {} vote{{}} between:\n{}'.format(
+                    title, win_score, '\n'.join(winners))))
+                await author.send(pluralize('The poll "{}" in {.mention} was a tie at {} vote{{}} between:\n{}'.format(
+                    title, channel, win_score, '\n'.join(winners))))
+        await self.delete_timer(rec, 'polls')
+
+    async def timers(self):
+        """Background task to check for past/upcoming reminders or polls."""
+        await self.bot.wait_until_ready()
+        delta = datetime.timedelta(seconds=TIMER_SLEEP - 1)
+        while not self.bot.is_closed():
+            async with self.bot.db_pool.acquire() as con:
+                upcoming_reminders = await con.fetch('''
+                    SELECT * FROM reminders WHERE end_at <= ((now() at time zone 'utc') + $1)
+                    ''', delta)
+                upcoming_polls = await con.fetch('''
+                    SELECT * FROM polls WHERE end_at <= ((now() at time zone 'utc') + $1)
+                    ''', delta)
+            upcoming = [*[self.finish_reminder(rec) for rec in upcoming_reminders],
+                        *[self.finish_poll(rec) for rec in upcoming_polls]]
+            if upcoming:
+                await asyncio.gather(*upcoming, loop=self.bot.loop)
+            await asyncio.sleep(TIMER_SLEEP, loop=self.bot.loop)
+
+    def __unload(self):
+        try:
+            self.timer_task.cancel()
+        except AttributeError:
+            pass
 
 
 def setup(bot):
