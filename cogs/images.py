@@ -201,7 +201,10 @@ class Images(BaseCog):
         finally:
             embed.set_footer()
             embed.color = discord.Color.default()
-            await msg.edit(embed=embed)
+            try:
+                await msg.edit(embed=embed)
+            except discord.NotFound:
+                pass
 
     @cat.command(name='facts', aliases=['fact'])
     async def cat_facts(self, ctx, count: integer = 1):

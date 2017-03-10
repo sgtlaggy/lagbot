@@ -107,6 +107,7 @@ SYMBOLS = string.punctuation + ' '
 
 def fix_arg_order(*args):
     tag, mode, region, platform = '', None, None, None
+    extras = []
     for arg in args:
         if arg is None or isinstance(arg, Mode):
             continue
@@ -122,7 +123,9 @@ def fix_arg_order(*args):
                 Mode[lower]
                 mode = lower
             except KeyError:
-                pass
+                extras.append(arg)
+    if extras:
+        raise commands.BadArgument('Invalid arguments: ' + ', '.join(extras))
     return tag, mode, region, platform
 
 
@@ -319,6 +322,7 @@ class Overwatch(BaseCog):
             * To get stats by Discord mention, the person must be in the DB.
         """
         tag, mode, region, platform = fix_arg_order(*args)
+
         with ctx.typing():
             stats, heroes, tag, mode, region, platform = await self.get_all(ctx, tag, mode, region, platform)
 
@@ -368,6 +372,7 @@ class Overwatch(BaseCog):
         [platform] can be 'pc', 'xbl', or 'psn'
         """
         tag, mode, region, platform = fix_arg_order(*args)
+
         with ctx.typing():
             stats, heroes, tag, mode, region, platform = await self.get_all(ctx, tag, mode, region, platform)
 
@@ -393,8 +398,9 @@ class Overwatch(BaseCog):
         await ctx.send('\n'.join(message), embed=embed)
 
     @need_db
-    @overwatch.group(name='set', aliases=['save'], invoke_without_command=True)
-    async def ow_set(self, ctx, tag, mode='comp', region='us', platform='pc'):
+    @overwatch.group(name='set', aliases=['save'], invoke_without_command=True,
+                     usage='<tag> [mode = competitive] [region = us] [platform = pc]')
+    async def ow_set(self, ctx, *args):
         """Set your BattleTag and default gamemode.
 
         <tag>, [mode], [region], and [platform] can be specified in any order.
@@ -412,7 +418,12 @@ class Overwatch(BaseCog):
             set region <region> - change preffered region
         """
         author = ctx.author
-        tag, mode, region, platform = fix_arg_order(tag, mode, region, platform)
+        tag, mode, region, platform = fix_arg_order(*args)
+
+        mode = mode or 'comp'
+        region = region or 'us'
+        platform = platform or 'pc'
+
         new_tag = btag_to_api(tag)
         new_mode = ow_mode(mode)
         new_region = region
@@ -509,7 +520,11 @@ class Overwatch(BaseCog):
             await ctx.send('\N{THUMBS UP SIGN} Removed from the db.')
 
     async def __error(self, exc, ctx):
-        if not isinstance(exc, commands.CommandInvokeError):
+        if isinstance(exc, commands.BadArgument):
+            exc.handled = True
+            await ctx.send(exc)
+            return
+        elif not isinstance(exc, commands.CommandInvokeError):
             exc.handled = False
             return
         if isinstance(exc.original, (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag)):
