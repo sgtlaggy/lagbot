@@ -1,7 +1,6 @@
 from xml.etree import ElementTree as XMLTree
 import datetime
 import asyncio
-import random
 
 from discord.ext import commands
 import discord
@@ -36,14 +35,6 @@ def xkcd_date(data):
     return date
 
 
-class MostRecent(Exception):
-    pass
-
-
-class Reported(Exception):
-    pass
-
-
 class Images(BaseCog):
     """Commands to fetch images from various sources."""
     def make_xkcd_url(self, num='', api=True):
@@ -54,9 +45,31 @@ class Images(BaseCog):
             url += 'info.0.json'
         return url
 
-    async def fetch_xkcd(self, num=''):
+    async def fetch_xkcd(self, ctx, num=''):
+        if num:
+            if num in {'r', 'rand', 'random'}:
+                url = 'https://c.xkcd.com/random/comic/'
+                try:
+                    async with self.bot.http_.get(url, timeout=10) as resp:
+                        num = resp.url.split('/')[-2]
+                except TimeoutError:
+                    raise NotFound('Could not get comic.')
+            try:
+                rec = await ctx.con.fetchrow('''
+                    SELECT * FROM xkcd WHERE num = $1
+                    ''', int(num))
+            except TypeError:
+                raise NotFound('Could not get comic.')
+            if rec:
+                return rec
+        else:
+            rec = await ctx.con.fetchrow('''
+                SELECT * FROM xkcd WHERE date = 'today'
+                ''')
+            if rec:
+                return rec
         url = self.make_xkcd_url(num)
-        status, data = await self.bot.request(url)
+        status, data = await self.bot.request(url, ignore_timeout=True)
         if status != 200:
             raise NotFound('Could not get comic.')
         else:
@@ -79,31 +92,12 @@ class Images(BaseCog):
         data = None
         with ctx.typing():
             try:
-                if comic in {'r', 'rand', 'random'} or not comic:
-                    data = await self.fetch_xkcd()
-                    await ctx.con.fetchrow('''
-                        SELECT * FROM xkcd WHERE num = $1
-                        ''', data['num']) or await self.xkcd_insert(ctx, data)
-                    if not comic:
-                        raise MostRecent
-                    while True:
-                        comic = random.randint(1, data['num'])
-                        if comic != 404:
-                            break
-                else:
-                    if not comic.isdigit():
-                        return
-                    comic = int(comic)
-                data = await ctx.con.fetchrow('''
-                    SELECT * FROM xkcd WHERE num = $1
-                    ''', comic) or await self.fetch_xkcd(comic)
+                data = await self.fetch_xkcd(ctx, comic)
                 if isinstance(data, dict):
                     await self.xkcd_insert(ctx, data)
             except NotFound as e:
                 await ctx.send(e)
                 return
-            except MostRecent:
-                pass
 
             description = f'**Date:** {xkcd_date(data):%m/%d/%Y}\n{data["alt"]}'
             embed = discord.Embed(title=f'{data["num"]}: {data["safe_title"]}',
