@@ -44,13 +44,15 @@ class Management(BaseCog):
     async def purge(self, ctx, count: integer, *, member: discord.Member=None):
         """Purge messages from the current channel.
 
+        [member] is optional and will default to yourself.
         You must have proper permissions to remove others' messages.
-        Note this only goes back through the last 1000 messages.
+        Note this only goes back through the last 1000 messages or 14 days.
         """
         message = ctx.message
         author = message.author
         channel = message.channel
         owner = ctx.guild.get_member(self.bot.owner.id)
+        earliest = message.created_at - datetime.timedelta(days=14)
         if member is None:
             member = author
 
@@ -58,7 +60,7 @@ class Management(BaseCog):
                 channel.permissions_for(author).manage_messages or \
                 (member == ctx.guild.me and author == owner):
             to_remove = []
-            async for msg in channel.history(before=message, limit=1000):
+            async for msg in channel.history(before=message, after=earliest, limit=1000):
                 if msg.author == member:
                     to_remove.append(msg)
                 if len(to_remove) == count:
