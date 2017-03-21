@@ -113,7 +113,7 @@ class Images(BaseCog):
         return j['facts']
 
     async def fetch_cat(self, url, **format_args):
-        url = url.format(api_key=self.bot.config['cat_api'],
+        url = url.format(api_key=self.bot.config['catapi_key'],
                          reason=format_args.pop('reason', ''),
                          **format_args)
         status, data = await self.bot.request(url, 'text')
@@ -132,7 +132,7 @@ class Images(BaseCog):
             return resp.status == 200
 
     @commands.group(invoke_without_command=True)
-    @bot_config_attr('cat_api')
+    @bot_config_attr('catapi_key')
     async def cat(self, ctx, category=''):
         """Get a random cat image.
 
