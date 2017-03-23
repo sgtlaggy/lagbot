@@ -5,6 +5,7 @@ import asyncio
 from discord.ext import commands
 import discord
 import aiohttp
+import asyncpg
 
 from utils.checks import bot_config_attr, need_db
 from utils.errors import NotFound
@@ -76,11 +77,15 @@ class Images(BaseCog):
             return data
 
     async def xkcd_insert(self, ctx, data):
-        async with ctx.con.transaction():
-            return await ctx.con.execute('''
-                INSERT INTO xkcd VALUES ($1, $2, $3, $4, $5)
-                ''', data['num'], data['safe_title'],
-                data['alt'], data['img'], xkcd_date(data))
+        try:
+            async with ctx.con.transaction():
+                return await ctx.con.execute('''
+                    INSERT INTO xkcd VALUES ($1, $2, $3, $4, $5)
+                    ''', data['num'], data['safe_title'],
+                    data['alt'], data['img'], xkcd_date(data))
+        except asyncpg.UniqueViolationError:
+            # got yesterday's comic
+            pass
 
     @need_db
     @commands.command()
