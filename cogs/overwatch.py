@@ -57,7 +57,8 @@ HERO_INFO = {'ana': {'color': 0x6D89B1, 'name': 'Ana'},
              'widowmaker': {'color': 0x9D69A7, 'name': 'Widowmaker'},
              'winston': {'color': 0xA0A5BB, 'name': 'Winston'},
              'zarya': {'color': 0xE87FB7, 'name': 'Zarya'},
-             'zenyatta': {'color': 0xEDE582, 'name': 'Zenyatta'}}
+             'zenyatta': {'color': 0xEDE582, 'name': 'Zenyatta'},
+             'orisa': {'color': 0x78A67A, 'name': 'Orisa'}}
 
 
 class NotPlayed(Exception):
