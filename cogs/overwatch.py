@@ -347,7 +347,6 @@ class Overwatch(BaseCog):
             if stats['overall_stats'].get('games'):
                 embed.add_field(name='Games Played', value=stats['overall_stats']['games'])
                 embed.add_field(name='Games Won', value=stats['overall_stats']['wins'])
-                embed.add_field(name='Games Tied', value=stats['overall_stats']['ties'])
                 embed.add_field(name='Win Rate', value=f'{stats["overall_stats"]["win_rate"]}%')
             else:
                 embed.add_field(name='Games Won', value=stats['overall_stats']['wins'])
