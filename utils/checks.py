@@ -11,16 +11,8 @@ def bot_config_attr(attr):
     return commands.check(lambda ctx: attr in ctx.bot.config)
 
 
-def is_owner_check(ctx):
-    return ctx.author.id == ctx.bot.owner.id
-
-
-def is_owner():
-    return commands.check(is_owner_check)
-
-
-def check_permissions(ctx, perms):
-    if is_owner_check(ctx):
+async def check_permissions(ctx, perms):
+    if ctx.bot.app.owner.id == ctx.author.id:
         return True
     resolved = ctx.channel.permissions_for(ctx.author)
     return all(getattr(resolved, name, None) == value

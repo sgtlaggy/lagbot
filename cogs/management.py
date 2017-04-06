@@ -59,14 +59,13 @@ class Management(BaseCog):
         message = ctx.message
         author = message.author
         channel = message.channel
-        owner = ctx.guild.get_member(self.bot.owner.id)
         earliest = message.created_at - datetime.timedelta(days=14)
         if member is None:
             member = author
 
         if member == author or \
                 channel.permissions_for(author).manage_messages or \
-                (member == ctx.guild.me and author == owner):
+                (member == ctx.guild.me and author.id == self.bot.owner.id):
             to_remove = []
             async for msg in channel.history(before=message, after=earliest, limit=1000):
                 if msg.author == member:

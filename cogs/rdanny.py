@@ -64,7 +64,7 @@ class RoboDanny:
         return 'Result too long and an error occurred while pasting.'
 
     @commands.command(hidden=True)
-    @checks.is_owner()
+    @commands.is_owner()
     async def repl(self, ctx):
         msg = ctx.message
 
@@ -153,7 +153,7 @@ class RoboDanny:
                 await msg.channel.send(f'Unexpected error: `{e}`')
 
     @commands.command(hidden=True, aliases=['py'])
-    @checks.is_owner()
+    @commands.is_owner()
     async def debug(self, ctx, *, code: str):
         """Evaluates code."""
         msg = ctx.message

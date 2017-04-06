@@ -14,7 +14,7 @@ class CogManagement(BaseCog):
         self.bot.load_extension(f'cogs.{ext}')
 
     @commands.command(name='cogs', hidden=True)
-    @checks.is_owner()
+    @commands.is_owner()
     async def list_exts(self, ctx):
         """List loaded extensions."""
         exts = sorted(self.bot.extensions.keys())
@@ -22,7 +22,7 @@ class CogManagement(BaseCog):
         await ctx.send(message)
 
     @commands.group(name='reload', hidden=True, invoke_without_command=True)
-    @checks.is_owner()
+    @commands.is_owner()
     async def reload_ext(self, ctx, *exts):
         """Reload specified extensions."""
         for ext in exts:
@@ -38,7 +38,7 @@ class CogManagement(BaseCog):
                 logging.exception(f"Couldn't reload cog {ext}.")
 
     @reload_ext.command(name='all')
-    @checks.is_owner()
+    @commands.is_owner()
     async def reload_all_exts(self, ctx):
         """Reload all loaded extensions."""
         exts = [e.split('.')[1] for e in self.bot.extensions.keys()]
@@ -46,7 +46,7 @@ class CogManagement(BaseCog):
         await ctx.send('Reloaded all cogs.')
 
     @commands.command(name='load', hidden=True)
-    @checks.is_owner()
+    @commands.is_owner()
     async def load_ext(self, ctx, *exts):
         """Load specified extensions."""
         for ext in exts:
@@ -62,7 +62,7 @@ class CogManagement(BaseCog):
                 logging.exception(f"Couldn't load cog {ext}.")
 
     @commands.command(name='unload', hidden=True)
-    @checks.is_owner()
+    @commands.is_owner()
     async def unload_ext(self, ctx, *exts):
         """Unload specified extensions."""
         for ext in exts:

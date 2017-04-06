@@ -111,16 +111,8 @@ class LagBot(commands.Bot):
             logging.info('Ready again.')
             return
         self.start_time = datetime.datetime.utcnow()
-        if None in {self.config.get('client_id'), self.config.get('owner_id')}:
-            app_info = await self.application_info()
-            self.client_id = app_info.id
-            self.owner = app_info.owner
-            self.config['client_id'] = self.client_id
-            self.config['owner_id'] = self.owner.id
-            await self.save_config()
-        else:
-            self.client_id = self.config.get('client_id')
-            self.owner = await self.get_user_info(self.config['owner_id'])
+        self.app = await self.application_info()
+        self.owner_id = self.app.owner.id
         game = self.config.get('game')
         if game is not None:
             await self.change_presence(game=discord.Game(name=game))
@@ -166,7 +158,7 @@ class LagBot(commands.Bot):
 
         if not self._debug and isinstance(exc, commands.CommandInvokeError):
             try:
-                await self.owner.send(f'{msg}\n```py\n{tb}\n```'.format(msg, tb))
+                await self.app.owner.send(f'{msg}\n```py\n{tb}\n```'.format(msg, tb))
             except:
                 pass
 

@@ -81,14 +81,14 @@ class Meta(BaseCog):
         await ctx.send(embed=embed)
 
     @manage.command(pass_context=False)
-    @checks.is_owner()
+    @commands.is_owner()
     async def name(self, *, new_name=None):
         """Rename bot."""
         if new_name:
             await self.bot.edit_profile(username=new_name)
 
     @manage.command(aliases=['game'])
-    @checks.is_owner()
+    @commands.is_owner()
     async def status(self, ctx, *, new_status=None):
         """Change bot's online status or game name."""
         bot_member = self.bot.guilds[0].me
@@ -108,7 +108,7 @@ class Meta(BaseCog):
         await self.bot.edit_profile(avatar=image)
 
     @manage.command()
-    @checks.is_owner()
+    @commands.is_owner()
     async def avatar(self, ctx, new_avatar=None):
         """Change bot's avatar.
 
@@ -133,7 +133,7 @@ class Meta(BaseCog):
         await ctx.guild.me.edit(nick=new_nick or None)
 
     @commands.command(aliases=['restart', 'kill'], hidden=True)
-    @checks.is_owner()
+    @commands.is_owner()
     async def exit(self, ctx, code: int = None):
         """Restart/kill the bot.
 
@@ -147,6 +147,7 @@ class Meta(BaseCog):
         self.bot.exit_status = code
         await self.bot.logout()
 
+    @property
     def oauth_url(self):
         perms = discord.Permissions()
         perms.update(kick_members=True,
@@ -158,7 +159,7 @@ class Meta(BaseCog):
                      embed_links=True,
                      change_nickname=True,
                      add_reactions=True)
-        return discord.utils.oauth_url(self.bot.client_id, permissions=perms)
+        return discord.utils.oauth_url(self.bot.app.id, permissions=perms)
 
     @commands.command()
     async def join(self, ctx):
@@ -172,7 +173,7 @@ class Meta(BaseCog):
             'Follow this link, login if necessary, then select a server you own to add me to.',
             'The requested permissions are required for some of my commands to function.'])
         embed = discord.Embed(title='Click here!',
-                              url=self.oauth_url(),
+                              url=self.oauth_url,
                               description=desc)
         await ctx.send(embed=embed)
 
@@ -180,10 +181,10 @@ class Meta(BaseCog):
     async def about(self, ctx):
         """Display bot information."""
         description = 'Uptime: {}\n[Invite Link]({})'.format(self.bot.get_uptime(brief=True),
-                                                             self.oauth_url())
+                                                             self.oauth_url)
         embed = discord.Embed(description=description)
-        embed.set_author(name=str(self.bot.owner),
-                         icon_url=self.bot.owner.avatar_url)
+        embed.set_author(name=str(self.bot.app.owner),
+                         icon_url=self.bot.app.owner.avatar_url)
         if callable(self.bot.command_prefix):
             valid_prefix = await self.bot.command_prefix(self.bot, ctx.message)
         else:

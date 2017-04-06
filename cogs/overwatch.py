@@ -210,7 +210,7 @@ class Overwatch(BaseCog):
         status, data = await self.bot.request(end.format(btag=tag, platform=platform),
                                               timeout=20)
         if status == 500:
-            await self.bot.owner.send(f'Blizzard broke OWAPI.\n{data["exc"]}')
+            await self.bot.app.owner.send(f'Blizzard broke OWAPI.\n{data["exc"]}')
             raise ServerError('Blizzard broke something. Please wait a bit before trying again.')
         elif status != 200:
             raise NotFound(f"Couldn't get stats for {btag}.")
