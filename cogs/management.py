@@ -1,3 +1,5 @@
+import datetime
+
 from discord.ext import commands
 import discord
 
@@ -7,7 +9,8 @@ from cogs.base import BaseCog
 
 class Management(BaseCog):
     """Admin/moderation commands."""
-    @commands.command(no_pm=True)
+    @commands.command()
+    @commands.guild_only()
     @commands.has_permissions(kick_members=True)
     async def kick(self, ctx, *, member: discord.Member):
         """Kick user from server if you have permission.
@@ -23,7 +26,8 @@ class Management(BaseCog):
         else:
             await ctx.send('\N{THUMBS UP SIGN}')
 
-    @commands.command(no_pm=True)
+    @commands.command()
+    @commands.guild_only()
     @commands.has_permissions(ban_members=True)
     async def ban(self, ctx, *, member: discord.Member):
         """Ban user from server.
@@ -39,15 +43,19 @@ class Management(BaseCog):
         else:
             await ctx.send('\N{THUMBS UP SIGN}')
 
-    @commands.command(no_pm=True)
+    @commands.command()
+    @commands.guild_only()
     @commands.bot_has_permissions(manage_messages=True)
     async def purge(self, ctx, count: integer, *, member: discord.Member=None):
-        """Purge messages from the current channel.
+        """Purge up to 100 messages from the current channel.
 
         [member] is optional and will default to yourself.
         You must have proper permissions to remove others' messages.
         Note this only goes back through the last 1000 messages or 14 days.
         """
+        if count > 100:
+            await ctx.send('Can only purge up to 100 messages.')
+            return
         message = ctx.message
         author = message.author
         channel = message.channel

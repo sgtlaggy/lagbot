@@ -98,6 +98,7 @@ class Misc(BaseCog):
     @commands.command()
     async def flip(self, ctx, coins: integer = 1):
         """Flip any number of coins."""
+        coins = coins if coins >= 1 else 1
         flips = OrderedDict([('Heads', 0),
                              ('Tails', 0),
                              ('Edge', 0)])
@@ -133,7 +134,8 @@ class Misc(BaseCog):
         else:
             await ctx.send(random.choice(options))
 
-    @commands.command(no_pm=True)
+    @commands.command()
+    @commands.guild_only()
     async def info(self, ctx, *, member: discord.Member = None):
         """Display information of specific user."""
         member = member or ctx.author
@@ -178,8 +180,9 @@ class Misc(BaseCog):
         await ctx.send(zenhan.h2z(chars))
 
     @need_db
-    @commands.group(aliases=['vote'], no_pm=True, invoke_without_command=True,
+    @commands.group(aliases=['vote'], invoke_without_command=True,
                     usage='[time] <title>\n<option 1>\n[option ..]\n[option 10]')
+    @commands.guild_only()
     @commands.bot_has_permissions(add_reactions=True)
     async def poll(self, ctx, *, options):
         """Allow users to vote on something.

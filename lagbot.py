@@ -18,7 +18,9 @@ from utils.utils import pluralize, TIME_BRIEF, TIME_LONG, tb_args, db_decode
 Response = namedtuple('Response', 'status data')
 
 
-IGNORE_EXCS = (commands.CommandNotFound, commands.MissingRequiredArgument)
+IGNORE_EXCS = (commands.CommandNotFound,
+               commands.MissingRequiredArgument,
+               commands.NoPrivateMessage)
 
 
 async def command_prefix(bot, message):

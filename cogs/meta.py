@@ -124,7 +124,8 @@ class Meta(BaseCog):
             else:
                 await self.bot.edit_profile(avatar=None)
 
-    @manage.command(no_pm=True)
+    @manage.command()
+    @commands.guild_only()
     @commands.bot_has_permissions(change_nickname=True)
     @checks.owner_or_permissions(manage_nicknames=True)
     async def nick(self, ctx, *, new_nick=None):
