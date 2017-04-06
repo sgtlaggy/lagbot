@@ -52,6 +52,7 @@ class LagBot(commands.Bot):
         self.config_lock = asyncio.Lock(loop=self.loop)
         self.loop.run_until_complete(self.load_config())
         self.default_prefix = self.command_prefix
+        self.resumes = 0
         if self._debug:
             self.command_prefix = '?!'
         else:
@@ -123,6 +124,12 @@ class LagBot(commands.Bot):
             await self.change_presence(game=discord.Game(name=game))
         if self._debug:
             logging.info('Ready.')
+
+    async def on_resumed(self):
+        game = self.config.get('game') or 'Resumes: '
+        self.resumes += 1
+        if game is not None:
+            await self.change_presence(game=discord.Game(name=f'{game} {self.resumes}'))
 
     async def on_message(self, msg):
         if msg.author.bot:
