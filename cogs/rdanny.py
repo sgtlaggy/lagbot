@@ -2,13 +2,12 @@
 from contextlib import redirect_stdout
 from datetime import datetime
 import traceback
+import textwrap
 import inspect
 import io
 
 from discord.ext import commands
 import discord
-
-from utils import checks
 
 
 def date(argument):
@@ -28,165 +27,146 @@ def exception_signature():
     return traceback.format_exc().split('\n')[-2]
 
 
+def cleanup_code(content):
+    """Automatically removes code blocks from the code."""
+    if content.startswith('```') and content.endswith('```'):
+        return '\n'.join(content.split('\n')[1:-1])
+    return content.strip('` \n')
+
+
+def get_syntax_error(e):
+    return f'```py\n{e.text}{"^":>{e.offset}}\n{type(e).__name__}: {e}\n```'
+
+
+def rep(obj):
+    return repr(obj) if isinstance(obj, str) else str(obj)
+
+
+def print_(*args, **kwargs):
+    new_args = [rep(arg) for arg in args]
+    print(*new_args, **kwargs)
+
+
 class RoboDanny:
     """Commands I stole from Robodanny (https://github.com/Rapptz/RoboDanny)."""
     def __init__(self, bot):
         self.bot = bot
-        self.sessions = set()
         self.last_eval = None
 
-    def cleanup_code(self, content):
-        """Automatically removes code blocks from the code."""
-        # remove ```py\n```
-        if content.startswith('```') and content.endswith('```'):
-            return '\n'.join(content.split('\n')[1:-1])
-
-        # remove `foo`
-        return content.strip('` \n')
-
-    def get_syntax_error(self, e):
-        return f'```py\n{e.text}{"^":>{e.offset}}\n{type(e).__name__}: {e}```'
-
-    async def maybe_upload(self, content, cur_len=0, max_len=2000,
-                           title='Bot Eval', syntax='python3'):
-        """Upload to dpaste if result is too long."""
-        if len(str(content)) <= max_len - cur_len:
-            return str(content)
-        data = dict(content=str(content),
-                    syntax=syntax,
-                    title=title,
-                    poster=str(self.bot.user),
-                    expiry_days=1)
-        resp = await self.bot.request('http://dpaste.com/api/v2/',
-                                      data=data, type_='text')
-        if resp.status == 201:
-            return resp.data
-        return 'Result too long and an error occurred while pasting.'
-
-    @commands.command(hidden=True)
-    @commands.is_owner()
-    async def repl(self, ctx):
-        msg = ctx.message
-
-        variables = {
-            'discord': discord,
-            'ctx': ctx,
-            'bot': self.bot,
-            'message': msg,
-            'guild': msg.guild,
-            'channel': msg.channel,
-            'author': msg.author,
-            'me': msg.author,
-            '__': None
-        }
-
-        if msg.channel.id in self.sessions:
-            await ctx.send('Already running a REPL session in this channel. Exit it with `quit`.')
+    async def eval_output(self, out=None):
+        lines = []
+        if out is not None:
+            link = await self.maybe_upload(out, len('```py\n' + '\n'.join(lines) + '\n\n```'))
+            if link.startswith('\n'):
+                link = "''" + link
+            lines.append(link if link != '' else "''")
+        if lines:
+            return '```py\n' + '\n'.join(lines) + '\n```'
+        else:
             return
 
-        self.sessions.add(msg.channel.id)
-        await ctx.send('Enter code to execute or evaluate. `exit()` or `quit` to exit.')
+    async def maybe_upload(self, content, cur_len=0, max_len=2000):
+        """Checks length of content and returns either the content or link to paste."""
+        contents = str(content)
+        if len(contents) >= 2 and contents[-2] == '\n':
+            contents = contents[:-2] + contents[-1]
+        if len(contents) <= max_len - cur_len:
+            return contents
+        resp = await self.bot.request('https://hastebin.com/documents',
+                                      data=contents, type_='text')
+        if resp.status == 201:
+            return f'https://hastebin.com/{resp.data}'
+        return 'Result too long and error occurred while posting to hastebin.'
 
-        def response_check(response):
-            return (response.channel == msg.channel and
-                    response.message.author == msg.author and
-                    response.content.startswith('`'))
-
-        while True:
-            response = await self.bot.wait_for('message', check=response_check)
-
-            cleaned = self.cleanup_code(response.content)
-
-            if cleaned in {'quit', 'exit', 'exit()'}:
-                await ctx.send('Exiting.')
-                self.sessions.remove(msg.channel.id)
-                return
-
-            executor = exec
-            if cleaned.count('\n') == 0:
-                # single statement, potentially 'eval'
-                try:
-                    code = compile(cleaned, '<repl session>', 'eval')
-                except SyntaxError:
-                    pass
-                else:
-                    executor = eval
-
-            if executor is exec:
-                try:
-                    code = compile(cleaned, '<repl session>', 'exec')
-                except SyntaxError as e:
-                    await ctx.send(self.get_syntax_error(e))
-                    continue
-
-            variables['message'] = response
-
-            fmt = None
-            stdout = io.StringIO()
-
-            try:
-                with redirect_stdout(stdout):
-                    result = executor(code, variables)
-                    if inspect.isawaitable(result):
-                        result = await result
-            except Exception as e:
-                value = stdout.getvalue()
-                fmt = f'```py\n{value}{traceback.format_exc()}\n```'
-            else:
-                value = stdout.getvalue()
-                variables['__'] = result
-                if result is not None:
-                    fmt = f'```py\n{value}{result}\n```'
-                    variables['last'] = result
-                elif value:
-                    fmt = f'```py\n{value}\n```'
-
-            try:
-                if fmt is not None:
-                    if len(fmt) > 2000:
-                        await msg.channel.send('Content too big to be printed.')
-                    else:
-                        await msg.channel.send(fmt)
-            except discord.Forbidden:
-                pass
-            except discord.HTTPException as e:
-                await msg.channel.send(f'Unexpected error: `{e}`')
-
-    @commands.command(hidden=True, aliases=['py'])
+    @commands.command(name='eval')
     @commands.is_owner()
-    async def debug(self, ctx, *, code: str):
-        """Evaluates code."""
+    async def eval_(self, ctx, *, code: cleanup_code):
+        """Alternative to `debug` that executes code inside a coroutine.
+
+        Allows multiple lines and `await`ing.
+
+        This is a modified version of RoboDanny's latest `eval` command.
+        """
         msg = ctx.message
-        code = code.strip('` ')
-        python = '```py\n{}\n```'
-        result = None
 
         env = {
             'discord': discord,
-            'ctx': ctx,
+            'print': print_,
             'bot': self.bot,
+            'client': self.bot,
+            'ctx': ctx,
+            'msg': msg,
             'message': msg,
             'guild': msg.guild,
+            'server': msg.guild,
+            'channel': msg.channel,
+            'me': msg.author
+        }
+
+        to_compile = 'async def _func():\n%s' % textwrap.indent(code, '  ')
+
+        stdout = io.StringIO()
+        try:
+            exec(to_compile, env)
+        except SyntaxError as e:
+            await ctx.send(await self.eval_output('\n'.join(get_syntax_error(e).splitlines()[1:-1])))
+            return
+
+        func = env['_func']
+        try:
+            with redirect_stdout(stdout):
+                ret = await func()
+        except Exception as e:
+            value = stdout.getvalue()
+            exc = traceback.format_exc().splitlines()
+            exc = '\n'.join([exc[0], *exc[3:]])
+            await ctx.send(await self.eval_output(f'{value}{exc}'))
+        else:
+            value = stdout.getvalue()
+            if isinstance(ret, discord.Embed):
+                await ctx.send(await self.eval_output(value if value else None),
+                               embed=ret)
+            else:
+                await ctx.send(await self.eval_output(value if ret is None
+                                                      else f'{value}{rep(ret)}'))
+
+    @commands.command(hidden=True, aliases=['py'])
+    @commands.is_owner()
+    async def debug(self, ctx, *, code: cleanup_code):
+        """Evaluates code."""
+        msg = ctx.message
+
+        result = None
+        env = {
+            'discord': discord,
+            'print': print_,
+            'ctx': ctx,
+            'bot': self.bot,
+            'client': self.bot,
+            'message': msg,
+            'msg': msg,
+            'guild': msg.guild,
+            'server': msg.guild,
             'channel': msg.channel,
             'author': msg.author,
             'me': msg.author,
             '__': self.last_eval
         }
 
-        env.update(globals())
-
         try:
             result = eval(code, env)
             if inspect.isawaitable(result):
                 result = await result
+            if isinstance(result, discord.Embed):
+                await ctx.send(embed=result)
+                return
         except Exception as e:
-            result = exception_signature()
-            syntax = 'py3tb'
+            say = await self.eval_output(exception_signature())
         else:
-            self.last_eval = result
-            syntax = 'python3'
-        result = await self.maybe_upload(result, len(python) - 2, title=code, syntax=syntax)
-        await ctx.send(python.format(result))
+            say = await self.eval_output(rep(result))
+        if say is None:
+            say = 'None'
+        await ctx.send(say)
 
     @commands.command()
     @commands.has_permissions(manage_messages=True)
