@@ -151,9 +151,10 @@ class LagBot(commands.Bot):
                 isinstance(exc, IGNORE_EXCS):
             return
         logging.warning(f'Ignoring exception in command {ctx.command}')
-        msg = ctx.message.content
+        msg = f'{ctx.message.content}\nin {"guild" if ctx.guild else "DM"}'
         original = getattr(exc, 'original', exc)
-        tb = ''.join(traceback.format_exception(*tb_args(original)))
+        outer_path = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
+        tb = ''.join(traceback.format_exception(*tb_args(original))).replace(outer_path, '...')
         logging.error('\n'.join((msg, tb)))
 
         if not self._debug and isinstance(exc, commands.CommandInvokeError):
