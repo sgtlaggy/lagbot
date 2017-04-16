@@ -126,7 +126,7 @@ class Images(BaseCog):
             raise NotFound('Could not get cat.')
         return data
 
-    async def try_cat_image(self, url, attempt=1):
+    async def try_cat_image(self, url):
         if url is None:
             return False
         try:
@@ -246,7 +246,6 @@ class Images(BaseCog):
             pass
         else:
             ctx.command = ctx.command.name
-            await self.bot.on_command_error(exc, ctx)
 
 
 def setup(bot):

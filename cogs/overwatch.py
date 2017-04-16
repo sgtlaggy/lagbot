@@ -146,11 +146,7 @@ def validate_btag(btag):
 
 
 def btag_to_api(btag):
-    split = btag.split('#')
-    if len(split) != 2:
-        raise InvalidBTag('Invalid BattleTag')
-    tag, disc = split
-    if 3 <= len(tag) <= 12 and not any(s in tag for s in SYMBOLS) and not tag[0].isdigit() and disc.isdigit():
+    if validate_btag(btag):
         return '-'.join([tag, disc])
     else:
         raise InvalidBTag('Invalid BattleTag')
