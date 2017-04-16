@@ -147,7 +147,7 @@ def validate_btag(btag):
 
 def btag_to_api(btag):
     if validate_btag(btag):
-        return '-'.join([tag, disc])
+        return btag.replace('#', '-')
     else:
         raise InvalidBTag('Invalid BattleTag')
 
