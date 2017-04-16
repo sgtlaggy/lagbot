@@ -63,14 +63,9 @@ class LagBot(commands.Bot):
         source = self.config.get('source')
         if source is not None:
             useragent += ' ' + source
-        self.http_ = aiohttp.ClientSession(
-            loop=self.loop,
-            headers={'User-Agent': useragent})
+        self.http_ = aiohttp.ClientSession(loop=self.loop, headers={'User-Agent': useragent})
         self.db_pool = self.loop.run_until_complete(
-            asyncpg.create_pool(
-                database='lagbot',
-                command_timeout=10,
-                loop=self.loop))
+            asyncpg.create_pool(database='lagbot', command_timeout=10, loop=self.loop))
 
     def _config_to_file(self):
         app_path, config_file = os.path.split(self.config_file)
@@ -145,9 +140,7 @@ class LagBot(commands.Bot):
 
     async def on_command_error(self, exc, ctx):
         """Emulate default on_command_error and add guild + channel info."""
-        if hasattr(ctx.command, 'on_error') or \
-                getattr(exc, 'handled', False) or \
-                isinstance(exc, IGNORE_EXCS):
+        if hasattr(ctx.command, 'on_error') or getattr(exc, 'handled', False) or isinstance(exc, IGNORE_EXCS):
             return
         logging.warning(f'Ignoring exception in command {ctx.command}')
         msg = f'{ctx.message.content}\nin {"guild" if ctx.guild else "DM"}'
@@ -210,8 +203,7 @@ class LagBot(commands.Bot):
             if self.resumes == 0:
                 await self.change_presence(status=status)
                 return
-        await self.change_presence(game=discord.Game(name=f'{game} {self.resumes or ""}'),
-                                   status=status)
+        await self.change_presence(game=discord.Game(name=f'{game} {self.resumes or ""}'), status=status)
 
     def get_uptime(self, brief=False):
         now = datetime.datetime.utcnow()

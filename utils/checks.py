@@ -15,8 +15,7 @@ async def check_permissions(ctx, perms):
     if ctx.bot.app.owner.id == ctx.author.id:
         return True
     resolved = ctx.channel.permissions_for(ctx.author)
-    return all(getattr(resolved, name, None) == value
-               for name, value in perms.items())
+    return all(getattr(resolved, name, None) == value for name, value in perms.items())
 
 
 def owner_or_permissions(**perms):

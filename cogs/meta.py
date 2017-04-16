@@ -170,9 +170,7 @@ class Meta(BaseCog):
         desc = '\n'.join([
             'Follow this link, login if necessary, then select a server you own to add me to.',
             'The requested permissions are required for some of my commands to function.'])
-        embed = discord.Embed(title='Click here!',
-                              url=self.oauth_url,
-                              description=desc)
+        embed = discord.Embed(title='Click here!', url=self.oauth_url, description=desc)
         await ctx.send(embed=embed)
 
     @commands.command()
@@ -181,8 +179,7 @@ class Meta(BaseCog):
         description = 'Uptime: {}\n[Invite Link]({})'.format(self.bot.get_uptime(brief=True),
                                                              self.oauth_url)
         embed = discord.Embed(description=description)
-        embed.set_author(name=str(self.bot.app.owner),
-                         icon_url=self.bot.app.owner.avatar_url)
+        embed.set_author(name=str(self.bot.app.owner), icon_url=self.bot.app.owner.avatar_url)
         if callable(self.bot.command_prefix):
             valid_prefix = await self.bot.command_prefix(self.bot, ctx.message)
         else:
@@ -206,9 +203,7 @@ class Meta(BaseCog):
     async def uptime(self, ctx):
         """Display bot uptime."""
         uptime = '\n'.join(self.bot.get_uptime().split(', '))
-        embed = discord.Embed(
-            description=f'```ocaml\nUptime:\n{uptime}\n```',
-            timestamp=self.bot.start_time)
+        embed = discord.Embed(description=f'```ocaml\nUptime:\n{uptime}\n```', timestamp=self.bot.start_time)
         embed.set_footer(text='Online Since')
         await ctx.send(embed=embed)
 

@@ -21,9 +21,9 @@ class BotList(BaseCog):
                               'servercount': guilds}
             resp = await self.bot.request(CARBON_API,
                                           data=carbon_payload,
-                                          type_='text', ignore_timeout=True)
-            logging.info('Carbon returned {.status} for\n{}'.format(
-                resp, json.dumps(carbon_payload, indent=2)))
+                                          ignore_timeout=True,
+                                          type_='text')
+            logging.info('Carbon returned {.status} for\n{}'.format(resp, json.dumps(carbon_payload, indent=2)))
 
         if self.dbots_key is not None:
             dbots_payload = {'server_count': guilds}
@@ -32,9 +32,9 @@ class BotList(BaseCog):
             resp = await self.bot.request(DBOTS_API.format(self.bot),
                                           data=dbots_payload,
                                           headers=dbots_headers,
-                                          type_='text', ignore_timeout=True)
-            logging.info('DBots returned {.status} for\n{}'.format(
-                resp, json.dumps(dbots_payload, indent=2)))
+                                          ignore_timeout=True,
+                                          type_='text')
+            logging.info('DBots returned {.status} for\n{}'.format(resp, json.dumps(dbots_payload, indent=2)))
 
     on_ready = update
     on_guild_join = update

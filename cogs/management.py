@@ -84,8 +84,7 @@ class Management(BaseCog):
                 await ctx.send("There was an error deleting the message{}.".format(
                     's' if len(to_remove) > 1 else ''))
             else:
-                await ctx.send(pluralize(f'Removed {len(to_remove)} message{{}}.'),
-                               delete_after=10)
+                await ctx.send(pluralize(f'Removed {len(to_remove)} message{{}}.'), delete_after=10)
 
 
 def setup(bot):

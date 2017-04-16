@@ -170,7 +170,8 @@ class Images(BaseCog):
                     if await self.try_cat_image(image_url):
                         break
                     else:
-                        await self.fetch_cat(REPORT, sub_id=sub_id,
+                        await self.fetch_cat(REPORT,
+                                             sub_id=sub_id,
                                              image_id=image_id,
                                              reason='DNS name not resolved')
             except NotFound as e:
@@ -182,8 +183,10 @@ class Images(BaseCog):
             except NotFound as e:
                 fact = ''
 
-            embed = discord.Embed(title=image_id, url=HOME_BY_ID.format(image_id=image_id),
-                                  description=fact or None, color=discord.Color.red())
+            embed = discord.Embed(title=image_id,
+                                  url=HOME_BY_ID.format(image_id=image_id),
+                                  description=fact or None,
+                                  color=discord.Color.red())
             embed.set_image(url=image_url)
             embed.set_footer(text='Add reaction \N{PILE OF POO} to report this image.')
             msg = await ctx.send(embed=embed)

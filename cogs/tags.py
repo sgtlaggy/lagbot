@@ -260,13 +260,11 @@ class Tags(BaseCog):
         embed = discord.Embed()
         embed.add_field(name='Users', value='\n'.join([f'{user.mention} - {uses}'
                                                        for user, uses in users]) or 'None')
-        embed.add_field(name='Tags', value='\n'.join([f'{r["name"]} - {r["uses"]}'
-                                                      for r in tags]) or 'None')
+        embed.add_field(name='Tags', value='\n'.join([f'{r["name"]} - {r["uses"]}' for r in tags]) or 'None')
         await ctx.send(embed=embed)
 
     async def on_message(self, message):
-        if self.bot._debug or (message.guild is not None and
-                               message.guild.id == 110373943822540800):  # DiscordBots server
+        if self.bot._debug or (message.guild is not None and message.guild.id == 110373943822540800):  # D.Bots
             return
         if message.content.startswith(TAG_PREFIX):
             tag = message.content[len(TAG_PREFIX):]

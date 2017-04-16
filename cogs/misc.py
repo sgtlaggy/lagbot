@@ -99,9 +99,7 @@ class Misc(BaseCog):
     async def flip(self, ctx, coins: integer = 1):
         """Flip any number of coins."""
         coins = coins if coins >= 1 else 1
-        flips = OrderedDict([('Heads', 0),
-                             ('Tails', 0),
-                             ('Edge', 0)])
+        flips = OrderedDict([('Heads', 0), ('Tails', 0), ('Edge', 0)])
 
         for _ in range(coins):
             rand = random.randint(0, 6000)
@@ -224,8 +222,7 @@ class Misc(BaseCog):
             await ctx.con.execute('''
                 INSERT INTO polls (message_id, channel_id, author_id, title, options, end_at)
                 VALUES ($1, $2, $3, $4, $5, $6)
-                ''', poll_msg.id, ctx.channel.id, ctx.author.id,
-                     db_encode(title), encoded_options, end_at)  # NOQA
+                ''', poll_msg.id, ctx.channel.id, ctx.author.id, db_encode(title), encoded_options, end_at)
         await ctx.author.send(f'The ID for poll "{title}" in {ctx.channel.mention} is {poll_msg.id}')
 
     @need_db
@@ -299,8 +296,7 @@ class Misc(BaseCog):
             await ctx.con.execute('''
                 INSERT INTO reminders (message_id, channel_id, author_id, content, end_at)
                 VALUES ($1, $2, $3, $4, $5)
-                ''', ctx.message.id, ctx.channel.id, ctx.author.id,
-                     db_encode(content), end_at)  # NOQA
+                ''', ctx.message.id, ctx.channel.id, ctx.author.id, db_encode(content), end_at)
         await ctx.send(f"I'll remind you about \"{content}\" in {time} seconds.")
 
     @poll.error
@@ -387,8 +383,9 @@ class Misc(BaseCog):
             else:
                 await channel.send(pluralize('The poll "{}" was a tie at {} vote{{}} between:\n{}'.format(
                     title, win_score, '\n'.join(winners))))
-                await author.send(pluralize('The poll "{}" in {.mention} was a tie at {} vote{{}} between:\n{}'.format(
-                    title, channel, win_score, '\n'.join(winners))))
+                await author.send(
+                    pluralize('The poll "{}" in {.mention} was a tie at {} vote{{}} between:\n{}'.format(
+                        title, channel, win_score, '\n'.join(winners))))
         await self.delete_timer(rec, 'polls')
 
     async def timers(self):

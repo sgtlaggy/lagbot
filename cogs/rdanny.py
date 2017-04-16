@@ -11,10 +11,7 @@ import discord
 
 
 def date(argument):
-    formats = (
-        '%Y/%m/%d',
-        '%Y-%m-%d',
-    )
+    formats = ('%Y/%m/%d', '%Y-%m-%d')
     for fmt in formats:
         try:
             return datetime.strptime(argument, fmt)
@@ -72,8 +69,7 @@ class RoboDanny:
             contents = contents[:-2] + contents[-1]
         if len(contents) <= max_len - cur_len:
             return contents
-        resp = await self.bot.request('https://hastebin.com/documents',
-                                      data=contents, type_='text')
+        resp = await self.bot.request('https://hastebin.com/documents', data=contents, type_='text')
         if resp.status == 201:
             return f'https://hastebin.com/{resp.data}'
         return 'Result too long and error occurred while posting to hastebin.'
@@ -124,11 +120,9 @@ class RoboDanny:
         else:
             value = stdout.getvalue()
             if isinstance(ret, discord.Embed):
-                await ctx.send(await self.eval_output(value if value else None),
-                               embed=ret)
+                await ctx.send(await self.eval_output(value if value else None), embed=ret)
             else:
-                await ctx.send(await self.eval_output(value if ret is None
-                                                      else f'{value}{rep(ret)}'))
+                await ctx.send(await self.eval_output(value if ret is None else f'{value}{rep(ret)}'))
 
     @commands.command(hidden=True, aliases=['py'])
     @commands.is_owner()

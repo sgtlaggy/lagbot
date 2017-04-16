@@ -122,9 +122,10 @@ def fix_arg_order(*args):
         else:
             try:
                 Mode[lower]
-                mode = lower
             except KeyError:
                 extras.append(arg)
+            else:
+                mode = lower
     if extras:
         raise commands.BadArgument('Invalid arguments: ' + ', '.join(extras))
     return tag, mode, region, platform
@@ -141,9 +142,7 @@ def validate_btag(btag):
     if len(split) != 2:
         return False
     tag, disc = split
-    return 3 <= len(tag) <= 12 and \
-        not any(s in tag for s in SYMBOLS) and \
-        not tag[0].isdigit() and disc.isdigit()
+    return 3 <= len(tag) <= 12 and not any(s in tag for s in SYMBOLS) and not tag[0].isdigit() and disc.isdigit()
 
 
 def btag_to_api(btag):
@@ -151,10 +150,7 @@ def btag_to_api(btag):
     if len(split) != 2:
         raise InvalidBTag('Invalid BattleTag')
     tag, disc = split
-    if 3 <= len(tag) <= 12 and \
-            not any(s in tag for s in SYMBOLS) and \
-            not tag[0].isdigit() and \
-            disc.isdigit():
+    if 3 <= len(tag) <= 12 and not any(s in tag for s in SYMBOLS) and not tag[0].isdigit() and disc.isdigit():
         return '-'.join([tag, disc])
     else:
         raise InvalidBTag('Invalid BattleTag')
@@ -207,8 +203,7 @@ class Overwatch(BaseCog):
     """
     async def fetch_stats(self, tag, platform, end=BLOB):
         btag = api_to_btag(tag)
-        status, data = await self.bot.request(end.format(btag=tag, platform=platform),
-                                              timeout=20)
+        status, data = await self.bot.request(end.format(btag=tag, platform=platform), timeout=20)
         if status == 500:
             await self.bot.app.owner.send(f'Blizzard broke OWAPI.\n{data["exc"]}')
             raise ServerError('Blizzard broke something. Please wait a bit before trying again.')
@@ -273,9 +268,7 @@ class Overwatch(BaseCog):
         if mode is not None:
             mode = ow_mode(mode)
         else:
-            mode = await self.get_mode(ctx, tag) or \
-                await self.get_mode(ctx, member_id) or \
-                Mode.default
+            mode = await self.get_mode(ctx, tag) or await self.get_mode(ctx, member_id) or Mode.default
         return tag, mode
 
     async def get_all(self, ctx, tag, mode, reg, platform, end=BLOB):
@@ -291,9 +284,7 @@ class Overwatch(BaseCog):
                 not data['stats'].get(mode.name) and \
                 not data['heroes']['stats'][mode.name]:
             mode = Mode.quickplay
-        return data['stats'].get(mode.name), \
-            data['heroes']['playtime'][mode.name], \
-            tag, mode, region, platform
+        return data['stats'].get(mode.name), data['heroes']['playtime'][mode.name], tag, mode, region, platform
 
     @need_db
     @commands.group(aliases=['ow'], usage='[tag] [mode] [region] [platform]', invoke_without_command=True)
@@ -351,11 +342,8 @@ class Overwatch(BaseCog):
             else:
                 embed.add_field(name='Games Won', value=stats['overall_stats']['wins'])
             embed.add_field(name='Kill/Death', value=round(stats['game_stats']['kpd'], 2))
-            embed.add_field(name='Environmental Deaths',
-                            value=int(stats['game_stats'].get('environmental_deaths', 0)))
-            embed.set_author(name=api_to_btag(tag),
-                             icon_url=author_icon,
-                             url=links['official'])
+            embed.add_field(name='Environmental Deaths', value=int(stats['game_stats'].get('environmental_deaths', 0)))
+            embed.set_author(name=api_to_btag(tag), icon_url=author_icon, url=links['official'])
         await ctx.send(embed=embed)
 
     @need_db
@@ -392,9 +380,7 @@ class Overwatch(BaseCog):
                 author_icon = Rank.get(tier)
             else:
                 author_icon = stats['overall_stats']['avatar']
-            embed.set_author(name=api_to_btag(tag),
-                             icon_url=author_icon,
-                             url=links['official'])
+            embed.set_author(name=api_to_btag(tag), icon_url=author_icon, url=links['official'])
         await ctx.send('\n'.join(message), embed=embed)
 
     @need_db
