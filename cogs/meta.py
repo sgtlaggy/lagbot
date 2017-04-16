@@ -14,8 +14,58 @@ class Meta(BaseCog):
         """Manage bot user attributes."""
         pass
 
+    @manage.command(pass_context=False)
+    @commands.is_owner()
+    async def name(self, *, new_name=None):
+        """Rename bot."""
+        if new_name:
+            await self.bot.edit_profile(username=new_name)
+
+    @manage.command(aliases=['game'])
+    @commands.is_owner()
+    async def status(self, ctx, *, new_status=None):
+        """Change bot's online status or game name."""
+        if ctx.invoked_with == 'game':
+            self.bot.game = new_status
+            await self.bot.set_game(self.bot.game)
+        else:
+            await self.bot.change_presence(
+                game=self.bot.game,
+                status=getattr(discord.Status, new_status or '', discord.Status.online))
+
+    async def set_avatar_by_url(self, url):
+        status, image = await self.bot.request(url, 'read')
+        if status != 200:
+            return
+        await self.bot.edit_profile(avatar=image)
+
+    @manage.command()
+    @commands.is_owner()
+    async def avatar(self, ctx, new_avatar=None):
+        """Change bot's avatar.
+
+        new_avatar can be a link to an image,
+        left blank with an attached image,
+        or left blank with no attachment to remove image
+        """
+        if new_avatar is not None:
+            await self.set_avatar_by_url(new_avatar)
+        else:
+            if len(ctx.message.attachments):
+                await self.set_avatar_by_url(ctx.message.attachments[0]['url'])
+            else:
+                await self.bot.edit_profile(avatar=None)
+
+    @manage.command()
+    @commands.guild_only()
+    @commands.bot_has_permissions(change_nickname=True)
+    @checks.owner_or_permissions(manage_nicknames=True)
+    async def nick(self, ctx, *, new_nick=None):
+        """Change bot's nickname."""
+        await ctx.guild.me.edit(nick=new_nick or None)
+
     @need_db
-    @manage.group(invoke_without_command=True)
+    @commands.group(invoke_without_command=True)
     @checks.owner_or_permissions(manage_guild=True)
     async def prefix(self, ctx, new_prefix: str, allow_default=False):
         """Set a custom prefix for this guild.
@@ -79,56 +129,6 @@ class Meta(BaseCog):
         embed.add_field(name='Allow Default', value=str(rec['allow_default']))
         embed.add_field(name='Valid Prefixes', value='\n'.join(valid))
         await ctx.send(embed=embed)
-
-    @manage.command(pass_context=False)
-    @commands.is_owner()
-    async def name(self, *, new_name=None):
-        """Rename bot."""
-        if new_name:
-            await self.bot.edit_profile(username=new_name)
-
-    @manage.command(aliases=['game'])
-    @commands.is_owner()
-    async def status(self, ctx, *, new_status=None):
-        """Change bot's online status or game name."""
-        if ctx.invoked_with == 'game':
-            self.bot.game = new_status
-            await self.bot.set_game(self.bot.game)
-        else:
-            await self.bot.change_presence(
-                game=self.bot.game,
-                status=getattr(discord.Status, new_status or '', discord.Status.online))
-
-    async def set_avatar_by_url(self, url):
-        status, image = await self.bot.request(url, 'read')
-        if status != 200:
-            return
-        await self.bot.edit_profile(avatar=image)
-
-    @manage.command()
-    @commands.is_owner()
-    async def avatar(self, ctx, new_avatar=None):
-        """Change bot's avatar.
-
-        new_avatar can be a link to an image,
-        left blank with an attached image,
-        or left blank with no attachment to remove image
-        """
-        if new_avatar is not None:
-            await self.set_avatar_by_url(new_avatar)
-        else:
-            if len(ctx.message.attachments):
-                await self.set_avatar_by_url(ctx.message.attachments[0]['url'])
-            else:
-                await self.bot.edit_profile(avatar=None)
-
-    @manage.command()
-    @commands.guild_only()
-    @commands.bot_has_permissions(change_nickname=True)
-    @checks.owner_or_permissions(manage_nicknames=True)
-    async def nick(self, ctx, *, new_nick=None):
-        """Change bot's nickname."""
-        await ctx.guild.me.edit(nick=new_nick or None)
 
     @commands.command(aliases=['restart', 'kill'], hidden=True)
     @commands.is_owner()
