@@ -109,21 +109,20 @@ class LagBot(commands.Bot):
     async def on_ready(self):
         if hasattr(self, 'start_time'):
             logging.info('Ready again.')
+            self.resumes += 1
+            await self.set_game(self.game)
             return
+        self.game = self.config.get('game')
         self.start_time = datetime.datetime.utcnow()
         self.app = await self.application_info()
         self.owner_id = self.app.owner.id
-        game = self.config.get('game')
-        if game is not None:
-            await self.change_presence(game=discord.Game(name=game))
+        await self.set_game(self.game)
         if self._debug:
             logging.info('Ready.')
 
     async def on_resumed(self):
-        game = self.config.get('game') or 'Resumes: '
         self.resumes += 1
-        if game is not None:
-            await self.change_presence(game=discord.Game(name=f'{game} {self.resumes}'))
+        await self.set_game(self.game)
 
     async def on_message(self, msg):
         if msg.author.bot:
@@ -198,6 +197,21 @@ class LagBot(commands.Bot):
                 return Response(None, None)
         else:
             return await self._request(*args, **kwargs)
+
+    async def set_game(self, game=None):
+        self.game = game
+        status = None
+        for guild in self.guilds:
+            if isinstance(guild.me, discord.Member):
+                status = guild.me.status
+                break
+        if game is None:
+            game = 'Resumes:'
+            if self.resumes == 0:
+                await self.change_presence(status=status)
+                return
+        await self.change_presence(game=discord.Game(name=f'{game} {self.resumes or ""}'),
+                                   status=status)
 
     def get_uptime(self, brief=False):
         now = datetime.datetime.utcnow()
