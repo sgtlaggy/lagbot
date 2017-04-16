@@ -49,7 +49,7 @@ class Management(BaseCog):
     async def purge(self, ctx, count: integer, *, member: discord.Member=None):
         """Purge up to 100 messages from the current channel.
 
-        [member] is optional and will default to yourself.
+        [member] is optional and will default to everyone.
         You must have proper permissions to remove others' messages.
         Note this only goes back through the last 1000 messages or 14 days.
         """
@@ -60,28 +60,32 @@ class Management(BaseCog):
         author = message.author
         channel = message.channel
         earliest = message.created_at - datetime.timedelta(days=14)
-        if member is None:
-            member = author
 
-        if member == author or \
+        if member is None or member == author or \
                 channel.permissions_for(author).manage_messages or \
                 (member == ctx.guild.me and author.id == self.bot.owner.id):
             to_remove = []
             async for msg in channel.history(before=message, after=earliest, limit=1000):
-                if msg.author == member:
+                if member is None or msg.author == member:
                     to_remove.append(msg)
                 if len(to_remove) == count:
                     break
-            if len(to_remove) == 0:
-                await ctx.send(f"{member.display_name} hasn't sent any messages.")
-                return
-            elif len(to_remove) == 1:
-                await to_remove[0].delete()
+            try:
+                if len(to_remove) == 0:
+                    pass
+                elif len(to_remove) == 1:
+                    await to_remove[0].delete()
+                else:
+                    await channel.delete_messages(to_remove)
+            except discord.Forbidden:
+                await ctx.send("{} message{} couldn't be deleted.".format(
+                    *(('The', '') if len(to_remove) < 1 else ('Some', 's'))))
+            except discord.HTTPException:
+                await ctx.send("There was an error deleting the message{}.".format(
+                    's' if len(to_remove) > 1 else ''))
             else:
-                await channel.delete_messages(to_remove)
-            await ctx.send(
-                pluralize(f'Removed {len(to_remove)} message{{}} by {member.display_name}.'),
-                delete_after=10)
+                await ctx.send(pluralize(f'Removed {len(to_remove)} message{{}}.'),
+                               delete_after=10)
 
 
 def setup(bot):
