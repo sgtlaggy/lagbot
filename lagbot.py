@@ -18,7 +18,8 @@ from utils.utils import pluralize, TIME_BRIEF, TIME_LONG, tb_args, db_decode
 Response = namedtuple('Response', 'status data')
 
 
-IGNORE_EXCS = (commands.CommandNotFound,
+IGNORE_EXCS = (discord.Forbidden,  # people keep disallowing send_messages
+               commands.CommandNotFound,
                commands.MissingRequiredArgument,
                commands.NoPrivateMessage)
 
