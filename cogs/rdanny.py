@@ -74,7 +74,7 @@ class RoboDanny:
             return f'https://hastebin.com/{resp.data}'
         return 'Result too long and error occurred while posting to hastebin.'
 
-    @commands.command(name='eval')
+    @commands.command(hidden=True, name='eval')
     @commands.is_owner()
     async def eval_(self, ctx, *, code: cleanup_code):
         """Alternative to `debug` that executes code inside a coroutine.
