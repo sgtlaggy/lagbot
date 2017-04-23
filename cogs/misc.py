@@ -144,7 +144,7 @@ class Misc(BaseCog):
         embed.add_field(name='ID', value=member.id)
         embed.add_field(name='Joined Server', value=fancy_time(member.joined_at)[::-1].replace(' ', '\n', 1)[::-1])
         embed.add_field(name='Joined Discord', value=fancy_time(member.created_at)[::-1].replace(' ', '\n', 1)[::-1])
-        embed.add_field(name='Roles', value=' '.join(roles))
+        embed.add_field(name='Roles', value=' '.join(roles) or 'None')
         embed.set_image(url=member.avatar_url)
         await ctx.send(embed=embed)
 
@@ -390,21 +390,24 @@ class Misc(BaseCog):
 
     async def timers(self):
         """Background task to check for past/upcoming reminders or polls."""
-        await self.bot.wait_until_ready()
-        delta = datetime.timedelta(seconds=TIMER_SLEEP - 1)
-        while not self.bot.is_closed():
-            async with self.bot.db_pool.acquire() as con:
-                upcoming_reminders = await con.fetch('''
-                    SELECT * FROM reminders WHERE end_at <= ((now() at time zone 'utc') + $1)
-                    ''', delta)
-                upcoming_polls = await con.fetch('''
-                    SELECT * FROM polls WHERE end_at <= ((now() at time zone 'utc') + $1)
-                    ''', delta)
-            upcoming = [*[self.finish_reminder(rec) for rec in upcoming_reminders],
-                        *[self.finish_poll(rec) for rec in upcoming_polls]]
-            if upcoming:
-                await asyncio.gather(*upcoming, loop=self.bot.loop)
-            await asyncio.sleep(TIMER_SLEEP, loop=self.bot.loop)
+        try:
+            await self.bot.wait_until_ready()
+            delta = datetime.timedelta(seconds=TIMER_SLEEP - 1)
+            while not self.bot.is_closed():
+                async with self.bot.db_pool.acquire() as con:
+                    upcoming_reminders = await con.fetch('''
+                        SELECT * FROM reminders WHERE end_at <= ((now() at time zone 'utc') + $1)
+                        ''', delta)
+                    upcoming_polls = await con.fetch('''
+                        SELECT * FROM polls WHERE end_at <= ((now() at time zone 'utc') + $1)
+                        ''', delta)
+                upcoming = [*[self.finish_reminder(rec) for rec in upcoming_reminders],
+                            *[self.finish_poll(rec) for rec in upcoming_polls]]
+                if upcoming:
+                    await asyncio.gather(*upcoming, loop=self.bot.loop)
+                await asyncio.sleep(TIMER_SLEEP, loop=self.bot.loop)
+        except asyncio.CancelledError:
+            pass
 
     def __unload(self):
         try:
