@@ -8,6 +8,7 @@ from utils.utils import pluralize, db_encode, db_decode
 from utils.checks import need_db
 from utils.errors import NotInDB
 from cogs.base import BaseCog
+from utils import checks
 
 
 TAG_PREFIX = '%'
@@ -263,9 +264,40 @@ class Tags(BaseCog):
         embed.add_field(name='Tags', value='\n'.join([f'{r["name"]} - {r["uses"]}' for r in tags]) or 'None')
         await ctx.send(embed=embed)
 
+    @need_db
+    @tag.command(usage='<off|on>')
+    @checks.owner_or_permissions(manage_guild=True)
+    async def prefix(self, ctx, allow: bool):
+        """Allow or disallow usage of short (%) prefix for tags."""
+        async with ctx.con.transaction():
+            if allow:
+                res = await ctx.con.execute('''
+                    DELETE FROM noshorttag WHERE guild_id = $1
+                    ''', ctx.guild.id)
+                if res[-1] == '0':
+                    await ctx.send('Short prefix is already enabled.')
+                else:
+                    await ctx.send('Short prefix is now enabled.')
+            else:
+                try:
+                    res = await ctx.con.execute('''
+                        INSERT INTO noshorttag (guild_id) VALUES ($1)
+                        ''', ctx.guild.id)
+                except asyncpg.UniqueViolationError:
+                    await ctx.send('Short prefix is already disabled.')
+                else:
+                    await ctx.send('Short prefix is now disabled.')
+
     async def on_message(self, message):
-        if self.bot._debug or (message.guild is not None and message.guild.id == 110373943822540800):  # D.Bots
+        if self.bot._debug:
             return
+        if message.guild is not None:
+            async with self.bot.db_pool.acquire() as con:
+                no_short = await con.fetchval('''
+                    SELECT EXISTS(SELECT * FROM noshorttag WHERE guild_id = $1)
+                    ''', message.guild.id)
+            if no_short:
+                return
         if message.content.startswith(TAG_PREFIX):
             tag = message.content[len(TAG_PREFIX):]
             ctx = commands.Context(bot=self.bot,

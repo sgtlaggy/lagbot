@@ -24,6 +24,9 @@ CREATE TABLE tagusers (
     id text PRIMARY KEY,
     uses integer DEFAULT 1
 );
+CREATE TABLE noshorttag (
+    guild_id text PRIMARY KEY
+);
 CREATE TABLE prefixes (
     guild_id text PRIMARY KEY,
     prefix text,
