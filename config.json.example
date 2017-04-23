@@ -2,7 +2,8 @@
     "source": "https://github.com/mikevb1/discordbot",
     "userdocs": "https://github.com/mikevb1/discordbot/tree/master/docs",
     "game": "playing game",
-    "dbots_key": "discordbots.pw api key",
+    "dbotspw_key": "bots.discord.pw api key",
+    "dbotsorg_key": "discordbots.org api key",
     "carbon_key": "carbonitex api key",
     "debug_channel": "channel_id",
     "bot_token": "bot application token"
