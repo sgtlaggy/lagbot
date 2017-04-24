@@ -141,11 +141,11 @@ class LagBot(commands.Bot):
 
     async def on_command_error(self, exc, ctx):
         """Emulate default on_command_error and add guild + channel info."""
-        if hasattr(ctx.command, 'on_error') or getattr(exc, 'handled', False) or isinstance(exc, IGNORE_EXCS):
+        original = getattr(exc, 'original', exc)
+        if hasattr(ctx.command, 'on_error') or getattr(exc, 'handled', False) or isinstance(original, IGNORE_EXCS):
             return
         logging.warning(f'Ignoring exception in command {ctx.command}')
         msg = f'{ctx.message.content}\nin {"guild" if ctx.guild else "DM"}'
-        original = getattr(exc, 'original', exc)
         outer_path = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
         tb = ''.join(traceback.format_exception(*tb_args(original))).replace(outer_path, '...')
         logging.error('\n'.join((msg, tb)))
