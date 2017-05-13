@@ -160,7 +160,7 @@ class Images(BaseCog):
             await ctx.send(facts[0])
 
     @cat_facts.error
-    async def cat_facts_error(self, exc, ctx):
+    async def cat_facts_error(self, ctx, exc):
         if isinstance(exc, commands.BadArgument):
             pass
         else:

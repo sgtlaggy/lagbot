@@ -139,7 +139,7 @@ class LagBot(commands.Bot):
         except AttributeError:
             pass
 
-    async def on_command_error(self, exc, ctx):
+    async def on_command_error(self, ctx, exc):
         """Emulate default on_command_error and add guild + channel info."""
         original = getattr(exc, 'original', exc)
         if hasattr(ctx.command, 'on_error') or getattr(exc, 'handled', False) or isinstance(original, IGNORE_EXCS):

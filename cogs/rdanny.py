@@ -186,7 +186,7 @@ class RoboDanny:
                 await ctx.send('\N{THUMBS DOWN SIGN} Could not pin message.')
 
     @nostalgia.error
-    async def nostalgia_error(self, error, ctx):
+    async def nostalgia_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
             await ctx.send(error)
 

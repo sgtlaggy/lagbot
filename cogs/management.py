@@ -12,13 +12,17 @@ class Management(BaseCog):
     @commands.command()
     @commands.guild_only()
     @commands.has_permissions(kick_members=True)
-    async def kick(self, ctx, *, member: discord.Member):
+    async def kick(self, ctx, member: discord.Member, *, reason=None):
         """Kick user from server if you have permission.
 
         You must have permission to kick members.
         """
+        if reason is None:
+            reason = f'request by {ctx.message.author}'
+        else:
+            reason = f'{reason} -{ctx.message.author}'
         try:
-            await ctx.guild.kick(member)
+            await ctx.guild.kick(member, reason=reason)
         except discord.Forbidden:
             await ctx.send("I don't have permission to kick.")
         except discord.HTTPException:
@@ -29,13 +33,17 @@ class Management(BaseCog):
     @commands.command()
     @commands.guild_only()
     @commands.has_permissions(ban_members=True)
-    async def ban(self, ctx, *, member: discord.Member):
+    async def ban(self, ctx, member: discord.Member, *, reason=None):
         """Ban user from server.
 
         You must have permission to ban members.
         """
+        if reason is None:
+            reason = f'request by {ctx.message.author}'
+        else:
+            reason = f'{reason} -{ctx.message.author}'
         try:
-            await ctx.guild.ban(member)
+            await ctx.guild.ban(member, reason=reason)
         except discord.Forbidden:
             await ctx.send("I don't have permission to ban.")
         except discord.HTTPException:
@@ -46,7 +54,7 @@ class Management(BaseCog):
     @commands.command()
     @commands.guild_only()
     @commands.bot_has_permissions(manage_messages=True)
-    async def purge(self, ctx, count: integer, *, member: discord.Member=None):
+    async def purge(self, ctx, count: integer, member: discord.Member=None, *, reason=None):
         """Purge up to 100 messages from the current channel.
 
         [member] is optional and will default to everyone.
@@ -56,6 +64,10 @@ class Management(BaseCog):
         if count > 100:
             await ctx.send('Can only purge up to 100 messages.')
             return
+        if reason is None:
+            reason = f'request by {ctx.message.author}'
+        else:
+            reason = f'{reason} -{ctx.message.author}'
         message = ctx.message
         author = message.author
         channel = message.channel
@@ -74,9 +86,9 @@ class Management(BaseCog):
                 if len(to_remove) == 0:
                     pass
                 elif len(to_remove) == 1:
-                    await to_remove[0].delete()
+                    await to_remove[0].delete(reason=reason)
                 else:
-                    await channel.delete_messages(to_remove)
+                    await channel.delete_messages(to_remove, reason=reason)
             except discord.Forbidden:
                 await ctx.send("{} message{} couldn't be deleted.".format(
                     *(('The', '') if len(to_remove) < 1 else ('Some', 's'))))

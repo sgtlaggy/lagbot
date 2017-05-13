@@ -91,7 +91,7 @@ class Misc(BaseCog):
         await ctx.send('\n'.join(msg))
 
     @roll_dice.error
-    async def roll_error(self, exc, ctx):
+    async def roll_error(self, ctx, exc):
         if isinstance(exc, commands.BadArgument):
             await ctx.send(str(exc))
 
@@ -301,7 +301,7 @@ class Misc(BaseCog):
 
     @poll.error
     @reminder.error
-    async def reminder_error(self, exc, ctx):
+    async def reminder_error(self, ctx, exc):
         actual_exc = getattr(exc, 'original', exc)
         if isinstance(actual_exc, commands.UserInputError):
             exc.handled = True

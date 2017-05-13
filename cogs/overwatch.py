@@ -501,7 +501,7 @@ class Overwatch(BaseCog):
         else:
             await ctx.send('\N{THUMBS UP SIGN} Removed from the db.')
 
-    async def __error(self, exc, ctx):
+    async def __error(self, ctx, exc):
         if isinstance(exc, commands.BadArgument):
             exc.handled = True
             await ctx.send(exc)

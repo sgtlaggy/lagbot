@@ -60,9 +60,13 @@ class Meta(BaseCog):
     @commands.guild_only()
     @commands.bot_has_permissions(change_nickname=True)
     @checks.owner_or_permissions(manage_nicknames=True)
-    async def nick(self, ctx, *, new_nick=None):
+    async def nick(self, ctx, new_nick=None, *, reason=None):
         """Change bot's nickname."""
-        await ctx.guild.me.edit(nick=new_nick or None)
+        if reason is None:
+            reason = f'request by {ctx.message.author}'
+        else:
+            reason = f'{reason} -{ctx.message.author}'
+        await ctx.guild.me.edit(nick=new_nick or None, reason=reason)
 
     @need_db
     @commands.group(invoke_without_command=True)
