@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import json
 
@@ -21,11 +22,12 @@ class BotList(BaseCog):
         if self.carbon_key is not None:
             carbon_payload = {'key': self.carbon_key,
                               'servercount': guilds}
-            resp = await self.bot.request(CARBON_API,
-                                          data=carbon_payload,
-                                          ignore_timeout=True,
-                                          type_='text')
-            logging.info('Carbon returned {.status} for\n{}'.format(resp, json.dumps(carbon_payload, indent=2)))
+            try:
+                resp = await self.bot.request(CARBON_API, data=carbon_payload, type_='text')
+            except asyncio.TimeoutError:
+                logging.info(f'Carbon failed to respond for\n{json.dumps(carbon_payload, indent=2)}')
+            else:
+                logging.info(f'Carbon returned {resp.status} for\n{json.dumps(carbon_payload, indent=2)}')
 
         for site, link, key in (('DBots.pw', DBOTSPW_API, self.dbotspw_key),
                                 ('DBots.org', DBOTSORG_API, self.dbotsorg_key)):
@@ -33,12 +35,13 @@ class BotList(BaseCog):
                 dbots_payload = {'server_count': guilds}
                 dbots_headers = {'authorization': key,
                                  'content-type': 'application/json'}
-                resp = await self.bot.request(link.format(self.bot),
-                                              data=dbots_payload,
-                                              headers=dbots_headers,
-                                              ignore_timeout=True,
-                                              type_='text')
-                logging.info('{site} returned {.status} for\n{}'.format(resp, json.dumps(dbots_payload, indent=2)))
+                try:
+                    resp = await self.bot.request(link.format(self.bot), data=dbots_payload,
+                                                  headers=dbots_headers, type_='text')
+                except asyncio.TimeoutError:
+                    logging.info(f'{site} failed to respond for\n{json.dumps(dbots_payload, indent=2)}')
+                else:
+                    logging.info(f'{site} returned {resp.status} for\n{json.dumps(dbots_payload, indent=2)}')
 
     on_ready = update
     on_guild_join = update
