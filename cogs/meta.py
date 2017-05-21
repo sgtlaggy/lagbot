@@ -27,11 +27,10 @@ class Meta(BaseCog):
     async def status(self, ctx, *, new_status=None):
         """Change bot's online status or game name."""
         if ctx.invoked_with == 'game':
-            self.bot.game = new_status
-            await self.bot.set_game(self.bot.game)
+            await self.bot.set_game(new_status)
         else:
             await self.bot.change_presence(
-                game=self.bot.game,
+                game=discord.Game(name=self.bot.game),
                 status=getattr(discord.Status, new_status or '', discord.Status.online))
 
     async def set_avatar_by_url(self, url):

@@ -49,8 +49,8 @@ class LagBot(commands.Bot):
         self._debug = debug
         self.loop = kwargs.get('loop', asyncio.get_event_loop())
         self.game = config.game
+        game = discord.Game(name=self.game)
         status = discord.Status.dnd if self._debug else discord.Status.online
-        game = self.game if self.game is None else discord.Game(name=self.game)
         super().__init__(*args, game=game, status=status, loop=self.loop, **kwargs)
         self._before_invoke = self._before_invoke_
         self._after_invoke = self._after_invoke_
@@ -173,18 +173,22 @@ class LagBot(commands.Bot):
             return await self._request(*args, **kwargs)
 
     async def set_game(self, game=None):
-        self.game = game
-        status = None
         for guild in self.guilds:
             if isinstance(guild.me, discord.Member):
                 status = guild.me.status
                 break
+        else:
+            status = None
+
         if game is None:
-            game = 'Resumes:'
-            if self.resumes == 0:
-                await self.change_presence(status=status)
-                return
-        await self.change_presence(game=discord.Game(name=f'{game} {self.resumes or ""}'), status=status)
+            if self.resumes > 0:
+                game = 'Resumes:'
+        if isinstance(game, str):
+            name = game
+            game = discord.Game(name=f'{name} {self.resumes or ""}')
+
+        await self.change_presence(game=game, status=status)
+        self.game = name
 
     def get_uptime(self, brief=False):
         now = datetime.datetime.utcnow()
