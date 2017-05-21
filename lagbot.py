@@ -49,15 +49,14 @@ class LagBot(commands.Bot):
     def __init__(self, *args, config_file, debug=False, **kwargs):
         self._debug = debug
         self.config_file = config_file
-        self._config_from_file()
+        self.config_lock = asyncio.Lock(loop=self.loop)
+        self.loop.run_until_complete(self.load_config())
         self.game = self.config.get('game')
         status = discord.Status.dnd if self._debug else discord.Status.online
         game = self.game if self.game is None else discord.Game(name=self.game)
         super().__init__(*args, game=game, status=status, **kwargs)
         self._before_invoke = self._before_invoke_
         self._after_invoke = self._after_invoke_
-        self.config_lock = asyncio.Lock(loop=self.loop)
-        self.loop.run_until_complete(self.load_config())
         self.default_prefix = self.command_prefix
         self.resumes = 0
         if self._debug:
