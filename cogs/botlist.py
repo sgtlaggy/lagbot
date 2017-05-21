@@ -3,6 +3,7 @@ import logging
 import json
 
 from .base import BaseCog
+import config
 
 CARBON_API = 'https://www.carbonitex.net/discord/data/botdata.php'
 DBOTSPW_API = 'https://bots.discord.pw/api/bots/{.user.id}/stats'
@@ -13,9 +14,9 @@ class BotList(BaseCog):
     """Most code here was adapted from R. Danny's carbonitex cog."""
     def __init__(self, bot):
         super().__init__(bot)
-        self.carbon_key = bot.config.get('carbon_key')
-        self.dbotspw_key = bot.config.get('dbotspw_key')
-        self.dbotsorg_key = bot.config.get('dbotsorg_key')
+        self.carbon_key = config.carbon_key
+        self.dbotspw_key = config.dbotspw_key
+        self.dbotsorg_key = config.dbotsorg_key
 
     async def update(self, *args, **kwargs):
         guilds = len(self.bot.guilds)

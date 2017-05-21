@@ -1,10 +1,8 @@
-from collections import OrderedDict, namedtuple
+from collections import namedtuple
 import traceback
 import datetime
 import asyncio
 import logging
-import json
-import uuid
 import os
 
 from discord.ext import commands
@@ -13,6 +11,7 @@ import aiohttp
 import asyncpg
 
 from utils.utils import pluralize, TIME_BRIEF, TIME_LONG, tb_args, db_decode
+import config
 
 
 Response = namedtuple('Response', 'status data')
@@ -46,13 +45,10 @@ async def command_prefix(bot, message):
 
 
 class LagBot(commands.Bot):
-    def __init__(self, *args, config_file, debug=False, **kwargs):
+    def __init__(self, *args, debug=False, **kwargs):
         self._debug = debug
         self.loop = kwargs.get('loop', asyncio.get_event_loop())
-        self.config_file = config_file
-        self.config_lock = asyncio.Lock(loop=self.loop)
-        self.loop.run_until_complete(self.load_config())
-        self.game = self.config.get('game')
+        self.game = config.game
         status = discord.Status.dnd if self._debug else discord.Status.online
         game = self.game if self.game is None else discord.Game(name=self.game)
         super().__init__(*args, game=game, status=status, loop=self.loop, **kwargs)
@@ -65,34 +61,12 @@ class LagBot(commands.Bot):
         else:
             self.command_prefix = command_prefix
         useragent = 'Discord Bot'
-        source = self.config.get('source')
+        source = config.source
         if source is not None:
             useragent += ' ' + source
         self.http_ = aiohttp.ClientSession(loop=self.loop, headers={'User-Agent': useragent})
         self.db_pool = self.loop.run_until_complete(
             asyncpg.create_pool(database='lagbot', command_timeout=10, loop=self.loop))
-
-    def _config_to_file(self):
-        app_path, config_file = os.path.split(self.config_file)
-        temp = os.path.join(app_path, f'{uuid.uuid4()}-{config_file}.tmp')
-        with open(temp, 'w', encoding='utf-8') as fp:
-            json.dump(self.config.copy(), fp, indent=4, ensure_ascii=True)
-        os.replace(temp, self.config_file)
-
-    def _config_from_file(self):
-        try:
-            with open(self.config_file, 'r', encoding='utf-8') as fp:
-                self.config = json.load(fp, object_pairs_hook=OrderedDict)
-        except FileNotFoundError:
-            self.config = {}
-
-    async def save_config(self):
-        with await self.config_lock:
-            await self.loop.run_in_executor(None, self._config_to_file)
-
-    async def load_config(self):
-        with await self.config_lock:
-            await self.loop.run_in_executor(None, self._config_from_file)
 
     async def logout(self):
         await self.http_.close()
@@ -104,7 +78,7 @@ class LagBot(commands.Bot):
         self.loop.create_task(self.logout())
 
     def run(self, *args, **kwargs):
-        super().run(self.config['bot_token'], *args, **kwargs)
+        super().run(config.token, *args, **kwargs)
         try:
             return self.exit_status
         except AttributeError:
@@ -130,7 +104,7 @@ class LagBot(commands.Bot):
         if msg.author.bot:
             return
         if self._debug:
-            debug_channel = self.config.get('debug_channel')
+            debug_channel = config.debug_channel
             if debug_channel is None or msg.channel.id != int(debug_channel):
                 return
         await self.process_commands(msg)

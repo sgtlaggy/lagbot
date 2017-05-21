@@ -1,8 +1,6 @@
 # discordbot
 
 This is a [Discord](https://discordapp.com) bot built using [discord.py by Danny/Rapptz](https://github.com/rapptz/discord.py).
-
-If you don't have or want to include config attributes, remove them from the config file. They all have fallbacks except `bot_token`.
 ---
 
 #### This bot requires you run Postgresql for the Overwatch, Images (XKCD), and Tags cogs.

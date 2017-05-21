@@ -5,6 +5,7 @@ from utils.utils import db_encode, db_decode
 from utils.checks import need_db
 from cogs.base import BaseCog
 from utils import checks
+import config
 
 
 class Meta(BaseCog):
@@ -192,11 +193,11 @@ class Meta(BaseCog):
             docs = 'Say ' + ' or '.join(f'{prefix}help' for prefix in valid_prefix)
         else:
             docs = f'Say {valid_prefix}help'
-        if self.bot.config.get('userdocs'):
-            docs += ' or see [here]({0.config[userdocs]})'
+        if config.userdocs is not None:
+            docs += f' or see [here]({config.userdocs})'
         docs += '.'
-        embed.add_field(name='Documentation', value=docs.format(self.bot))
-        source = self.bot.config.get('source')
+        embed.add_field(name='Documentation', value=docs)
+        source = config.source
         if source:
             embed.add_field(name='Source', value=f'See [here]({source}).')
         embed.set_footer(text='Made with discord.py | Online Since', icon_url='http://i.imgur.com/5BFecvA.png')

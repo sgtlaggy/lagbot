@@ -1,10 +1,8 @@
 #!/usr/bin/env python3.6
-import functools
 import asyncio
 import logging
 import signal
 import sys
-import os
 
 from lagbot import LagBot
 
@@ -20,10 +18,6 @@ else:
 debug = any('debug' in arg.lower() for arg in sys.argv)
 logging.basicConfig(level=logging.INFO if debug else logging.WARNING)
 
-# Files and Paths
-app_path = os.path.dirname(os.path.abspath(sys.argv[0]))
-config_file = os.path.join(app_path, 'config.json')
-
 # Discord Client/Bot
 default_prefix = '!'
 help_attrs = {'hidden': True}
@@ -34,8 +28,7 @@ if not debug:
     initial_cogs.append('cogs.botlist')
 
 if __name__ == '__main__':
-    bot = LagBot(command_prefix=default_prefix, help_attrs=help_attrs,
-                 config_file=config_file, debug=debug)
+    bot = LagBot(command_prefix=default_prefix, help_attrs=help_attrs, debug=debug)
 
     bot.loop.add_signal_handler(signal.SIGTERM, bot.logout_)
 
