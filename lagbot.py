@@ -105,6 +105,10 @@ class LagBot(commands.Bot):
 
     def run(self, *args, **kwargs):
         super().run(self.config['bot_token'], *args, **kwargs)
+        try:
+            return self.exit_status
+        except AttributeError:
+            return 0
 
     async def on_ready(self):
         if hasattr(self, 'start_time'):
