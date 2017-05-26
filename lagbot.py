@@ -34,9 +34,8 @@ async def command_prefix(bot, message):
             ''', str(message.guild.id))
     if settings is None:
         return default
-    prefix, allow_default = settings['prefix'], settings['allow_default']
-    valid = [db_decode(prefix)]
-    if allow_default:
+    valid = [db_decode(settings['prefix'])]
+    if settings['allow_default']:
         if isinstance(default, (tuple, list)):
             valid.extend(default)
         else:
