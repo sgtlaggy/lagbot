@@ -9,6 +9,8 @@ import io
 from discord.ext import commands
 import discord
 
+from utils.checks import need_db
+
 
 def date(argument):
     formats = ('%Y/%m/%d', '%Y-%m-%d')
@@ -74,6 +76,7 @@ class RoboDanny:
             return f'https://hastebin.com/{resp.data}'
         return 'Result too long and error occurred while posting to hastebin.'
 
+    @need_db
     @commands.command(hidden=True, name='eval')
     @commands.is_owner()
     async def eval_(self, ctx, *, code: cleanup_code):
@@ -91,6 +94,7 @@ class RoboDanny:
             'bot': self.bot,
             'client': self.bot,
             'ctx': ctx,
+            'con': ctx.con,
             'msg': msg,
             'message': msg,
             'guild': msg.guild,
@@ -124,6 +128,7 @@ class RoboDanny:
             else:
                 await ctx.send(await self.eval_output(value if ret is None else f'{value}{rep(ret)}'))
 
+    @need_db
     @commands.command(hidden=True, aliases=['py'])
     @commands.is_owner()
     async def debug(self, ctx, *, code: cleanup_code):
@@ -135,6 +140,7 @@ class RoboDanny:
             'discord': discord,
             'print': print_,
             'ctx': ctx,
+            'con': ctx.con,
             'bot': self.bot,
             'client': self.bot,
             'message': msg,
