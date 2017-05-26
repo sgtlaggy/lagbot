@@ -36,7 +36,8 @@ class Tags(BaseCog):
             ''', name)
         if tag is not None:
             return tag
-        tags = [r['name'] for r in await ctx.con.fetch('SELECT name FROM tags')]
+        async with ctx.con.transaction():
+            tags = [r['name'] async for r in ctx.con.cursor('SELECT name FROM tags')]
         matches = difflib.get_close_matches(name, tags)
         if not matches:
             raise NotInDB('Tag not found.')
