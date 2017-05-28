@@ -87,7 +87,7 @@ class Meta(BaseCog):
                 INSERT INTO prefixes (guild_id, prefix, allow_default) VALUES ($1, $2, $3)
                 ON CONFLICT (guild_id)
                 DO UPDATE SET (prefix, allow_default) = ($2, $3)
-                ''', str(guild.id), db_encode(new_prefix), allow_default)
+                ''', guild.id, db_encode(new_prefix), allow_default)
         await ctx.send(f'Set custom prefix to "{new_prefix}".')
 
     @need_db
