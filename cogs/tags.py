@@ -44,7 +44,6 @@ class Tags(BaseCog):
         raise NotInDB('Tag not found. Did you mean...\n' + '\n'.join(matches))
 
     async def update_uses(self, ctx, tag):
-        user = ctx.author
         if isinstance(tag, str):
             name = tag
         else:
@@ -53,11 +52,6 @@ class Tags(BaseCog):
             await ctx.con.execute('''
                 UPDATE tags SET uses = uses + 1 WHERE name = $1
                 ''', name)
-            await ctx.con.execute('''
-                INSERT INTO tagusers VALUES ($1)
-                ON CONFLICT (id)
-                DO UPDATE SET uses = tagusers.uses + 1
-                ''', user.id)
 
     @need_db
     @commands.group(invoke_without_command=True)
@@ -198,26 +192,8 @@ class Tags(BaseCog):
                 SELECT count(*) FROM tags
                 '''))
             embed.add_field(name='Total Uses', value=await ctx.con.fetchval('''
-                SELECT sum(uses) FROM tagusers
+                SELECT sum(uses) FROM tags
                 ''') or 0)
-        await ctx.send(embed=embed)
-
-    @need_db
-    @tag.command()
-    async def stats(self, ctx, *, member: discord.Member = None):
-        """See stats about your own or another person's tag usage."""
-        if member is None:
-            member = ctx.author
-        tags = await ctx.con.fetchval('''
-            SELECT count(*) FROM tags WHERE owner_id = $1
-            ''', member.id)
-        uses = await ctx.con.fetchval('''
-            SELECT uses FROM tagusers WHERE id = $1
-            ''', member.id) or 0
-        embed = discord.Embed()
-        embed.set_author(name=str(member), icon_url=member.avatar_url)
-        embed.add_field(name='Tags Created', value=tags)
-        embed.add_field(name='Tags Used', value=uses)
         await ctx.send(embed=embed)
 
     @need_db
@@ -249,19 +225,11 @@ class Tags(BaseCog):
     @need_db
     @tag.command()
     async def leaderboard(self, ctx):
-        """See leaderboard of most used tags and largest users of tags."""
+        """See leaderboard of most used tags."""
         tags = await ctx.con.fetch('''
             SELECT name, uses FROM tags ORDER BY uses DESC LIMIT 10
             ''')
-        userstats = await ctx.con.fetch('''
-            SELECT id, uses FROM tagusers ORDER BY uses DESC LIMIT 10
-            ''')
-        users = []
-        for r in userstats:
-            users.append((await self.bot.get_user_info(r['id']), r['uses']))
         embed = discord.Embed()
-        embed.add_field(name='Users', value='\n'.join([f'{user.mention} - {uses}'
-                                                       for user, uses in users]) or 'None')
         embed.add_field(name='Tags', value='\n'.join([f'{r["name"]} - {r["uses"]}' for r in tags]) or 'None')
         await ctx.send(embed=embed)
 

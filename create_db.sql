@@ -20,10 +20,6 @@ CREATE TABLE tags (
     owner_id bigint,
     modified_at timestamp DEFAULT (now() at time zone 'utc')
 );
-CREATE TABLE tagusers (
-    id bigint PRIMARY KEY,
-    uses integer DEFAULT 1
-);
 CREATE TABLE noshorttag (
     guild_id bigint PRIMARY KEY
 );
