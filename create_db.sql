@@ -1,7 +1,7 @@
 CREATE DATABASE lagbot;
 \c lagbot
 CREATE TABLE overwatch (
-    id text PRIMARY KEY,
+    id bigint PRIMARY KEY,
     btag text,
     mode text,
     region text
@@ -17,32 +17,32 @@ CREATE TABLE tags (
     name text PRIMARY KEY,
     content text,
     uses integer DEFAULT 0,
-    owner_id text,
+    owner_id bigint,
     modified_at timestamp DEFAULT (now() at time zone 'utc')
 );
 CREATE TABLE tagusers (
-    id text PRIMARY KEY,
+    id bigint PRIMARY KEY,
     uses integer DEFAULT 1
 );
 CREATE TABLE noshorttag (
-    guild_id text PRIMARY KEY
+    guild_id bigint PRIMARY KEY
 );
 CREATE TABLE prefixes (
-    guild_id text PRIMARY KEY,
+    guild_id bigint PRIMARY KEY,
     prefix text,
     allow_default boolean
 );
 CREATE TABLE reminders (
-    message_id text PRIMARY KEY,
-    channel_id text,
-    author_id text,
+    message_id bigint PRIMARY KEY,
+    channel_id bigint,
+    author_id bigint,
     content text,
     end_at timestamp
 );
 CREATE TABLE polls (
-    message_id text PRIMARY KEY,
-    channel_id text,
-    author_id text,
+    message_id bigint PRIMARY KEY,
+    channel_id bigint,
+    author_id bigint,
     title text,
     options text[],
     end_at timestamp,

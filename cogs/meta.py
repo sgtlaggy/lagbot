@@ -87,7 +87,7 @@ class Meta(BaseCog):
                 INSERT INTO prefixes (guild_id, prefix, allow_default) VALUES ($1, $2, $3)
                 ON CONFLICT (guild_id)
                 DO UPDATE SET (prefix, allow_default) = ($2, $3)
-                ''', guild.id, db_encode(new_prefix), allow_default)
+                ''', str(guild.id), db_encode(new_prefix), allow_default)
         await ctx.send(f'Set custom prefix to "{new_prefix}".')
 
     @need_db
@@ -99,7 +99,7 @@ class Meta(BaseCog):
         async with ctx.con.transaction():
             res = await ctx.con.execute('''
                 DELETE FROM prefixes WHERE guild_id = $1
-                ''', guild.id)
+                ''', str(guild.id))
         if res[-1] == '0':
             await ctx.send("A custom prefix hasn't been set for this guild.")
         else:
@@ -114,7 +114,7 @@ class Meta(BaseCog):
         """
         rec = await ctx.con.fetchrow('''
             SELECT * FROM prefixes WHERE guild_id = $1
-            ''', str(ctx.guild.id))
+            ''', ctx.guild.id)
         if rec is None:
             await ctx.send("A custom prefix hasn't been set for this guild.")
             return

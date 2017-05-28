@@ -31,7 +31,7 @@ async def command_prefix(bot, message):
     async with bot.db_pool.acquire() as con:
         settings = await con.fetchrow('''
             SELECT * FROM prefixes WHERE guild_id = $1
-            ''', str(message.guild.id))
+            ''', message.guild.id)
     if settings is None:
         return default
     valid = [db_decode(settings['prefix'])]
