@@ -23,6 +23,9 @@ IGNORE_EXCS = (discord.Forbidden,  # people keep disallowing send_messages
                commands.NoPrivateMessage)
 
 
+UPPER_PATH = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
+
+
 async def command_prefix(bot, message):
     """Custom prefix function for guild-specific prefixes."""
     default = bot.default_prefix
@@ -55,6 +58,7 @@ class LagBot(commands.Bot):
         self._after_invoke = self._after_invoke_
         self.default_prefix = self.command_prefix
         self.resumes = 0
+        self.errors = {}
         if self._debug:
             self.command_prefix = '?!'
         else:
@@ -92,6 +96,7 @@ class LagBot(commands.Bot):
         self.start_time = datetime.datetime.utcnow()
         self.app = await self.application_info()
         self.owner_id = self.app.owner.id
+        await self.app.owner.create_dm()
         if self._debug:
             logging.info('Ready.')
 
@@ -106,6 +111,45 @@ class LagBot(commands.Bot):
             debug_channel = config.debug_channel
             if debug_channel is None or msg.channel.id != int(debug_channel):
                 return
+        if self.errors and msg.channel == self.app.owner.dm_channel:
+            def split(c):
+                s = c.split(' ')
+                if len(s) == 1:
+                    s.append(None)
+                return s
+            cmd, num, *content = split(msg.content)
+            cmd, content = cmd.lower(), ' '.join(content)
+            if num is not None:
+                if num.isdigit():
+                    num = int(num)
+                else:
+                    await msg.channel.send(f'{num} is not a valid error number.')
+                    return
+            if cmd in ('tell', 'dm'):
+                try:
+                    ctx = self.errors[num]
+                except KeyError:
+                    await msg.chanel.send(f'There is no error #{num}.')
+                    return
+                dest = ctx.channel if cmd == 'tell' else await ctx.author.create_dm()
+                await dest.send(content)
+                try:
+                    r = await self.wait_for('message', timeout=60,
+                                            check=lambda m: m.channel == dest and m.author == ctx.author)
+                except asyncio.TimeoutError:
+                    pass
+                else:
+                    await msg.channel.send(f'{num} {r.content}')
+            elif cmd == 'list':
+                await msg.channel.send(' '.join([str(k) for k in self.errors.keys()]))
+            elif cmd == 'close':
+                try:
+                    self.errors.pop(num)
+                except KeyError:
+                    await msg.channel.send(f'There is no error #{num}.')
+                else:
+                    await msg.channel.send(f'Closed error #{num}.')
+            return
         await self.process_commands(msg)
 
     async def _before_invoke_(self, ctx):
@@ -125,13 +169,15 @@ class LagBot(commands.Bot):
             return
         logging.warning(f'Ignoring exception in command {ctx.command}')
         msg = f'{ctx.message.content}\nin {"guild" if ctx.guild else "DM"}'
-        outer_path = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
-        tb = ''.join(traceback.format_exception(*tb_args(original))).replace(outer_path, '...')
+        tb = ''.join(traceback.format_exception(*tb_args(original))).replace(UPPER_PATH, '...')
         logging.error('\n'.join((msg, tb)))
+        error_num = max(self.errors or (0,)) + 1
+        ctx.error = exc
+        self.errors[error_num] = ctx
 
         if not self._debug and isinstance(exc, commands.CommandInvokeError):
             try:
-                await self.app.owner.send(f'{msg}\n```py\n{tb}\n```'.format(msg, tb))
+                await self.app.owner.send(f'{error_num} {msg}\n```py\n{tb}\n```'.format(msg, tb))
             except:
                 pass
 
