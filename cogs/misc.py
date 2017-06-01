@@ -59,6 +59,29 @@ def die(arg):
     return (arg, dice.roll(arg))
 
 
+def hex_or_rgb(arg):
+    s = arg.split(' ')
+    if len(s) == 1:
+        color = s[0]
+        if len(color) == 6:
+            color = f'0x{color}'
+        elif len(color) == 7:
+            color = color.replace('#', '0x')
+        try:
+            return discord.Color(int(color, 0))
+        except ValueError:
+            raise commands.BadArgument('A single argument must be passed as hex (`0x7289DA`, `#7289DA`, `7289DA`)')
+    elif len(s) == 3:
+        try:
+            rgb = [*map(int, s)]
+        except ValueError:
+            raise commands.BadArgument('Three arguments must be passed as RGB (`114 137 218`, `153 170 181`)')
+        if any(c < 0 or c > 255 for c in rgb):
+            raise commands.BadArgument('RGB colors must be in the range `[0, 255]`')
+        return discord.Color.from_rgb(*rgb)
+    raise commands.BadArgument('You must pass 1 (hex) or 3 (RGB) arguments.')
+
+
 class Misc(BaseCog):
     """Miscellaneous commands that don't fit in other categories."""
     def __init__(self, bot):
@@ -176,6 +199,24 @@ class Misc(BaseCog):
         except:
             pass
         await ctx.send(zenhan.h2z(chars))
+
+    @commands.command(usage='<rgb/hex>')
+    async def color(self, ctx, *, color: hex_or_rgb):
+        """See hex or RGB color.
+
+        <rgb/hex> can be provided as any of the following:
+        0x7289DA
+        #7289DA
+        7289DA
+        114 137 218
+        """
+        em = discord.Embed(color=color, description=f'Hex: {color}\nRGB: {color.to_rgb()}')
+        await ctx.send(embed=em)
+
+    @color.error
+    async def color_error(self, ctx, exc):
+        if isinstance(exc, commands.BadArgument):
+            await ctx.send(exc)
 
     @need_db
     @commands.group(aliases=['vote'], invoke_without_command=True,
