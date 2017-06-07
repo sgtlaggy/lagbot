@@ -10,7 +10,7 @@ from utils.utils import between, integer
 from cogs.base import BaseCog
 
 
-FACTS = 'http://catfacts-api.appspot.com/api/facts?number={count}'
+FACTS = 'https://catfact.ninja/facts?limit={count}'
 
 
 def xkcd_date(data):
@@ -55,7 +55,10 @@ class Images(BaseCog):
             if rec:
                 return rec
         url = self.make_xkcd_url(num)
-        status, data = await self.bot.request(url, ignore_timeout=True)
+        try:
+            status, data = await self.bot.request(url)
+        except asyncio.TimeoutError:
+            status, data = None, None
         if status != 200:
             raise NotFound('Could not get comic.')
         else:
@@ -97,10 +100,10 @@ class Images(BaseCog):
         await ctx.send(embed=embed)
 
     async def fetch_facts(self, count):
-        status, j = await self.bot.request(FACTS.format(count=count))
-        if status != 200 or (j is not None and j['success'] != 'true'):
+        status, data = await self.bot.request(FACTS.format(count=count))
+        if status != 200:
             raise NotFound('No cat fact available.')
-        return j['facts']
+        return [d['fact'] for d in data['data']]
 
     async def fetch_cat(self):
         status, data = await self.bot.request('http://random.cat/meow')
