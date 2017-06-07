@@ -22,3 +22,7 @@ async def check_permissions(ctx, perms):
 
 def owner_or_permissions(**perms):
     return commands.check(lambda ctx: check_permissions(ctx, perms))
+
+
+def dm_only():
+    return commands.check(lambda ctx: ctx.guild is None)

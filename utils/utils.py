@@ -1,8 +1,12 @@
+import traceback
 import base64
+import os
 
 from discord.ext.commands import BadArgument
+from discord.ext import commands
 
 
+UPPER_PATH = os.path.split(os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])[0]
 TIME_BRIEF = ('{d}d', '{h}h', '{m}m', '{s}s')
 TIME_LONG = ('{d} day{{}}', '{h} hour{{}}', '{m} minute{{}}', '{s} second{{}}')
 
@@ -101,3 +105,13 @@ def db_encode(text):
 
 def db_decode(text):
     return base64.b64decode(text.encode()).decode()
+
+
+async def send_error(dest, ctx, exc, num):
+    msg = f'{ctx.message.content}\nin {"guild" if ctx.guild else "DM"}'
+    tb = ''.join(traceback.format_exception(*tb_args(exc))).replace(UPPER_PATH, '...')
+    pag = commands.Paginator(prefix=f'{num} {msg}\n```')
+    for line in tb.split('\n'):
+        pag.add_line(line)
+    for page in pag.pages:
+        await dest.send(page)

@@ -1,25 +1,17 @@
-"""Most of the contents are from Rapptz RoboDanny bot. Don't sue me."""
+"""The eval commands are from Rapptz's RoboDanny. Don't sue me."""
 from contextlib import redirect_stdout
-from datetime import datetime
 import traceback
 import textwrap
+import asyncio
 import inspect
 import io
 
 from discord.ext import commands
 import discord
 
+from utils.utils import send_error
 from utils.checks import need_db
-
-
-def date(argument):
-    formats = ('%Y/%m/%d', '%Y-%m-%d')
-    for fmt in formats:
-        try:
-            return datetime.strptime(argument, fmt)
-        except ValueError:
-            continue
-    raise commands.BadArgument('Cannot convert to date. Expected YYYY/MM/DD or YYYY-MM-DD.')
+from utils import checks
 
 
 def exception_signature():
@@ -46,11 +38,13 @@ def print_(*args, **kwargs):
     print(*new_args, **kwargs)
 
 
-class RoboDanny:
+class Owner:
     """Commands I stole from Robodanny (https://github.com/Rapptz/RoboDanny)."""
     def __init__(self, bot):
         self.bot = bot
         self.last_eval = None
+        if not hasattr(bot, 'errors'):
+            bot.errors = {}
 
     async def eval_output(self, out=None):
         lines = []
@@ -168,34 +162,66 @@ class RoboDanny:
             say = 'None'
         await ctx.send(say)
 
-    @commands.command()
-    @commands.has_permissions(manage_messages=True)
-    async def nostalgia(self, ctx, date: date = None, *, channel: discord.TextChannel = None):
-        """Pins an old message from a specific date.
+    @commands.command(hidden=True, aliases=['edm'])
+    @commands.is_owner()
+    @checks.dm_only()
+    async def etell(self, ctx, num: int, *, content):
+        """Respond to an error that occured."""
+        try:
+            error_ctx = self.bot.errors[num]
+        except KeyError:
+            await ctx.send(f'There is no error #{num}.')
+            return
+        dest = error_ctx.channel if ctx.invoked_with == 'tell' else await error_ctx.author.create_dm()
+        await dest.send(content)
+        try:
+            r = await self.bot.wait_for('message', timeout=60,
+                                        check=lambda m: m.channel == dest and m.author == error_ctx.author)
+        except asyncio.TimeoutError:
+            pass
+        else:
+            await ctx.send(f'{num} {r.content}')
 
-        If a date is not given, then pins first message from the channel.
-        If a channel is not given, then pins from the channel the
-        command was ran on.
-
-        The format of the date must be either YYYY-MM-DD or YYYY/MM/DD.
-        """
-
-        if channel is None:
-            channel = ctx.channel
-        if date is None:
-            date = channel.created_at
-
-        async for m in ctx.history(after=date, limit=1):
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    @checks.dm_only()
+    async def eshow(self, ctx, num: int = None):
+        if num:
             try:
-                await m.pin()
-            except:
-                await ctx.send('\N{THUMBS DOWN SIGN} Could not pin message.')
+                error_ctx = self.bot.errors[num]
+            except KeyError:
+                await ctx.send(f'There is no error #{num}.')
+            else:
+                await send_error(ctx, error_ctx, error_ctx.error, num)
+        else:
+            await ctx.send(' '.join(str(k) for k in self.bot.errors.keys()))
 
-    @nostalgia.error
-    async def nostalgia_error(self, ctx, error):
-        if isinstance(error, commands.BadArgument):
-            await ctx.send(error)
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    @checks.dm_only()
+    async def eclose(self, ctx, num: int):
+        try:
+            self.bot.errors.pop(num)
+        except KeyError:
+            await ctx.send(f'There is no error #{num}.')
+        else:
+            await ctx.send(f'Closed error #{num}.')
+
+    @commands.command(hidden=True)
+    @commands.is_owner()
+    @checks.dm_only()
+    async def eclear(self, ctx):
+        self.bot.errors = {}
+        await ctx.send('Cleared all errors.')
+
+    async def on_command_error(self, ctx, exc):
+        if hasattr(ctx.command, 'on_error') or getattr(exc, 'handled', False) or \
+                not isinstance(exc, commands.CommandInvokeError):
+            return
+        error_num = max(self.bot.errors or (0,)) + 1
+        ctx.error = exc.original
+        self.bot.errors[error_num] = ctx
 
 
 def setup(bot):
-    bot.add_cog(RoboDanny(bot))
+    bot.add_cog(Owner(bot))

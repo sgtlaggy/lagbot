@@ -7,6 +7,16 @@ from utils.utils import pluralize, integer
 from cogs.base import BaseCog
 
 
+def date(argument):
+    formats = ('%Y/%m/%d', '%Y-%m-%d')
+    for fmt in formats:
+        try:
+            return datetime.strptime(argument, fmt)
+        except ValueError:
+            continue
+    raise commands.BadArgument('Cannot convert to date. Expected YYYY/MM/DD or YYYY-MM-DD.')
+
+
 class Management(BaseCog):
     """Admin/moderation commands."""
     @commands.command()
@@ -97,6 +107,34 @@ class Management(BaseCog):
                     's' if len(to_remove) > 1 else ''))
             else:
                 await ctx.send(pluralize(f'Removed {len(to_remove)} message{{}}.'))
+
+    @commands.command()
+    @commands.has_permissions(manage_messages=True)
+    async def nostalgia(self, ctx, date: date = None, *, channel: discord.TextChannel = None):
+        """Pins an old message from a specific date.
+
+        If a date is not given, then pins first message from the channel.
+        If a channel is not given, then pins from the channel the
+        command was ran on.
+
+        The format of the date must be either YYYY-MM-DD or YYYY/MM/DD.
+        """
+
+        if channel is None:
+            channel = ctx.channel
+        if date is None:
+            date = channel.created_at
+
+        async for m in ctx.history(after=date, limit=1):
+            try:
+                await m.pin()
+            except:
+                await ctx.send('\N{THUMBS DOWN SIGN} Could not pin message.')
+
+    @nostalgia.error
+    async def nostalgia_error(self, ctx, error):
+        if isinstance(error, commands.BadArgument):
+            await ctx.send(error)
 
 
 def setup(bot):

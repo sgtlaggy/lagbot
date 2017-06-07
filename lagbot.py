@@ -3,27 +3,17 @@ import traceback
 import datetime
 import asyncio
 import logging
-import os
 
 from discord.ext import commands
 import discord
 import aiohttp
 import asyncpg
 
-from utils.utils import pluralize, TIME_BRIEF, TIME_LONG, tb_args, db_decode
+from utils.utils import UPPER_PATH, TIME_BRIEF, TIME_LONG, send_error, tb_args, db_decode, pluralize
 import config
 
 
 Response = namedtuple('Response', 'status data')
-
-
-IGNORE_EXCS = (discord.Forbidden,  # people keep disallowing send_messages
-               commands.CommandNotFound,
-               commands.MissingRequiredArgument,
-               commands.NoPrivateMessage)
-
-
-UPPER_PATH = os.path.split(os.path.split(os.path.abspath(__file__))[0])[0]
 
 
 async def command_prefix(bot, message):
@@ -43,6 +33,7 @@ async def command_prefix(bot, message):
             valid.extend(default)
         else:
             valid.append(default)
+    valid.sort(reverse=True)
     return valid
 
 
@@ -58,7 +49,6 @@ class LagBot(commands.Bot):
         self._after_invoke = self._after_invoke_
         self.default_prefix = self.command_prefix
         self.resumes = 0
-        self.errors = {}
         if self._debug:
             self.command_prefix = '?!'
         else:
@@ -111,45 +101,6 @@ class LagBot(commands.Bot):
             debug_channel = config.debug_channel
             if debug_channel is None or msg.channel.id != int(debug_channel):
                 return
-        if self.errors and msg.channel == self.app.owner.dm_channel:
-            def split(c):
-                s = c.split(' ')
-                if len(s) == 1:
-                    s.append(None)
-                return s
-            cmd, num, *content = split(msg.content)
-            cmd, content = cmd.lower(), ' '.join(content)
-            if num is not None:
-                if num.isdigit():
-                    num = int(num)
-                else:
-                    await msg.channel.send(f'{num} is not a valid error number.')
-                    return
-            if cmd in ('tell', 'dm'):
-                try:
-                    ctx = self.errors[num]
-                except KeyError:
-                    await msg.chanel.send(f'There is no error #{num}.')
-                    return
-                dest = ctx.channel if cmd == 'tell' else await ctx.author.create_dm()
-                await dest.send(content)
-                try:
-                    r = await self.wait_for('message', timeout=60,
-                                            check=lambda m: m.channel == dest and m.author == ctx.author)
-                except asyncio.TimeoutError:
-                    pass
-                else:
-                    await msg.channel.send(f'{num} {r.content}')
-            elif cmd == 'list':
-                await msg.channel.send(' '.join([str(k) for k in self.errors.keys()]))
-            elif cmd == 'close':
-                try:
-                    self.errors.pop(num)
-                except KeyError:
-                    await msg.channel.send(f'There is no error #{num}.')
-                else:
-                    await msg.channel.send(f'Closed error #{num}.')
-            return
         await self.process_commands(msg)
 
     async def _before_invoke_(self, ctx):
@@ -164,22 +115,17 @@ class LagBot(commands.Bot):
 
     async def on_command_error(self, ctx, exc):
         """Emulate default on_command_error and add guild + channel info."""
-        original = getattr(exc, 'original', exc)
-        if hasattr(ctx.command, 'on_error') or getattr(exc, 'handled', False) or isinstance(original, IGNORE_EXCS):
+        if hasattr(ctx.command, 'on_error') or getattr(exc, 'handled', False) or \
+                not isinstance(exc, commands.CommandInvokeError):
             return
-        logging.warning(f'Ignoring exception in command {ctx.command}')
+        if isinstance(exc.original, discord.Forbidden):
+            await ctx.send('Stop disallowing my permissions or fix role heirarchy.')
+            return
         msg = f'{ctx.message.content}\nin {"guild" if ctx.guild else "DM"}'
-        tb = ''.join(traceback.format_exception(*tb_args(original))).replace(UPPER_PATH, '...')
+        tb = ''.join(traceback.format_exception(*tb_args(exc.original))).replace(UPPER_PATH, '...')
         logging.error('\n'.join((msg, tb)))
-        error_num = max(self.errors or (0,)) + 1
-        ctx.error = exc
-        self.errors[error_num] = ctx
-
-        if not self._debug and isinstance(exc, commands.CommandInvokeError):
-            try:
-                await self.app.owner.send(f'{error_num} {msg}\n```py\n{tb}\n```'.format(msg, tb))
-            except:
-                pass
+        if not self._debug:
+            await send_error(self.app.owner, ctx, exc.original)
 
     async def wait_for(self, *args, ignore_timeout=False, **kwargs):
         """Override default wait_for to allow ignoring TimeoutError."""
