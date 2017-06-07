@@ -431,7 +431,7 @@ class Overwatch(BaseCog):
         async with ctx.con.transaction():
             res = await ctx.con.execute('''
                 UPDATE overwatch SET btag = $1 WHERE id = $2
-                ''', new_tag, str(ctx.author.id))
+                ''', new_tag, ctx.author.id)
         if res[-1] == '0':
             await ctx.send("\N{THUMBS DOWN SIGN} You're not in the db.")
         else:
@@ -445,7 +445,7 @@ class Overwatch(BaseCog):
         async with ctx.con.transaction():
             res = await ctx.con.execute('''
                 UPDATE overwatch SET mode = $1 WHERE id = $2
-                ''', new_mode.name, str(ctx.author.id))
+                ''', new_mode.name, ctx.author.id)
         if res[-1] == '0':
             await ctx.send("\N{THUMBS DOWN SIGN} You're not in the db.")
         else:
@@ -463,7 +463,7 @@ class Overwatch(BaseCog):
         async with ctx.con.transaction():
             res = await ctx.con.execute('''
                 UPDATE overwatch SET region = $1 WHERE id = $2
-                ''', new_region, str(ctx.author.id))
+                ''', new_region, ctx.author.id)
         if res[-1] == '0':
             await ctx.send("\N{THUMBS DOWN SIGN} You're not in the db.")
         else:
@@ -481,7 +481,7 @@ class Overwatch(BaseCog):
         async with ctx.con.transaction():
             res = await ctx.con.execute('''
                 UPDATE overwatch SET platform = $1 WHERE id = $2
-                ''', new_platform, str(ctx.author.id))
+                ''', new_platform, ctx.author.id)
         if res[-1] == '0':
             await ctx.send("\N{THUMBS DOWN SIGN} You're not in the db.")
         else:
@@ -495,7 +495,7 @@ class Overwatch(BaseCog):
         async with ctx.con.transaction():
             res = await ctx.con.execute('''
                 DELETE FROM overwatch WHERE id = $1
-                ''', str(author.id))
+                ''', author.id)
         if res[-1] == '0':
             await ctx.send("\N{THUMBS DOWN SIGN} You're not in the db.")
         else:

@@ -99,7 +99,7 @@ class Meta(BaseCog):
         async with ctx.con.transaction():
             res = await ctx.con.execute('''
                 DELETE FROM prefixes WHERE guild_id = $1
-                ''', str(guild.id))
+                ''', guild.id)
         if res[-1] == '0':
             await ctx.send("A custom prefix hasn't been set for this guild.")
         else:
