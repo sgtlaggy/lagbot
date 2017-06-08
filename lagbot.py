@@ -116,10 +116,7 @@ class LagBot(commands.Bot):
     async def on_command_error(self, ctx, exc):
         """Emulate default on_command_error and add guild + channel info."""
         if hasattr(ctx.command, 'on_error') or getattr(exc, 'handled', False) or \
-                not isinstance(exc, commands.CommandInvokeError):
-            return
-        if isinstance(exc.original, discord.Forbidden):
-            await ctx.send('Stop disallowing my permissions or fix role heirarchy.')
+                not isinstance(exc, commands.CommandInvokeError) or isinstance(exc.original, discord.Forbidden):
             return
         msg = f'{ctx.message.content}\nin {"guild" if ctx.guild else "DM"}'
         tb = ''.join(traceback.format_exception(*tb_args(exc.original))).replace(UPPER_PATH, '...')

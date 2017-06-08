@@ -216,7 +216,7 @@ class Owner:
 
     async def on_command_error(self, ctx, exc):
         if hasattr(ctx.command, 'on_error') or getattr(exc, 'handled', False) or \
-                not isinstance(exc, commands.CommandInvokeError):
+                not isinstance(exc, commands.CommandInvokeError) or isinstance(exc.original, discord.Forbidden):
             return
         error_num = max(self.bot.errors or (0,)) + 1
         ctx.error = exc.original
