@@ -264,6 +264,10 @@ class Misc(BaseCog):
                 INSERT INTO polls (message_id, channel_id, author_id, title, options, end_at)
                 VALUES ($1, $2, $3, $4, $5, $6)
                 ''', poll_msg.id, ctx.channel.id, ctx.author.id, db_encode(title), encoded_options, end_at)
+        try:
+            await ctx.message.delete()
+        except:
+            pass
         await ctx.author.send(f'The ID for poll "{title}" in {ctx.channel.mention} is {poll_msg.id}')
 
     @need_db
