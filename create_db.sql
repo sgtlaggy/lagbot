@@ -28,19 +28,3 @@ CREATE TABLE prefixes (
     prefix text,
     allow_default boolean
 );
-CREATE TABLE reminders (
-    message_id bigint PRIMARY KEY,
-    channel_id bigint,
-    author_id bigint,
-    content text,
-    end_at timestamp
-);
-CREATE TABLE polls (
-    message_id bigint PRIMARY KEY,
-    channel_id bigint,
-    author_id bigint,
-    title text,
-    options text[],
-    end_at timestamp,
-    cancelled boolean DEFAULT FALSE
-);
