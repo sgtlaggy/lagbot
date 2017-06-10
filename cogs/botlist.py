@@ -14,9 +14,9 @@ class BotList(BaseCog):
     """Most code here was adapted from R. Danny's carbonitex cog."""
     def __init__(self, bot):
         super().__init__(bot)
-        self.carbon_key = config.carbon_key
-        self.dbotspw_key = config.dbotspw_key
-        self.dbotsorg_key = config.dbotsorg_key
+        self.carbon_key = getattr(config, 'carbon_key', None)
+        self.dbotspw_key = getattr(config, 'dbotspw_key', None)
+        self.dbotsorg_key = getattr(config, 'dbotsorg_key', None)
 
     async def update(self, *args, **kwargs):
         guilds = len(self.bot.guilds)
