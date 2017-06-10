@@ -64,7 +64,8 @@ class Roll:
 
 def roll(arg):
     r = ROLL.match(arg)
-    count, sides = map(int, r.group('count', 'sides'))
+    count = int(r.group('count') or 1)
+    sides = int(r.group('sides'))
     highest = int(r.group('highest') or 0)
     lowest = int(r.group('lowest') or 0)
     reroll = int(r.group('rollunder') or 0)

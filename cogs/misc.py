@@ -64,14 +64,16 @@ class Misc(BaseCog):
         If C is neglected, it will be assumed to mean 1 die.
 
         Advanced notation:
-            * add "t" to get the total of the rolls : 2d6t   -> 9
-            * add "s" to sort the rolls             : 2d6s   -> 2, 4
-            * add "^X" to keep the highest X rolls  : 10d6^3 -> 4, 4, 5
-            * add "vX" to keep the lowest X rolls   : 10d6v3 -> 1, 2, 2
+            * add "^X" to keep the highest X rolls          : 10d6^3 -> 4, 4, 5
+            * add "vX" to keep the lowest X rolls           : 10d6v3 -> 1, 2, 2
+            * add "x" to explode when rolling highest value : 1d6x -> 6, 3
+            * add "t" to get the total of the rolls         : 2d6t   -> 9
+            * add "s" to sort the rolls                     : 2d6s   -> 2, 4
+
+        ^ and v are mutually exclusive.
+        t and s are mutually exclusive.
 
         You can also specify a list of dice to roll. "1d6 2d20 d12"
-
-        This command also handles basic arithmetic operations (/*+-)
         """
         rolls = rolls or [('1d6', random.randint(1, 6))]
         msg = []
