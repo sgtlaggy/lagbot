@@ -2,14 +2,15 @@ from collections import OrderedDict
 import unicodedata
 import datetime
 import random
+import logging
 
 from discord.ext import commands
 import discord
 import zenhan
-import dice
 
 from utils.utils import integer, pluralize
 from cogs.base import BaseCog
+from utils import dice
 
 
 def fancy_time(orig_time, utc=False):
@@ -83,7 +84,7 @@ class Misc(BaseCog):
     @roll_dice.error
     async def roll_error(self, ctx, exc):
         if isinstance(exc, commands.BadArgument):
-            await ctx.send(str(exc))
+            await ctx.send(str(exc.__cause__))
 
     @commands.command()
     async def flip(self, ctx, coins: integer = 1):
