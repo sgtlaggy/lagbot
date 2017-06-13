@@ -1,7 +1,7 @@
 import random
 import re
 
-ROLL = re.compile(r"^(?P<count>\d+)d(?P<sides>\d+)((\^(?P<highest>\d+))|(v(?P<lowest>\d+)))?"
+ROLL = re.compile(r"^(?P<count>\d+)?d(?P<sides>\d+)((?P<high>\^(?P<highest>\d*))|(?P<low>v(?P<lowest>\d*)))?"
                   r"((?P<reroll>r|rr)(?P<rollunder>\d+))?(?P<explode>x)?(?P<ts>[ts])?$")
 
 
@@ -66,8 +66,8 @@ def roll(arg):
     r = ROLL.match(arg)
     count = int(r.group('count') or 1)
     sides = int(r.group('sides'))
-    highest = int(r.group('highest') or 0)
-    lowest = int(r.group('lowest') or 0)
+    highest = int(r.group('highest') or (1 if r.group('high') else 0))
+    lowest = int(r.group('lowest') or (1 if r.group('low') else 0))
     reroll = int(r.group('rollunder') or 0)
     recursive = r.group('reroll') == 'rr'
     explode = bool(r.group('explode'))
