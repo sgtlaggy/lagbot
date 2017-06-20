@@ -9,7 +9,7 @@ import io
 from discord.ext import commands
 import discord
 
-from utils.utils import send_error
+from utils.utils import UPPER_PATH, send_error
 from utils.checks import need_db
 from utils import checks
 
@@ -46,29 +46,19 @@ class Owner:
         if not hasattr(bot, 'errors'):
             bot.errors = {}
 
-    async def eval_output(self, out=None):
+    def eval_output(self, out=None):
         lines = []
         if out is not None:
-            link = await self.maybe_upload(out, len('```py\n' + '\n'.join(lines) + '\n\n```'))
-            if link.startswith('\n'):
-                link = "''" + link
-            lines.append(link if link != '' else "''")
+            if out.startswith('\n'):
+                out = "''" + out
+            lines.append(out if out != '' else "''")
         if lines:
-            return '```py\n' + '\n'.join(lines) + '\n```'
+            out = '```py\n' + '\n'.join(lines) + '\n```'
+            if len(out) > 2000:
+                out = '```py\nOutput too long.\n```'
+            return out
         else:
             return
-
-    async def maybe_upload(self, content, cur_len=0, max_len=2000):
-        """Checks length of content and returns either the content or link to paste."""
-        contents = str(content)
-        if len(contents) >= 2 and contents[-2] == '\n':
-            contents = contents[:-2] + contents[-1]
-        if len(contents) <= max_len - cur_len:
-            return contents
-        resp = await self.bot.request('https://hastebin.com/documents', data=contents, type_='text')
-        if resp.status == 201:
-            return f'https://hastebin.com/{resp.data}'
-        return 'Result too long and error occurred while posting to hastebin.'
 
     @need_db
     @commands.command(hidden=True, name='eval')
@@ -103,7 +93,7 @@ class Owner:
         try:
             exec(to_compile, env)
         except SyntaxError as e:
-            await ctx.send(await self.eval_output('\n'.join(get_syntax_error(e).splitlines()[1:-1])))
+            await ctx.send(self.eval_output('\n'.join(get_syntax_error(e).splitlines()[1:-1])))
             return
 
         func = env['_func']
@@ -112,15 +102,15 @@ class Owner:
                 ret = await func()
         except Exception as e:
             value = stdout.getvalue()
-            exc = traceback.format_exc().splitlines()
+            exc = traceback.format_exc().replace(UPPER_PATH, '...').splitlines()
             exc = '\n'.join([exc[0], *exc[3:]])
-            await ctx.send(await self.eval_output(f'{value}{exc}'))
+            await ctx.send(self.eval_output(f'{value}{exc}'))
         else:
             value = stdout.getvalue()
             if isinstance(ret, discord.Embed):
-                await ctx.send(await self.eval_output(value if value else None), embed=ret)
+                await ctx.send(self.eval_output(value if value else None), embed=ret)
             else:
-                await ctx.send(await self.eval_output(value if ret is None else f'{value}{rep(ret)}'))
+                await ctx.send(self.eval_output(value if ret is None else f'{value}{rep(ret)}'))
 
     @need_db
     @commands.command(hidden=True, aliases=['py'])
@@ -155,9 +145,9 @@ class Owner:
                 await ctx.send(embed=result)
                 return
         except Exception as e:
-            say = await self.eval_output(exception_signature())
+            say = self.eval_output(exception_signature())
         else:
-            say = await self.eval_output(rep(result))
+            say = self.eval_output(rep(result))
         if say is None:
             say = 'None'
         await ctx.send(say)
