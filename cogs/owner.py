@@ -43,8 +43,6 @@ class Owner:
     def __init__(self, bot):
         self.bot = bot
         self.last_eval = None
-        if not hasattr(bot, 'errors'):
-            bot.errors = {}
 
     def eval_output(self, out=None):
         lines = []
@@ -203,14 +201,6 @@ class Owner:
     async def eclear(self, ctx):
         self.bot.errors = {}
         await ctx.send('Cleared all errors.')
-
-    async def on_command_error(self, ctx, exc):
-        if hasattr(ctx.command, 'on_error') or getattr(exc, 'handled', False) or \
-                not isinstance(exc, commands.CommandInvokeError) or isinstance(exc.original, discord.Forbidden):
-            return
-        error_num = max(self.bot.errors or (0,)) + 1
-        ctx.error = exc.original
-        self.bot.errors[error_num] = ctx
 
 
 def setup(bot):
