@@ -28,3 +28,7 @@ CREATE TABLE prefixes (
     prefix text,
     allow_default boolean
 );
+CREATE TABLE newrole (
+    guild_id bigint PRIMARY KEY,
+    role_id bigint
+);

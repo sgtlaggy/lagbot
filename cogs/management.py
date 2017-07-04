@@ -4,6 +4,7 @@ from discord.ext import commands
 import discord
 
 from utils.utils import pluralize, integer
+from utils.checks import need_db
 from cogs.base import BaseCog
 
 
@@ -19,6 +20,53 @@ def date(argument):
 
 class Management(BaseCog):
     """Admin/moderation commands."""
+    @need_db
+    @commands.group(invoke_without_command=True)
+    @commands.guild_only()
+    @commands.has_permissions(manage_roles=True)
+    async def newrole(self, ctx, role: discord.Role = None):
+        """Automatically give new members a role.
+
+        Call without a role to see current role.
+        You can pass role as case-sensitive role name or role ID to avoid mentions.
+        """
+        if role is None:
+            role_id = await ctx.con.fetchval('''
+                SELECT role_id FROM newrole WHERE guild_id = $1
+                ''', ctx.guild.id)
+            if role_id is None:
+                await ctx.send('A role has not been set for this guild.')
+                return
+            role = discord.utils.get(ctx.guild.roles, id=role_id)
+            if role is None:
+                async with ctx.con.transaction():
+                    await ctx.con.execute('''
+                        DELETE FROM newrole WHERE guild_id = $1
+                        ''', ctx.guild.id)
+                await ctx.send('A role has not been set for this guild.')
+            else:
+                await ctx.send(f'"{role.name}" is the current role for new members.')
+        else:
+            async with ctx.con.transaction():
+                await ctx.con.execute('''
+                    INSERT INTO newrole (guild_id, role_id) VALUES ($1, $2)
+                    ON CONFLICT (guild_id) DO
+                    UPDATE SET role_id = $2 WHERE newrole.guild_id = $1
+                    ''', ctx.guild.id, role.id)
+            await ctx.send(f'The role "{role.name}" will be given to new members.')
+
+    @need_db
+    @newrole.command()
+    @commands.guild_only()
+    @commands.has_permissions(manage_roles=True)
+    async def off(self, ctx):
+        """Stop automically giving new members a role."""
+        async with ctx.con.transaction():
+            await ctx.con.execute('''
+                DELETE FROM newrole WHERE guild_id = $1
+                ''', ctx.guild.id)
+        await ctx.send('Disabled automatic role assignment.')
+
     @commands.command()
     @commands.guild_only()
     @commands.has_permissions(kick_members=True)
@@ -135,6 +183,25 @@ class Management(BaseCog):
     async def nostalgia_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
             await ctx.send(error)
+
+    async def on_member_join(self, member):
+        """Automatically assign roles if guild has a role set through `newrole` command."""
+        if not member.guild.me.guild_permissions.manage_roles:
+            return
+        async with self.bot.db_pool.acquire() as con:
+            role_id = await con.fetchval('''
+                SELECT role_id FROM newrole WHERE guild_id = $1
+                ''', member.guild.id)
+            if role_id is None:
+                return
+            role = discord.utils.get(member.guild.roles, id=role_id)
+            if role is None:
+                async with con.transaction():
+                    await con.execute('''
+                        DELETE FROM newrole WHERE guild_id = $1
+                        ''', member.guild.id)
+                return
+        await member.add_roles(role, reason='New Member')
 
 
 def setup(bot):
