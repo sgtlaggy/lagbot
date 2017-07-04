@@ -1,5 +1,7 @@
 """The eval commands are from Rapptz's RoboDanny. Don't sue me."""
 from contextlib import redirect_stdout
+from timeit import timeit
+from dis import dis
 import traceback
 import textwrap
 import asyncio
@@ -38,6 +40,25 @@ def print_(*args, **kwargs):
     print(*new_args, **kwargs)
 
 
+def get_env(ctx):
+    return dict(
+        print=print_,
+        timeit=timeit,
+        dis=dis,
+        discord=discord,
+        bot=ctx.bot,
+        client=ctx.bot,
+        ctx=ctx,
+        con=ctx.con,
+        msg=ctx.message,
+        message=ctx.message,
+        guild=ctx.guild,
+        server=ctx.guild,
+        channel=ctx.channel,
+        me=ctx.me
+    )
+
+
 class Owner:
     """Commands I stole from Robodanny (https://github.com/Rapptz/RoboDanny)."""
     def __init__(self, bot):
@@ -70,20 +91,7 @@ class Owner:
         """
         msg = ctx.message
 
-        env = {
-            'discord': discord,
-            'print': print_,
-            'bot': self.bot,
-            'client': self.bot,
-            'ctx': ctx,
-            'con': ctx.con,
-            'msg': msg,
-            'message': msg,
-            'guild': msg.guild,
-            'server': msg.guild,
-            'channel': msg.channel,
-            'me': msg.author
-        }
+        env = get_env(ctx)
 
         to_compile = 'async def _func():\n%s' % textwrap.indent(code, '  ')
 
@@ -118,22 +126,8 @@ class Owner:
         msg = ctx.message
 
         result = None
-        env = {
-            'discord': discord,
-            'print': print_,
-            'ctx': ctx,
-            'con': ctx.con,
-            'bot': self.bot,
-            'client': self.bot,
-            'message': msg,
-            'msg': msg,
-            'guild': msg.guild,
-            'server': msg.guild,
-            'channel': msg.channel,
-            'author': msg.author,
-            'me': msg.author,
-            '__': self.last_eval
-        }
+        env = get_env(ctx)
+        env['__'] = self.last_eval
 
         try:
             result = eval(code, env)
