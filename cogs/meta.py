@@ -10,14 +10,14 @@ import config
 
 class Meta(BaseCog):
     """Commands that are related to the bot itself."""
-    @commands.group(pass_context=False, hidden=True)
-    async def manage(self):
+    @commands.group(hidden=True)
+    async def manage(self, ctx):
         """Manage bot user attributes."""
         pass
 
-    @manage.command(pass_context=False)
+    @manage.command()
     @commands.is_owner()
-    async def name(self, *, new_name=None):
+    async def name(self, ctx, *, new_name=None):
         """Rename bot."""
         if new_name:
             await self.bot.edit_profile(username=new_name)
