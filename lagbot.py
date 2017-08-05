@@ -9,7 +9,7 @@ import discord
 import aiohttp
 import asyncpg
 
-from utils.utils import UPPER_PATH, TIME_BRIEF, TIME_LONG, send_error, tb_args, db_decode, pluralize
+from utils.utils import UPPER_PATH, TIME_BRIEF, TIME_LONG, send_error, tb_args, pluralize
 import config
 
 
@@ -27,7 +27,7 @@ async def command_prefix(bot, message):
             ''', message.guild.id)
     if settings is None:
         return default
-    valid = [db_decode(settings['prefix'])]
+    valid = [settings['prefix']]
     if settings['allow_default']:
         if isinstance(default, (tuple, list)):
             valid.extend(default)

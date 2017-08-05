@@ -1,7 +1,6 @@
 from discord.ext import commands
 import discord
 
-from utils.utils import db_encode, db_decode
 from utils.checks import need_db
 from cogs.base import BaseCog
 from utils import checks
@@ -87,7 +86,7 @@ class Meta(BaseCog):
                 INSERT INTO prefixes (guild_id, prefix, allow_default) VALUES ($1, $2, $3)
                 ON CONFLICT (guild_id)
                 DO UPDATE SET (prefix, allow_default) = ($2, $3)
-                ''', guild.id, db_encode(new_prefix), allow_default)
+                ''', guild.id, new_prefix, allow_default)
         await ctx.send(f'Set custom prefix to "{new_prefix}".')
 
     @need_db
@@ -120,7 +119,7 @@ class Meta(BaseCog):
             return
 
         prefix, allow_default = rec['prefix'], rec['allow_default']
-        valid = [db_decode(prefix)]
+        valid = [prefix]
         default = self.bot.default_prefix
         if allow_default:
             if isinstance(default, (tuple, list)):

@@ -4,7 +4,7 @@ from discord.ext import commands
 import asyncpg
 import discord
 
-from utils.utils import pluralize, db_encode, db_decode
+from utils.utils import pluralize
 from utils.checks import need_db
 from utils.errors import NotInDB
 from cogs.base import BaseCog
@@ -65,7 +65,7 @@ class Tags(BaseCog):
         except NotInDB as e:
             await ctx.send(e)
             return
-        await ctx.send(db_decode(tag['content']))
+        await ctx.send(tag['content'])
         await self.update_uses(ctx, tag)
 
     @need_db
@@ -78,7 +78,7 @@ class Tags(BaseCog):
         if tag is None:
             await ctx.send('No tags in db.')
             return
-        await ctx.send(db_decode(tag['content']))
+        await ctx.send(tag['content'])
         await self.update_uses(ctx, tag)
 
     @need_db
@@ -98,7 +98,7 @@ class Tags(BaseCog):
                 await ctx.con.execute('''
                     INSERT INTO tags (name, content, owner_id)
                     VALUES ($1, $2, $3)
-                    ''', name, db_encode(text), ctx.author.id)
+                    ''', name, text, ctx.author.id)
         except asyncpg.UniqueViolationError:
             await ctx.send('A tag with that name already exists!')
             return
@@ -145,7 +145,7 @@ class Tags(BaseCog):
             await ctx.con.execute('''
                 UPDATE tags SET (content, modified_at) = ($1, $2)
                 WHERE name = $3
-                ''', db_encode(new_text), ctx.message.created_at, name)
+                ''', new_text, ctx.message.created_at, name)
         await ctx.send(f'Updated tag "{name}".')
 
     @need_db
