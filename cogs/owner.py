@@ -89,8 +89,6 @@ class Owner:
 
         This is a modified version of RoboDanny's latest `eval` command.
         """
-        msg = ctx.message
-
         env = get_env(ctx)
 
         to_compile = 'async def _func():\n%s' % textwrap.indent(code, '  ')
@@ -123,8 +121,6 @@ class Owner:
     @commands.is_owner()
     async def debug(self, ctx, *, code: cleanup_code):
         """Evaluates code."""
-        msg = ctx.message
-
         result = None
         env = get_env(ctx)
         env['__'] = self.last_eval
@@ -154,7 +150,7 @@ class Owner:
         except KeyError:
             await ctx.send(f'There is no error #{num}.')
             return
-        dest = error_ctx.channel if ctx.invoked_with == 'tell' else await error_ctx.author.create_dm()
+        dest = error_ctx.channel if ctx.invoked_with == 'etell' else await error_ctx.author.create_dm()
         await dest.send(content)
         try:
             r = await self.bot.wait_for('message', timeout=60,
