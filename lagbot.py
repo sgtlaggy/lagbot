@@ -63,7 +63,7 @@ class LagBot(commands.Bot):
             asyncpg.create_pool(database='lagbot', command_timeout=10, loop=self.loop))
 
     async def logout(self):
-        await self.http_.close()
+        self.http_.close()
         await self.db_pool.close()
         await super().logout()
 
