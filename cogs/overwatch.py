@@ -35,30 +35,31 @@ class Mode(enum.Enum):
     default = 1
 
 
-HERO_INFO = {'ana': {'color': 0x6D89B1, 'name': 'Ana'},
-             'bastion': {'color': 0x7B8E7A, 'name': 'Bastion'},
-             'dva': {'color': 0xEC92C6, 'name': 'D.Va'},
-             'genji': {'color': 0x97EF43, 'name': 'Genji'},
-             'hanzo': {'color': 0xB8B389, 'name': 'Hanzo'},
-             'junkrat': {'color': 0xE8BC51, 'name': 'Junkrat'},
-             'lucio': {'color': 0x84C851, 'name': 'Lúcio'},
-             'mccree': {'color': 0xB05A5D, 'name': 'McCree'},
-             'mei': {'color': 0x6BABE9, 'name': 'Mei'},
-             'mercy': {'color': 0xEAE7BA, 'name': 'Mercy'},
-             'pharah': {'color': 0x3B7BC5, 'name': 'Pharah'},
-             'reaper': {'color': 0x7E3F52, 'name': 'Reaper'},
-             'reinhardt': {'color': 0x929FA5, 'name': 'Reinhardt'},
-             'roadhog': {'color': 0xB58D52, 'name': 'Roadhog'},
-             'soldier76': {'color': 0x697794, 'name': 'Soldier: 76'},
-             'sombra': {'color': 0x7359BA, 'name': 'Sombra'},
-             'symmetra': {'color': 0x8FBCCF, 'name': 'Symmetra'},
-             'torbjorn': {'color': 0xBE736D, 'name': 'Torbjörn'},
-             'tracer': {'color': 0xD79342, 'name': 'Tracer'},
-             'widowmaker': {'color': 0x9D69A7, 'name': 'Widowmaker'},
-             'winston': {'color': 0xA0A5BB, 'name': 'Winston'},
-             'zarya': {'color': 0xE87FB7, 'name': 'Zarya'},
-             'zenyatta': {'color': 0xEDE582, 'name': 'Zenyatta'},
-             'orisa': {'color': 0x78A67A, 'name': 'Orisa'}}
+_heroes = {'ana': {'color': 0x6D89B1, 'name': 'Ana'},
+           'bastion': {'color': 0x7B8E7A, 'name': 'Bastion'},
+           'doomfist': {'color': 0x344EE0, 'name': 'Doomfist'},
+           'dva': {'color': 0xEC92C6, 'name': 'D.Va'},
+           'genji': {'color': 0x97EF43, 'name': 'Genji'},
+           'hanzo': {'color': 0xB8B389, 'name': 'Hanzo'},
+           'junkrat': {'color': 0xE8BC51, 'name': 'Junkrat'},
+           'lucio': {'color': 0x84C851, 'name': 'Lúcio'},
+           'mccree': {'color': 0xB05A5D, 'name': 'McCree'},
+           'mei': {'color': 0x6BABE9, 'name': 'Mei'},
+           'mercy': {'color': 0xEAE7BA, 'name': 'Mercy'},
+           'pharah': {'color': 0x3B7BC5, 'name': 'Pharah'},
+           'reaper': {'color': 0x7E3F52, 'name': 'Reaper'},
+           'reinhardt': {'color': 0x929FA5, 'name': 'Reinhardt'},
+           'roadhog': {'color': 0xB58D52, 'name': 'Roadhog'},
+           'soldier76': {'color': 0x697794, 'name': 'Soldier: 76'},
+           'sombra': {'color': 0x7359BA, 'name': 'Sombra'},
+           'symmetra': {'color': 0x8FBCCF, 'name': 'Symmetra'},
+           'torbjorn': {'color': 0xBE736D, 'name': 'Torbjörn'},
+           'tracer': {'color': 0xD79342, 'name': 'Tracer'},
+           'widowmaker': {'color': 0x9D69A7, 'name': 'Widowmaker'},
+           'winston': {'color': 0xA0A5BB, 'name': 'Winston'},
+           'zarya': {'color': 0xE87FB7, 'name': 'Zarya'},
+           'zenyatta': {'color': 0xEDE582, 'name': 'Zenyatta'},
+           'orisa': {'color': 0x78A67A, 'name': 'Orisa'}}
 
 
 class NotPlayed(Exception):
@@ -67,6 +68,21 @@ class NotPlayed(Exception):
 
 class InvalidBTag(Exception):
     pass
+
+
+class Hero:
+    def __init__(self, name):
+        self.api_name = name
+        hero = _heroes.get(name)
+        if hero:
+            self.name = hero['name']
+            self.color = hero['color']
+        else:
+            self.name = name.title()
+            self.color = 0xffffff
+
+    def __str__(self):
+        return self.name
 
 
 class Rank:
@@ -315,7 +331,8 @@ class Overwatch(BaseCog):
             stats, heroes, tag, mode, region, platform = await self.get_all(ctx, tag, mode, region, platform)
 
             mp_hero, mp_time = next(most_played(heroes))
-            embed = discord.Embed(colour=HERO_INFO[mp_hero]['color'])
+            mp_hero = Hero(mp_hero)
+            embed = discord.Embed(color=mp_hero.color)
             links = stat_links(tag, region, platform)
             embed.description = f'{platform.upper()}/{region.upper()} **{mode.name.title()}** Stats ([raw]({links["owapi"]}))'
             author_icon = stats['overall_stats']['avatar']
@@ -330,7 +347,7 @@ class Overwatch(BaseCog):
                 else:
                     rank = 'Unranked'
                 embed.add_field(name='Competitive Rank', value=rank)
-            embed.add_field(name='Most Played Hero', value=' - '.join([HERO_INFO[mp_hero]['name'], mp_time]))
+            embed.add_field(name='Most Played Hero', value=' - '.join([mp_hero.name, mp_time]))
             if stats['overall_stats'].get('games'):
                 embed.add_field(name='Games Played', value=stats['overall_stats']['games'])
                 embed.add_field(name='Games Won', value=stats['overall_stats']['wins'])
@@ -361,16 +378,16 @@ class Overwatch(BaseCog):
             stats, heroes, tag, mode, region, platform = await self.get_all(ctx, tag, mode, region, platform)
 
             message = [f'{platform.upper()}/{region.upper()} **{mode.name.title()}** hero stats:']
-            width = max(len(HERO_INFO[hero]['name']) for hero in heroes.keys())
+            width = max(len(Hero(hero).name) for hero in heroes.keys())
             message.append('```ocaml')
             ordered = list(most_played(heroes))
             for hero, played in ordered:
                 if played:
-                    message.append(f'{HERO_INFO[hero]["name"]:<{width}} : {played}')
+                    message.append(f'{Hero(hero).name:<{width}} : {played}')
             message.append('```')
-            hero = ordered[0][0]
+            hero = Hero(ordered[0][0])
             links = stat_links(tag, region, platform)
-            embed = discord.Embed(colour=HERO_INFO[hero]['color'])
+            embed = discord.Embed(color=hero.color)
             tier = stats['overall_stats']['tier']
             if stats['competitive'] and tier is not None:
                 author_icon = Rank.get(tier)
