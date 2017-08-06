@@ -172,7 +172,10 @@ class Owner:
             else:
                 await send_error(ctx, error_ctx, error_ctx.error, num)
         else:
-            await ctx.send(' '.join(str(k) for k in self.bot.errors.keys()))
+            if self.bot.errors:
+                await ctx.send(' '.join(str(k) for k in self.bot.errors.keys()))
+            else:
+                await ctx.send('No errors.')
 
     @commands.command(hidden=True)
     @commands.is_owner()
