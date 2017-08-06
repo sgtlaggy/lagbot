@@ -128,7 +128,12 @@ class Images(BaseCog):
 
             embed = discord.Embed(description=fact or None)
             embed.set_image(url=image_url)
-        await ctx.send(embed=embed)
+        try:
+            await ctx.send(embed=embed)
+        except discord.HTTPException:
+            embed = discord.Embed(description=fact or None)
+            embed.set_footer(text='Failed getting a cat image.')
+            await ctx.send(embed=embed)
 
     @cat.command(name='facts', aliases=['fact'])
     async def cat_facts(self, ctx, count: integer = 1):
