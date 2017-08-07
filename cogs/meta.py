@@ -153,10 +153,11 @@ class Meta(BaseCog):
         perms = discord.Permissions()
         perms.update(kick_members=True,
                      ban_members=True,
+                     manage_roles=True,
+                     manage_messages=True,
                      read_messages=True,
                      read_message_history=True,
                      send_messages=True,
-                     manage_messages=True,
                      embed_links=True,
                      change_nickname=True,
                      add_reactions=True)
