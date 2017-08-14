@@ -3,6 +3,7 @@
 token = 'bot application token'
 game = 'playing game'
 debug_channel: int = None
+prefix = '!'
 
 source = 'https://github.com/mikevb1/discordbot'
 

@@ -20,7 +20,7 @@ async def command_prefix(bot, message):
     """Custom prefix function for guild-specific prefixes."""
     default = bot.default_prefix
     if message.guild is None:
-        return default
+        return commands.when_mentioned_or(default)(bot, message)
     async with bot.db_pool.acquire() as con:
         settings = await con.fetchrow('''
             SELECT * FROM prefixes WHERE guild_id = $1
@@ -40,11 +40,11 @@ async def command_prefix(bot, message):
 class LagBot(commands.Bot):
     def __init__(self, *args, debug=False, **kwargs):
         self._debug = debug
-        self.loop = kwargs.get('loop', asyncio.get_event_loop())
         self.game = config.game
         game = discord.Game(name=self.game)
         status = discord.Status.dnd if self._debug else discord.Status.online
-        super().__init__(*args, game=game, status=status, loop=self.loop, **kwargs)
+        super().__init__(*args, command_prefix=config.prefix,
+                         game=game, status=status, **kwargs)
         self._before_invoke = self._before_invoke_
         self._after_invoke = self._after_invoke_
         self.default_prefix = self.command_prefix

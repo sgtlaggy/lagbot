@@ -18,8 +18,6 @@ else:
 debug = any('debug' in arg.lower() for arg in sys.argv)
 logging.basicConfig(level=logging.INFO if debug else logging.WARNING)
 
-# Discord Client/Bot
-default_prefix = '!'
 help_attrs = {'hidden': True}
 initial_cogs = [f'cogs.{cog}' for cog in [
     'cog', 'images', 'management', 'meta',
@@ -28,7 +26,7 @@ if not debug:
     initial_cogs.append('cogs.botlist')
 
 if __name__ == '__main__':
-    bot = LagBot(command_prefix=default_prefix, help_attrs=help_attrs, debug=debug)
+    bot = LagBot(help_attrs=help_attrs, debug=debug)
 
     bot.loop.add_signal_handler(signal.SIGTERM, bot.logout_)
 
