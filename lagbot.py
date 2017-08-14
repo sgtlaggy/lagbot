@@ -26,7 +26,7 @@ async def command_prefix(bot, message):
             SELECT * FROM prefixes WHERE guild_id = $1
             ''', message.guild.id)
     if settings is None:
-        return default
+        return commands.when_mentioned_or(default)(bot, message)
     valid = [settings['prefix']]
     if settings['allow_default']:
         if isinstance(default, (tuple, list)):
@@ -34,7 +34,7 @@ async def command_prefix(bot, message):
         else:
             valid.append(default)
     valid.sort(reverse=True)
-    return valid
+    return commands.when_mentioned_or(*valid)(bot, message)
 
 
 class LagBot(commands.Bot):
