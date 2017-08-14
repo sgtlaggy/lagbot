@@ -184,17 +184,15 @@ class Meta(BaseCog):
                                                              self.oauth_url)
         embed = discord.Embed(description=description)
         embed.set_author(name=str(self.bot.app.owner), icon_url=self.bot.app.owner.avatar_url)
+        embed.add_field(name='Guilds', description=str(len(self.bot.guilds)))
         if callable(self.bot.command_prefix):
             valid_prefix = await self.bot.command_prefix(self.bot, ctx.message)
         else:
             valid_prefix = self.bot.command_prefix
         if isinstance(valid_prefix, list):
-            docs = 'Say ' + ' or '.join(f'{prefix}help' for prefix in valid_prefix)
+            docs = 'Say ' + ' or '.join(f'{prefix}help' for prefix in valid_prefix) + '.'
         else:
-            docs = f'Say {valid_prefix}help'
-        if config.userdocs is not None:
-            docs += f' or see [here]({config.userdocs})'
-        docs += '.'
+            docs = f'Say {valid_prefix}help.'
         embed.add_field(name='Documentation', value=docs)
         source = config.source
         if source:

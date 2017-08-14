@@ -5,7 +5,6 @@ game = 'playing game'
 debug_channel: int = None
 
 source = 'https://github.com/mikevb1/discordbot'
-userdocs = 'https://github.com/mikevb1/discordbot/tree/master/docs'
 
 dbotspw_key = 'bots.discord.pw api key'
 dbotsorg_key = 'discordbots.org api key'
