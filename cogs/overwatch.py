@@ -73,6 +73,8 @@ class InvalidBTag(Exception):
 class Hero:
     def __init__(self, name):
         self.api_name = name
+        self.portrait = 'https://blzgdapipro-a.akamaihd.net/hero/{}/hero-select-portrait.png'.format(
+            'soldier-76' if self.api_name == 'soldier76' else self.api_name)
         hero = _heroes.get(name)
         if hero:
             self.name = hero['name']
@@ -98,19 +100,6 @@ class Rank:
     @classmethod
     def get(cls, rank):
         return cls.default.format(cls.ranks[rank])
-
-
-class Portrait:
-    default = 'https://blzgdapipro-a.akamaihd.net/hero/{}/hero-select-portrait{}.png'
-
-    @classmethod
-    def get(cls, hero):
-        if hero == 'soldier76':
-            return cls.default.format('soldier-76', '')
-        elif hero == 'sombra':  # blame Blizzard
-            return cls.default.format(hero, '-d5121256f71c9d7dc7a434ac75be95d99942e8386ba7f8462f3e15d91223854c9b9adde42a3aca70715ab24326a7c27848151e8ab92a259ac7744d7f15a6d91b')
-        else:
-            return cls.default.format(hero, '')
 
 
 def stat_links(tag, region, platform):
@@ -336,7 +325,7 @@ class Overwatch(BaseCog):
             links = stat_links(tag, region, platform)
             embed.description = f'{platform.upper()}/{region.upper()} **{mode.name.title()}** Stats ([raw]({links["owapi"]}))'
             author_icon = stats['overall_stats']['avatar']
-            embed.set_thumbnail(url=Portrait.get(mp_hero))
+            embed.set_thumbnail(url=mp_hero.portrait)
             embed.add_field(name='Time Played', value=time_str(stats['game_stats']['time_played']))
             embed.add_field(name='Level', value=ow_level(stats['overall_stats']))
             if stats['competitive']:
