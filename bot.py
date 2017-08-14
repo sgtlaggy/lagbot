@@ -23,7 +23,7 @@ default_prefix = '!'
 help_attrs = {'hidden': True}
 initial_cogs = [f'cogs.{cog}' for cog in [
     'cog', 'images', 'management', 'meta',
-    'misc', 'overwatch', 'owner', 'tags']]
+    'misc', 'overwatch', 'owner']]
 if not debug:
     initial_cogs.append('cogs.botlist')
 

@@ -13,16 +13,6 @@ CREATE TABLE xkcd (
     img text,
     date date
 );
-CREATE TABLE tags (
-    name text PRIMARY KEY,
-    content text,
-    uses integer DEFAULT 0,
-    owner_id bigint,
-    modified_at timestamp DEFAULT (now() at time zone 'utc')
-);
-CREATE TABLE noshorttag (
-    guild_id bigint PRIMARY KEY
-);
 CREATE TABLE prefixes (
     guild_id bigint PRIMARY KEY,
     prefix text,
