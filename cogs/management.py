@@ -69,48 +69,6 @@ class Management(BaseCog):
 
     @commands.command()
     @commands.guild_only()
-    @commands.has_permissions(kick_members=True)
-    async def kick(self, ctx, member: discord.Member, *, reason=None):
-        """Kick user from server if you have permission.
-
-        You must have permission to kick members.
-        """
-        if reason is None:
-            reason = f'request by {ctx.message.author}'
-        else:
-            reason = f'{reason} -{ctx.message.author}'
-        try:
-            await ctx.guild.kick(member, reason=reason)
-        except discord.Forbidden:
-            await ctx.send("I don't have permission to kick.")
-        except discord.HTTPException:
-            await ctx.send('Kicking failed.')
-        else:
-            await ctx.send('\N{THUMBS UP SIGN}')
-
-    @commands.command()
-    @commands.guild_only()
-    @commands.has_permissions(ban_members=True)
-    async def ban(self, ctx, member: discord.Member, *, reason=None):
-        """Ban user from server.
-
-        You must have permission to ban members.
-        """
-        if reason is None:
-            reason = f'request by {ctx.message.author}'
-        else:
-            reason = f'{reason} -{ctx.message.author}'
-        try:
-            await ctx.guild.ban(member, reason=reason)
-        except discord.Forbidden:
-            await ctx.send("I don't have permission to ban.")
-        except discord.HTTPException:
-            await ctx.send('Banning failed.')
-        else:
-            await ctx.send('\N{THUMBS UP SIGN}')
-
-    @commands.command()
-    @commands.guild_only()
     @commands.bot_has_permissions(manage_messages=True)
     async def purge(self, ctx, count: integer, member: discord.Member=None, *, reason=None):
         """Purge up to 100 messages from the current channel.

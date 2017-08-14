@@ -151,9 +151,7 @@ class Meta(BaseCog):
     @property
     def oauth_url(self):
         perms = discord.Permissions()
-        perms.update(kick_members=True,
-                     ban_members=True,
-                     manage_roles=True,
+        perms.update(manage_roles=True,
                      manage_messages=True,
                      read_messages=True,
                      read_message_history=True,
