@@ -82,6 +82,20 @@ class Owner:
     async def __local_check(self, ctx):
         return await self.bot.is_owner(ctx.author)
 
+    @commands.command(aliases=['restart', 'kill'], hidden=True)
+    async def exit(self, ctx, code: int = None):
+        """Restart/kill the bot.
+
+        Optionally set exit code for custom handling.
+        """
+        codes = {'restart': 2, 'kill': 1}
+        code = codes.get(ctx.invoked_with, code)
+        if code is None:
+            await ctx.send('Invalid exit code.')
+            return
+        self.bot.exit_status = code
+        await self.bot.logout()
+
     @need_db
     @commands.command(hidden=True, name='eval')
     async def eval_(self, ctx, *, code: cleanup_code):
