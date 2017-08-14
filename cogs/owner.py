@@ -79,9 +79,11 @@ class Owner:
         else:
             return
 
+    async def __local_check(self, ctx):
+        return await self.bot.is_owner(ctx.author)
+
     @need_db
     @commands.command(hidden=True, name='eval')
-    @commands.is_owner()
     async def eval_(self, ctx, *, code: cleanup_code):
         """Alternative to `debug` that executes code inside a coroutine.
 
@@ -118,7 +120,6 @@ class Owner:
 
     @need_db
     @commands.command(hidden=True, aliases=['py'])
-    @commands.is_owner()
     async def debug(self, ctx, *, code: cleanup_code):
         """Evaluates code."""
         result = None
@@ -141,7 +142,6 @@ class Owner:
         await ctx.send(say)
 
     @commands.command(hidden=True, aliases=['edm'])
-    @commands.is_owner()
     @checks.dm_only()
     async def etell(self, ctx, num: int, *, content):
         """Respond to an error that occured."""
@@ -161,7 +161,6 @@ class Owner:
             await ctx.send(f'{num} {r.content}')
 
     @commands.command(hidden=True)
-    @commands.is_owner()
     @checks.dm_only()
     async def eshow(self, ctx, num: int = None):
         if num:
@@ -178,7 +177,6 @@ class Owner:
                 await ctx.send('No errors.')
 
     @commands.command(hidden=True)
-    @commands.is_owner()
     @checks.dm_only()
     async def eclose(self, ctx, num: int):
         try:
@@ -189,7 +187,6 @@ class Owner:
             await ctx.send(f'Closed error #{num}.')
 
     @commands.command(hidden=True)
-    @commands.is_owner()
     @checks.dm_only()
     async def eclear(self, ctx):
         self.bot.errors = {}
