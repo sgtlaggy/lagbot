@@ -89,8 +89,7 @@ class Images(BaseCog):
                 if isinstance(data, dict):
                     await self.xkcd_insert(ctx, data)
             except NotFound as e:
-                await ctx.send(e)
-                return
+                return await ctx.send(e)
 
             description = f'**Date:** {xkcd_date(data):%m/%d/%Y}\n{data["alt"]}'
             embed = discord.Embed(title=f'{data["num"]}: {data["safe_title"]}',
@@ -118,8 +117,7 @@ class Images(BaseCog):
             try:
                 image_url = await self.fetch_cat()
             except NotFound as e:
-                await ctx.send(e)
-                return
+                return await ctx.send(e)
 
             try:
                 fact = (await self.fetch_facts(1))[0]

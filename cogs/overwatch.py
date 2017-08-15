@@ -206,7 +206,6 @@ class Overwatch(BaseCog):
         btag = api_to_btag(tag)
         status, data = await self.bot.request(end.format(btag=tag, platform=platform), timeout=20)
         if status == 500:
-            await self.bot.app.owner.send(f'Blizzard broke OWAPI.\n{data["exc"]}')
             raise ServerError('Blizzard broke something. Please wait a bit before trying again.')
         elif status != 200:
             raise NotFound(f"Couldn't get stats for {btag}.")
@@ -316,7 +315,7 @@ class Overwatch(BaseCog):
         """
         tag, mode, region, platform = fix_arg_order(*args)
 
-        with ctx.typing():
+        async with ctx.typing():
             stats, heroes, tag, mode, region, platform = await self.get_all(ctx, tag, mode, region, platform)
 
             mp_hero, mp_time = next(most_played(heroes))
@@ -363,7 +362,7 @@ class Overwatch(BaseCog):
         """
         tag, mode, region, platform = fix_arg_order(*args)
 
-        with ctx.typing():
+        async with ctx.typing():
             stats, heroes, tag, mode, region, platform = await self.get_all(ctx, tag, mode, region, platform)
 
             message = [f'{platform.upper()}/{region.upper()} **{mode.name.title()}** hero stats:']
@@ -432,8 +431,7 @@ class Overwatch(BaseCog):
         """Change your BattleTag in the db."""
         new_tag = btag_to_api(tag)
         if new_tag is None:
-            await ctx.send(f'{tag} is not a valid BattleTag.')
-            return
+            return await ctx.send(f'{tag} is not a valid BattleTag.')
         async with ctx.con.transaction():
             res = await ctx.con.execute('''
                 UPDATE overwatch SET btag = $1 WHERE id = $2
@@ -464,8 +462,7 @@ class Overwatch(BaseCog):
         if region.lower() in REGIONS:
             new_region = region.lower()
         else:
-            await ctx.send(f'{region} is not a valid region.')
-            return
+            return await ctx.send(f'{region} is not a valid region.')
         async with ctx.con.transaction():
             res = await ctx.con.execute('''
                 UPDATE overwatch SET region = $1 WHERE id = $2
@@ -482,8 +479,7 @@ class Overwatch(BaseCog):
         if platform.lower() in PLATFORMS:
             new_platform = platform.lower()
         else:
-            await ctx.send(f'{platform} is not a valid platform.')
-            return
+            return await ctx.send(f'{platform} is not a valid platform.')
         async with ctx.con.transaction():
             res = await ctx.con.execute('''
                 UPDATE overwatch SET platform = $1 WHERE id = $2
@@ -510,15 +506,12 @@ class Overwatch(BaseCog):
     async def __error(self, ctx, exc):
         if isinstance(exc, commands.BadArgument):
             exc.handled = True
-            await ctx.send(exc)
-            return
+            return await ctx.send(exc)
         elif not isinstance(exc, commands.CommandInvokeError):
-            exc.handled = False
             return
         if isinstance(exc.original, (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag)):
             exc.handled = True
-            await ctx.send(exc.original)
-            return
+            return await ctx.send(exc.original)
 
 
 def setup(bot):

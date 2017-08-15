@@ -91,8 +91,7 @@ class Owner:
         codes = {'restart': 2, 'kill': 1}
         code = codes.get(ctx.invoked_with, code)
         if code is None:
-            await ctx.send('Invalid exit code.')
-            return
+            return await ctx.send('Invalid exit code.')
         self.bot.exit_status = code
         await self.bot.logout()
 
@@ -113,8 +112,7 @@ class Owner:
         try:
             exec(to_compile, env)
         except SyntaxError as e:
-            await ctx.send(self.eval_output('\n'.join(get_syntax_error(e).splitlines()[1:-1])))
-            return
+            return await ctx.send(self.eval_output('\n'.join(get_syntax_error(e).splitlines()[1:-1])))
 
         func = env['_func']
         try:
@@ -145,8 +143,7 @@ class Owner:
             if inspect.isawaitable(result):
                 result = await result
             if isinstance(result, discord.Embed):
-                await ctx.send(embed=result)
-                return
+                return await ctx.send(embed=result)
         except Exception as e:
             say = self.eval_output(exception_signature())
         else:

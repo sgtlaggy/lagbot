@@ -79,8 +79,7 @@ class Meta(BaseCog):
         """
         guild = ctx.guild
         if len(new_prefix) > 25:
-            await ctx.send('That prefix is too long, please choose a new one.')
-            return
+            return await ctx.send('That prefix is too long, please choose a new one.')
         async with ctx.con.transaction():
             await ctx.con.execute('''
                 INSERT INTO prefixes (guild_id, prefix, allow_default) VALUES ($1, $2, $3)
@@ -115,8 +114,7 @@ class Meta(BaseCog):
         """
         rec = await self.bot.get_guild_prefix(ctx.guild.id)
         if rec is None:
-            await ctx.send("A custom prefix hasn't been set for this guild.")
-            return
+            return await ctx.send("A custom prefix hasn't been set for this guild.")
 
         prefix, allow_default = rec['prefix'], rec['allow_default']
         valid = [prefix]

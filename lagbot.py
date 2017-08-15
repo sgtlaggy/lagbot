@@ -87,8 +87,7 @@ class LagBot(commands.Bot):
         if hasattr(self, 'start_time'):
             logging.info('Ready again.')
             self.resumes += 1
-            await self.set_game(self.game)
-            return
+            return await self.set_game(self.game)
         self.start_time = datetime.datetime.utcnow()
         self.app = await self.application_info()
         self.owner_id = self.app.owner.id

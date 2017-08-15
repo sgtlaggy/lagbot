@@ -35,8 +35,7 @@ class Management(BaseCog):
                 SELECT role_id FROM newrole WHERE guild_id = $1
                 ''', ctx.guild.id)
             if role_id is None:
-                await ctx.send('A role has not been set for this guild.')
-                return
+                return await ctx.send('A role has not been set for this guild.')
             role = discord.utils.get(ctx.guild.roles, id=role_id)
             if role is None:
                 async with ctx.con.transaction():
@@ -78,8 +77,7 @@ class Management(BaseCog):
         Note this only goes back through the last 1000 messages or 14 days.
         """
         if count > 100:
-            await ctx.send('Can only purge up to 100 messages.')
-            return
+            return await ctx.send('Can only purge up to 100 messages.')
         if reason is None:
             reason = f'request by {ctx.message.author}'
         else:
@@ -155,10 +153,9 @@ class Management(BaseCog):
             role = discord.utils.get(member.guild.roles, id=role_id)
             if role is None:
                 async with con.transaction():
-                    await con.execute('''
+                    return await con.execute('''
                         DELETE FROM newrole WHERE guild_id = $1
                         ''', member.guild.id)
-                return
         await member.add_roles(role, reason='New Member')
 
 
