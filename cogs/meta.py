@@ -87,6 +87,7 @@ class Meta(BaseCog):
                 ON CONFLICT (guild_id)
                 DO UPDATE SET (prefix, allow_default) = ($2, $3)
                 ''', guild.id, new_prefix, allow_default)
+        self.bot.invalidate_guild_prefix(guild.id)
         await ctx.send(f'Set custom prefix to "{new_prefix}".')
 
     @need_db
@@ -99,6 +100,7 @@ class Meta(BaseCog):
             res = await ctx.con.execute('''
                 DELETE FROM prefixes WHERE guild_id = $1
                 ''', guild.id)
+        self.bot.invalidate_guild_prefix(guild.id)
         if res[-1] == '0':
             await ctx.send("A custom prefix hasn't been set for this guild.")
         else:
@@ -111,9 +113,7 @@ class Meta(BaseCog):
 
         Also shows whether or not the default prefix can be used.
         """
-        rec = await ctx.con.fetchrow('''
-            SELECT * FROM prefixes WHERE guild_id = $1
-            ''', ctx.guild.id)
+        rec = await self.bot.get_guild_prefix(ctx.guild.id)
         if rec is None:
             await ctx.send("A custom prefix hasn't been set for this guild.")
             return
@@ -167,16 +167,7 @@ class Meta(BaseCog):
                                                              self.oauth_url)
         embed = discord.Embed(description=description)
         embed.set_author(name=str(self.bot.app.owner), icon_url=self.bot.app.owner.avatar_url)
-        embed.add_field(name='Guilds', description=str(len(self.bot.guilds)))
-        if callable(self.bot.command_prefix):
-            valid_prefix = await self.bot.command_prefix(self.bot, ctx.message)
-        else:
-            valid_prefix = self.bot.command_prefix
-        if isinstance(valid_prefix, list):
-            docs = 'Say ' + ' or '.join(f'{prefix}help' for prefix in valid_prefix) + '.'
-        else:
-            docs = f'Say {valid_prefix}help.'
-        embed.add_field(name='Documentation', value=docs)
+        embed.add_field(name='Guilds', value=str(len(self.bot.guilds)))
         source = config.source
         if source:
             embed.add_field(name='Source', value=f'See [here]({source}).')

@@ -10,31 +10,11 @@ import aiohttp
 import asyncpg
 
 from utils.utils import UPPER_PATH, TIME_BRIEF, TIME_LONG, send_error, tb_args, pluralize
+from utils.cache import cache
 import config
 
 
 Response = namedtuple('Response', 'status data')
-
-
-async def command_prefix(bot, message):
-    """Custom prefix function for guild-specific prefixes."""
-    default = bot.default_prefix
-    if message.guild is None:
-        return commands.when_mentioned_or(default)(bot, message)
-    async with bot.db_pool.acquire() as con:
-        settings = await con.fetchrow('''
-            SELECT * FROM prefixes WHERE guild_id = $1
-            ''', message.guild.id)
-    if settings is None:
-        return commands.when_mentioned_or(default)(bot, message)
-    valid = [settings['prefix']]
-    if settings['allow_default']:
-        if isinstance(default, (tuple, list)):
-            valid.extend(default)
-        else:
-            valid.append(default)
-    valid.sort(reverse=True)
-    return commands.when_mentioned_or(*valid)(bot, message)
 
 
 class LagBot(commands.Bot):
@@ -53,7 +33,7 @@ class LagBot(commands.Bot):
         if self._debug:
             self.command_prefix = '?!'
         else:
-            self.command_prefix = command_prefix
+            self.command_prefix = self._command_prefix
         useragent = 'Discord Bot'
         source = config.source
         if source is not None:
@@ -61,6 +41,32 @@ class LagBot(commands.Bot):
         self.http_ = aiohttp.ClientSession(loop=self.loop, headers={'User-Agent': useragent})
         self.db_pool = self.loop.run_until_complete(
             asyncpg.create_pool(database='lagbot', command_timeout=10, loop=self.loop))
+
+    @cache()
+    async def get_guild_prefix(self, guild_id):
+        async with self.db_pool.acquire() as con:
+            return await con.fetchrow('''
+                SELECT * FROM prefixes WHERE guild_id = $1
+                ''', guild_id)
+
+    invalidate_guild_prefix = get_guild_prefix.invalidate
+
+    async def _command_prefix(self, _, message):
+        """Custom prefix function for guild-specific prefixes."""
+        default = self.default_prefix
+        if message.guild is None:
+            return commands.when_mentioned_or(default)(self, message)
+        settings = await self.get_guild_prefix(message.guild.id)
+        if settings is None:
+            return commands.when_mentioned_or(default)(self, message)
+        valid = [settings['prefix']]
+        if settings['allow_default']:
+            if isinstance(default, (tuple, list)):
+                valid.extend(default)
+            else:
+                valid.append(default)
+        valid.sort(reverse=True)
+        return commands.when_mentioned_or(*valid)(self, message)
 
     async def logout(self):
         self.http_.close()
