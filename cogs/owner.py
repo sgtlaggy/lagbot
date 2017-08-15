@@ -155,57 +155,6 @@ class Owner:
             say = 'None'
         await ctx.send(say)
 
-    @commands.command(hidden=True, aliases=['edm'])
-    @checks.dm_only()
-    async def etell(self, ctx, num: int, *, content):
-        """Respond to an error that occured."""
-        try:
-            error_ctx = self.bot.errors[num]
-        except KeyError:
-            await ctx.send(f'There is no error #{num}.')
-            return
-        dest = error_ctx.channel if ctx.invoked_with == 'etell' else await error_ctx.author.create_dm()
-        await dest.send(content)
-        try:
-            r = await self.bot.wait_for('message', timeout=60,
-                                        check=lambda m: m.channel == dest and m.author == error_ctx.author)
-        except asyncio.TimeoutError:
-            pass
-        else:
-            await ctx.send(f'{num} {r.content}')
-
-    @commands.command(hidden=True)
-    @checks.dm_only()
-    async def eshow(self, ctx, num: int = None):
-        if num:
-            try:
-                error_ctx = self.bot.errors[num]
-            except KeyError:
-                await ctx.send(f'There is no error #{num}.')
-            else:
-                await send_error(ctx, error_ctx, error_ctx.error, num)
-        else:
-            if self.bot.errors:
-                await ctx.send(' '.join(str(k) for k in self.bot.errors.keys()))
-            else:
-                await ctx.send('No errors.')
-
-    @commands.command(hidden=True)
-    @checks.dm_only()
-    async def eclose(self, ctx, num: int):
-        try:
-            self.bot.errors.pop(num)
-        except KeyError:
-            await ctx.send(f'There is no error #{num}.')
-        else:
-            await ctx.send(f'Closed error #{num}.')
-
-    @commands.command(hidden=True)
-    @checks.dm_only()
-    async def eclear(self, ctx):
-        self.bot.errors = {}
-        await ctx.send('Cleared all errors.')
-
 
 def setup(bot):
     bot.add_cog(Owner(bot))

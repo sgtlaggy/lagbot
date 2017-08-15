@@ -29,7 +29,6 @@ class LagBot(commands.Bot):
         self._after_invoke = self._after_invoke_
         self.default_prefix = self.command_prefix
         self.resumes = 0
-        self.errors = {}
         if self._debug:
             self.command_prefix = '?!'
         else:
@@ -128,11 +127,6 @@ class LagBot(commands.Bot):
         msg = f'{ctx.message.content}\nin {"guild" if ctx.guild else "DM"}'
         tb = ''.join(traceback.format_exception(*tb_args(exc.original))).replace(UPPER_PATH, '...')
         logging.error('\n'.join((msg, tb)))
-        if not self._debug:
-            error_num = max(self.errors or (0,)) + 1
-            ctx.error = exc.original
-            self.errors[error_num] = ctx
-            await send_error(self.app.owner, ctx, exc.original, error_num)
 
     async def wait_for(self, *args, ignore_timeout=False, **kwargs):
         """Override default wait_for to allow ignoring TimeoutError."""
