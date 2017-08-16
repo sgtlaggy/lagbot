@@ -34,7 +34,7 @@ class CogManagement(BaseCog):
                 await self.reload_ext_helper(ctx, ext)
                 await ctx.send(f'Reloaded cog {ext}.')
             except Exception as e:
-                await ctx.send(f"Couldn't reload cog {ext}.")
+                await ctx.send(f"Couldn't reload cog {ext}.\n{e}")
                 logging.exception(f"Couldn't reload cog {ext}.")
 
     @reload_ext.command(name='all')
@@ -42,8 +42,7 @@ class CogManagement(BaseCog):
     async def reload_all_exts(self, ctx):
         """Reload all loaded extensions."""
         exts = [e.split('.')[1] for e in self.bot.extensions.keys()]
-        await asyncio.gather(*[self.reload_ext_helper(ctx, ext) for ext in exts])
-        await ctx.send('Reloaded all cogs.')
+        await ctx.invoke(self.reload_ext, *exts)
 
     @commands.command(name='load', hidden=True)
     @commands.is_owner()
@@ -58,7 +57,7 @@ class CogManagement(BaseCog):
                 self.bot.load_extension(mod)
                 await ctx.send(f'Loaded cog {ext}.')
             except Exception as e:
-                await ctx.send(f"Couldn't load cog {ext}.")
+                await ctx.send(f"Couldn't load cog {ext}.\n{e}")
                 logging.exception(f"Couldn't load cog {ext}.")
 
     @commands.command(name='unload', hidden=True)
@@ -74,7 +73,7 @@ class CogManagement(BaseCog):
                 self.bot.unload_extension(mod)
                 await ctx.send(f'Unloaded cog {ext}.')
             except Exception as e:
-                await ctx.send(f"Couldn't unload cog {ext}.")
+                await ctx.send(f"Couldn't unload cog {ext}.\n{e}")
                 logging.exception(f"Couldn't unload cog {ext}.")
 
 
