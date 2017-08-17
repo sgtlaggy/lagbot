@@ -21,16 +21,11 @@ class Meta(BaseCog):
         if new_name:
             await self.bot.edit_profile(username=new_name)
 
-    @manage.command(aliases=['game'])
+    @manage.command()
     @commands.is_owner()
-    async def status(self, ctx, *, new_status=None):
+    async def game(self, ctx, *, name=None):
         """Change bot's online status or game name."""
-        if ctx.invoked_with == 'game':
-            await self.bot.set_game(new_status)
-        else:
-            await self.bot.change_presence(
-                game=discord.Game(name=self.bot.game),
-                status=getattr(discord.Status, new_status or '', discord.Status.online))
+        await self.bot.set_game(name)
 
     async def set_avatar_by_url(self, url):
         status, image = await self.bot.request(url, 'read')

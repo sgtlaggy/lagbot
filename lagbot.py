@@ -9,7 +9,7 @@ import discord
 import aiohttp
 import asyncpg
 
-from utils.utils import UPPER_PATH, TIME_BRIEF, TIME_LONG, send_error, tb_args, pluralize
+from utils.utils import UPPER_PATH, TIME_BRIEF, TIME_LONG, tb_args, pluralize
 from utils.cache import cache
 import config
 
@@ -163,22 +163,10 @@ class LagBot(commands.Bot):
         else:
             return await self._request(*args, **kwargs)
 
-    async def set_game(self, game=None):
-        for guild in self.guilds:
-            if isinstance(guild.me, discord.Member):
-                status = guild.me.status
-                break
-        else:
-            status = None
-
-        if game is None:
-            if self.resumes > 0:
-                game = 'Resumes:'
-        if isinstance(game, str):
-            name = game
+    async def set_game(self, name):
+        if name is not None:
             game = discord.Game(name=f'{name} {self.resumes or ""}')
-
-        await self.change_presence(game=game, status=status)
+        await self.change_presence(game=game, status=discord.Status.dnd if self._debug else discord.Status.online)
         self.game = name
 
     def get_uptime(self, brief=False):
