@@ -88,7 +88,6 @@ class Hero:
 
 
 class Rank:
-    default = 'https://blzgdapipro-a.akamaihd.net/game/rank-icons/season-2/rank-{}.png'
     ranks = {'bronze': 1,
              'silver': 2,
              'gold': 3,
@@ -99,7 +98,7 @@ class Rank:
 
     @classmethod
     def get(cls, rank):
-        return cls.default.format(cls.ranks[rank])
+        return f'https://blzgdapipro-a.akamaihd.net/game/rank-icons/season-2/rank-{cls.ranks[rank]}.png'
 
 
 def stat_links(tag, region, platform):
@@ -317,33 +316,35 @@ class Overwatch(BaseCog):
 
         async with ctx.typing():
             stats, heroes, tag, mode, region, platform = await self.get_all(ctx, tag, mode, region, platform)
-
+            game, overall = stats['game_stats'], stats['overall_stats']
             mp_hero, mp_time = next(most_played(heroes))
             mp_hero = Hero(mp_hero)
-            embed = discord.Embed(color=mp_hero.color)
             links = stat_links(tag, region, platform)
-            embed.description = f'{platform.upper()}/{region.upper()} **{mode.name.title()}** Stats ([raw]({links["owapi"]}))'
-            author_icon = stats['overall_stats']['avatar']
+
+            embed = discord.Embed(color=mp_hero.color)
+            embed.description = '{}/{} **{}** Stats ([raw]({[owapi]}))'.format(
+                platform.upper(), region.upper(), mode.name.title(), links)
+            author_icon = overall['avatar']
             embed.set_thumbnail(url=mp_hero.portrait)
-            embed.add_field(name='Time Played', value=time_str(stats['game_stats']['time_played']))
-            embed.add_field(name='Level', value=ow_level(stats['overall_stats']))
+            embed.add_field(name='Time Played', value=time_str(game['time_played']))
+            embed.add_field(name='Level', value=ow_level(overall))
             if stats['competitive']:
-                tier = stats['overall_stats']['tier']
+                tier = overall['tier']
                 if tier is not None:
-                    rank = '{0[tier]} {0[comprank]}'.format(stats['overall_stats']).title()
+                    rank = f'{overall["tier"]} {overall["comprank"]}'.title()
                     author_icon = Rank.get(tier)
                 else:
                     rank = 'Unranked'
                 embed.add_field(name='Competitive Rank', value=rank)
             embed.add_field(name='Most Played Hero', value=' - '.join([mp_hero.name, mp_time]))
-            if stats['overall_stats'].get('games'):
-                embed.add_field(name='Games Played', value=stats['overall_stats']['games'])
-                embed.add_field(name='Games Won', value=stats['overall_stats']['wins'])
-                embed.add_field(name='Win Rate', value=f'{stats["overall_stats"]["win_rate"]}%')
+            if overall.get('games'):
+                embed.add_field(name='Games Played', value=overall['games'])
+                embed.add_field(name='Games Won', value=overall['wins'])
+                embed.add_field(name='Win Rate', value=f'{overall["win_rate"]}%')
             else:
-                embed.add_field(name='Games Won', value=stats['overall_stats']['wins'])
-            embed.add_field(name='Kill/Death', value=round(stats['game_stats']['kpd'], 2))
-            embed.add_field(name='Environmental Deaths', value=int(stats['game_stats'].get('environmental_deaths', 0)))
+                embed.add_field(name='Games Won', value=overall['wins'])
+            embed.add_field(name='Kill/Death', value=round(game['kpd'], 2))
+            embed.add_field(name='Environmental Deaths', value=int(game.get('environmental_deaths', 0)))
             embed.set_author(name=api_to_btag(tag), icon_url=author_icon, url=links['official'])
         await ctx.send(embed=embed)
 
