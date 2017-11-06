@@ -18,5 +18,7 @@ CREATE TABLE prefixes (
 );
 CREATE TABLE newrole (
     guild_id bigint PRIMARY KEY,
-    role_id bigint
+    role_id bigint,
+    autoremove boolean DEFAULT FALSE,
+    autoadd boolean DEFAULT TRUE
 );
