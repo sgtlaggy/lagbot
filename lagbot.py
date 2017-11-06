@@ -39,7 +39,7 @@ class LagBot(commands.Bot):
             useragent += ' ' + source
         self.http_ = aiohttp.ClientSession(loop=self.loop, headers={'User-Agent': useragent})
         self.db_pool = self.loop.run_until_complete(
-            asyncpg.create_pool(database='lagbot', command_timeout=10, loop=self.loop))
+            asyncpg.create_pool(dsn=config.pg_dsn, command_timeout=10, loop=self.loop))
 
     @cache()
     async def get_guild_prefix(self, guild_id):

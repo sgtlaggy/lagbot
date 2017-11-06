@@ -1,5 +1,3 @@
-CREATE DATABASE lagbot;
-\c lagbot
 CREATE TABLE overwatch (
     id bigint PRIMARY KEY,
     btag text,
