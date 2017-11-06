@@ -5,7 +5,7 @@ game = 'playing game'
 debug_channel: int = None
 prefix = '!'
 
-source = 'https://github.com/mikevb1/discordbot'
+source = 'https://github.com/mikevb1/lagbot'
 
 dbotspw_key = 'bots.discord.pw api key'
 dbotsorg_key = 'discordbots.org api key'
