@@ -28,7 +28,11 @@ if not debug:
 if __name__ == '__main__':
     bot = LagBot(help_attrs=help_attrs, debug=debug)
 
-    bot.loop.add_signal_handler(signal.SIGTERM, bot.logout_)
+    # this is mainly for use with service managers
+    try:
+        bot.loop.add_signal_handler(signal.SIGTERM, bot.logout_)
+    except NotImplementedError:  # most likely Windows
+        pass
 
     for cog in initial_cogs:
         try:
