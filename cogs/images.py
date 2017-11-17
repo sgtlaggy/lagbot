@@ -13,6 +13,15 @@ from cogs.base import BaseCog
 FACTS = 'https://catfact.ninja/facts?limit={count}'
 
 
+def make_xkcd_url(num='', api=True):
+    url = 'http://xkcd.com/'
+    if num:
+        url += str(num) + '/'
+    if api:
+        url += 'info.0.json'
+    return url
+
+
 def xkcd_date(data):
     if 'date' in data:  # data is an asyncpg record
         date = data['date']
@@ -23,14 +32,6 @@ def xkcd_date(data):
 
 class Images(BaseCog):
     """Commands to fetch images from various sources."""
-    def make_xkcd_url(self, num='', api=True):
-        url = 'http://xkcd.com/'
-        if num:
-            url += str(num) + '/'
-        if api:
-            url += 'info.0.json'
-        return url
-
     async def fetch_xkcd(self, ctx, num=''):
         if num:
             if num in {'r', 'rand', 'random'}:
@@ -54,7 +55,7 @@ class Images(BaseCog):
                 ''')
             if rec:
                 return rec
-        url = self.make_xkcd_url(num)
+        url = make_xkcd_url(num)
         try:
             status, data = await self.bot.request(url)
         except asyncio.TimeoutError:
@@ -93,7 +94,7 @@ class Images(BaseCog):
 
             description = f'**Date:** {xkcd_date(data):%m/%d/%Y}\n{data["alt"]}'
             embed = discord.Embed(title=f'{data["num"]}: {data["safe_title"]}',
-                                  url=self.make_xkcd_url(data['num'], api=False),
+                                  url=make_xkcd_url(data['num'], api=False),
                                   description=description)
             embed.set_image(url=data['img'])
         await ctx.send(embed=embed)
