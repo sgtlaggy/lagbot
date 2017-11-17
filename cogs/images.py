@@ -50,9 +50,14 @@ class Images(BaseCog):
             if rec:
                 return rec
         else:
+            last_date = datetime.date.today()
+            for _ in range(3):
+                if last_date.weekday() in (0, 2, 4):
+                    break
+                last_date = last_date - datetime.timedelta(days=1)
             rec = await ctx.con.fetchrow('''
-                SELECT * FROM xkcd WHERE date = 'today'
-                ''')
+                SELECT * FROM xkcd WHERE date = $1
+                ''', last_date)
             if rec:
                 return rec
         url = make_xkcd_url(num)
