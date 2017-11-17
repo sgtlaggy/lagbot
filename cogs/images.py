@@ -38,7 +38,7 @@ class Images(BaseCog):
                 url = 'https://c.xkcd.com/random/comic/'
                 try:
                     async with self.bot.http_.get(url, timeout=10) as resp:
-                        num = resp.url.split('/')[-2]
+                        num = resp.url.parts[1]
                 except TimeoutError:
                     raise NotFound('Could not get comic.')
             try:
