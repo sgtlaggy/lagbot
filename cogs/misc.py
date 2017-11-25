@@ -148,7 +148,8 @@ class Misc(BaseCog):
             return
         chars = unicodedata.normalize('NFC', chars)
         if len(chars) > 25:
-            return await ctx.send('Too many emoji.')
+            await ctx.send('Too many emoji.')
+            return
         embed = discord.Embed()
         for char in chars:
             uc = hex(ord(char))[2:]

@@ -123,7 +123,8 @@ class Images(BaseCog):
             try:
                 image_url = await self.fetch_cat()
             except NotFound as e:
-                return await ctx.send(e)
+                await ctx.send(e)
+                return
 
             try:
                 fact = (await self.fetch_facts(1))[0]

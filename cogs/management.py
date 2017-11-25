@@ -36,7 +36,8 @@ class Management(BaseCog):
                 SELECT role_id FROM newrole WHERE guild_id = $1
                 ''', ctx.guild.id)
             if role_id is None:
-                return await ctx.send('A role has not been set for this guild.')
+                await ctx.send('A role has not been set for this guild.')
+                return
             role = discord.utils.get(ctx.guild.roles, id=role_id)
             if role is None:
                 async with ctx.con.transaction():
@@ -111,7 +112,8 @@ class Management(BaseCog):
             SELECT EXISTS(*) FROM newrole WHERE guild_id = $1
             ''', ctx.guild.id)
         if not exists:
-            return await ctx.send('New role is not set for this guild.')
+            await ctx.send('New role is not set for this guild.')
+            return
         async with ctx.con.transaction():
             await ctx.con.execute('''
                 DELETE FROM newrole WHERE guild_id = $1
@@ -129,7 +131,8 @@ class Management(BaseCog):
         Note this only goes back through the last 1000 messages or 14 days.
         """
         if count > 100:
-            return await ctx.send('Can only purge up to 100 messages.')
+            await ctx.send('Can only purge up to 100 messages.')
+            return
         message = ctx.message
         author = message.author
         channel = message.channel
@@ -201,9 +204,10 @@ class Management(BaseCog):
             role = discord.utils.get(member.guild.roles, id=role_id)
             if role is None:
                 async with con.transaction():
-                    return await con.execute('''
+                    await con.execute('''
                         DELETE FROM newrole WHERE guild_id = $1
                         ''', member.guild.id)
+                    return
         await member.add_roles(role, reason='New Member')
 
     async def on_member_update(self, before, after):

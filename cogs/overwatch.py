@@ -432,7 +432,8 @@ class Overwatch(BaseCog):
         """Change your BattleTag in the db."""
         new_tag = btag_to_api(tag)
         if new_tag is None:
-            return await ctx.send(f'{tag} is not a valid BattleTag.')
+            await ctx.send(f'{tag} is not a valid BattleTag.')
+            return
         async with ctx.con.transaction():
             res = await ctx.con.execute('''
                 UPDATE overwatch SET btag = $1 WHERE id = $2
@@ -463,7 +464,8 @@ class Overwatch(BaseCog):
         if region.lower() in REGIONS:
             new_region = region.lower()
         else:
-            return await ctx.send(f'{region} is not a valid region.')
+            await ctx.send(f'{region} is not a valid region.')
+            return
         async with ctx.con.transaction():
             res = await ctx.con.execute('''
                 UPDATE overwatch SET region = $1 WHERE id = $2
@@ -480,7 +482,8 @@ class Overwatch(BaseCog):
         if platform.lower() in PLATFORMS:
             new_platform = platform.lower()
         else:
-            return await ctx.send(f'{platform} is not a valid platform.')
+            await ctx.send(f'{platform} is not a valid platform.')
+            return
         async with ctx.con.transaction():
             res = await ctx.con.execute('''
                 UPDATE overwatch SET platform = $1 WHERE id = $2
@@ -507,12 +510,14 @@ class Overwatch(BaseCog):
     async def __error(self, ctx, exc):
         if isinstance(exc, commands.BadArgument):
             exc.handled = True
-            return await ctx.send(exc)
+            await ctx.send(exc)
+            return
         elif not isinstance(exc, commands.CommandInvokeError):
             return
         if isinstance(exc.original, (NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag)):
             exc.handled = True
-            return await ctx.send(exc.original)
+            await ctx.send(exc.original)
+            return
 
 
 def setup(bot):
