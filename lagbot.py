@@ -17,22 +17,38 @@ import config
 Response = namedtuple('Response', 'status data')
 
 
+async def command_prefix(bot, message):
+    """Custom prefix function for guild-specific prefixes."""
+    default = config.prefix
+    if message.guild is None:
+        return default
+    settings = await bot.get_guild_prefix(message.guild.id)
+    if settings is None:
+        return commands.when_mentioned_or(default)(bot, message)
+    if settings['prefix'] is None:
+        print('prefix is None')
+        return commands.when_mentioned(bot, message)
+    valid = [settings['prefix']]
+    if settings['allow_default']:
+        if isinstance(default, (tuple, list)):
+            valid.extend(default)
+        else:
+            valid.append(default)
+    valid.sort(reverse=True)
+    return commands.when_mentioned_or(*valid)(bot, message)
+
+
 class LagBot(commands.Bot):
     def __init__(self, *args, debug=False, **kwargs):
         self._debug = debug
         self.game = config.game
         game = discord.Game(name=self.game)
         status = discord.Status.dnd if self._debug else discord.Status.online
-        super().__init__(*args, command_prefix=config.prefix,
+        super().__init__(*args, command_prefix=command_prefix,
                          game=game, status=status, **kwargs)
         self._before_invoke = self._before_invoke_
         self._after_invoke = self._after_invoke_
-        self.default_prefix = self.command_prefix
         self.resumes = 0
-        if self._debug:
-            self.command_prefix = '?!'
-        else:
-            self.command_prefix = self._command_prefix
         useragent = 'Discord Bot'
         source = config.source
         if source is not None:
@@ -49,23 +65,6 @@ class LagBot(commands.Bot):
                 ''', guild_id)
 
     invalidate_guild_prefix = get_guild_prefix.invalidate
-
-    async def _command_prefix(self, _, message):
-        """Custom prefix function for guild-specific prefixes."""
-        default = self.default_prefix
-        if message.guild is None:
-            return commands.when_mentioned_or(default)(self, message)
-        settings = await self.get_guild_prefix(message.guild.id)
-        if settings is None:
-            return commands.when_mentioned_or(default)(self, message)
-        valid = [settings['prefix']]
-        if settings['allow_default']:
-            if isinstance(default, (tuple, list)):
-                valid.extend(default)
-            else:
-                valid.append(default)
-        valid.sort(reverse=True)
-        return commands.when_mentioned_or(*valid)(self, message)
 
     async def logout(self):
         self.http_.close()

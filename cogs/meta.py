@@ -115,7 +115,7 @@ class Meta(BaseCog):
 
         prefix, allow_default = rec['prefix'], rec['allow_default']
         valid = [prefix]
-        default = self.bot.default_prefix
+        default = config.prefix
         if allow_default:
             if isinstance(default, (tuple, list)):
                 valid.extend(default)
@@ -127,6 +127,22 @@ class Meta(BaseCog):
         embed.add_field(name='Allow Default', value=str(rec['allow_default']))
         embed.add_field(name='Valid Prefixes', value='\n'.join(valid))
         await ctx.send(embed=embed)
+
+    @need_db
+    @prefix.command()
+    async def disable(self, ctx):
+        """Disable prefix for this guild. Only invoke commands with @LagBot"""
+        guild = ctx.guild
+        async with ctx.con.transaction():
+            await ctx.con.execute('''
+                INSERT INTO prefixes (guild_id) VALUES ($1)
+                ON CONFLICT (guild_id)
+                DO UPDATE SET prefix = NULL
+                ''', guild.id)
+        self.bot.invalidate_guild_prefix(guild.id)
+        await ctx.send('\n'.join(['Prefix has been disabled.',
+                                  'You can now only invoke commands by mention.',
+                                  f'{ctx.bot.user.mention} command']))
 
     @property
     def oauth_url(self):
