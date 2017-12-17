@@ -21,6 +21,11 @@ def date(argument):
 
 class Management(BaseCog):
     """Admin/moderation commands."""
+
+    def __init__(self, bot):
+        super().__init__(bot)
+        self.tts = {}
+
     @need_db
     @commands.group(invoke_without_command=True)
     @commands.guild_only()
@@ -164,6 +169,17 @@ class Management(BaseCog):
                 await ctx.send(pluralize(f'Removed {len(to_remove)} message{{}}.'))
 
     @commands.command()
+    async def autotts(self, ctx, toggle: bool = None):
+        """Automatically makes every message sent to this channel TTS."""
+        if toggle is None:
+            status = 'enabled' if self.tts.get(ctx.channel.id) else 'disabled'
+            await ctx.send(f'AutoTTS is {status} for this channel.')
+            return
+        self.tts[ctx.channel.id] = toggle
+        status = 'enabled' if toggle else 'disabled'
+        await ctx.send(f'AutoTTS is now {status} for this channel.')
+
+    @commands.command()
     @commands.has_permissions(manage_messages=True)
     async def nostalgia(self, ctx, date: date = None, *, channel: discord.TextChannel = None):
         """Pins an old message from a specific date.
@@ -191,6 +207,16 @@ class Management(BaseCog):
         if isinstance(error, commands.BadArgument):
             await ctx.send(error)
 
+    async def on_message(self, message):
+        view = commands.view.StringView(message.content)
+        if self.tts.get(message.channel.id) and message.author.id != self.bot.user.id and \
+                not any(view.skip_string(p) for p in await bot.command_prefix(bot, msg)) and not message.tts:
+            try:
+                await message.delete()
+            except:
+                pass
+            await message.channel.send(f'{message.author.name} says {message.content}', tts=True)
+
     async def on_member_join(self, member):
         """Automatically assign roles if guild has a role set through `newrole` command."""
         if not member.guild.me.guild_permissions.manage_roles:
@@ -215,7 +241,7 @@ class Management(BaseCog):
         len_before = len(before.roles)
         len_after = len(after.roles)
         if not after.guild.me.guild_permissions.manage_roles or \
-                len(before.roles) == len(after.roles):
+                len_before == len_after:
             return
         async with self.bot.db_pool.acquire() as con:
             settings = await con.fetchrow('''
