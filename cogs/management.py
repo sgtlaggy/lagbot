@@ -35,6 +35,7 @@ class Management(BaseCog):
 
         Call without a role to see current role.
         You can pass role as case-sensitive role name or role ID to avoid mentions.
+        My bot integration role must be higher than the new user role.
         """
         if role is None:
             role_id = await ctx.con.fetchval('''
@@ -60,6 +61,9 @@ class Management(BaseCog):
                     UPDATE SET role_id = $2 WHERE newrole.guild_id = $1
                     ''', ctx.guild.id, role.id)
             await ctx.send(f'The role "{role.name}" will be given to new members.')
+        bot_role = discord.utils.get(ctx.me.roles, managed=True)
+        if role is not None and role.position > bot_role.position:
+            await ctx.send(f'Please move "{role}" above "{bot_role}" in the role list.')
 
     @need_db
     @newrole.command()
@@ -233,23 +237,31 @@ class Management(BaseCog):
                     await con.execute('''
                         DELETE FROM newrole WHERE guild_id = $1
                         ''', member.guild.id)
-                    return
+                return
         await member.add_roles(role, reason='New Member')
 
     async def on_member_update(self, before, after):
         """Remove new role when user is assigned another role."""
         len_before = len(before.roles)
         len_after = len(after.roles)
-        if not after.guild.me.guild_permissions.manage_roles or \
-                len_before == len_after:
+        guild = after.guild
+        if not guild.me.guild_permissions.manage_roles or len_before == len_after:
             return
         async with self.bot.db_pool.acquire() as con:
             settings = await con.fetchrow('''
                 SELECT * FROM newrole WHERE guild_id = $1
-                ''', after.guild.id)
-        if settings is None or (not settings['autoremove'] and not settings['autoadd']):
+                ''', guild.id)
+            if settings is None or not (settings['autoremove'] or settings['autoadd']):
+                return
+            newrole = discord.utils.get(guild.roles, id=settings['role_id'])
+            if newrole is None:
+                async with con.transaction():
+                    await con.execute('''
+                        DELETE FROM newrole WHERE guild_id = $1
+                        ''', member.guild.id)
+                return
+        if newrole.position > guild.me.top_role.position:
             return
-        newrole = discord.utils.get(before.roles, id=settings['role_id'])
         if settings['autoremove'] and len_after > len_before:
             if newrole not in after.roles:
                 return
