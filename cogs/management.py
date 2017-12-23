@@ -70,7 +70,7 @@ class Management(BaseCog):
     @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     async def autoadd(self, ctx, toggle: bool = None):
-        """Check or set whether to automatically add the new role. Default: enabled
+        """Check or set whether to automatically add the new role.
 
         If enabled, the new role will automatically be added if a user has all other roles removed.
         """
@@ -80,20 +80,20 @@ class Management(BaseCog):
         if state is None:
             await ctx.send('New role is not set for this guild.')
         elif toggle is None:
-            await ctx.send(f'New role autoremoval is set to {"enabled" if state else "disabled"}')
+            await ctx.send(f'New role autoadd is set to {"enabled" if state else "disabled"}')
         else:
             async with ctx.con.transaction():
                 await ctx.con.execute('''
                     UPDATE newrole SET autoadd = $1 WHERE guild_id = $2
                     ''', toggle, ctx.guild.id)
-            await ctx.send(f'New role removal is now {"enabled" if toggle else "disabled"}')
+            await ctx.send(f'New role adding is now {"enabled" if toggle else "disabled"}')
 
     @need_db
     @newrole.command()
     @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
     async def autoremove(self, ctx, toggle: bool = None):
-        """Check or set whether to automatically remove the new role. Default: disabled
+        """Check or set whether to automatically remove the new role.
 
         If enabled, the new role will automatically be removed when the user is assigned another role.
         """
@@ -118,7 +118,7 @@ class Management(BaseCog):
     async def off(self, ctx):
         """Stop automically giving new members a role."""
         exists = await ctx.con.fetchval('''
-            SELECT EXISTS(*) FROM newrole WHERE guild_id = $1
+            SELECT EXISTS(SELECT 1 FROM newrole WHERE guild_id = $1)
             ''', ctx.guild.id)
         if not exists:
             await ctx.send('New role is not set for this guild.')
