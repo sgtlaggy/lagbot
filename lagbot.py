@@ -45,7 +45,7 @@ class LagBot(commands.Bot):
         game = discord.Game(name=self.game)
         status = discord.Status.dnd if self._debug else discord.Status.online
         super().__init__(*args, command_prefix=command_prefix,
-                         game=game, status=status, **kwargs)
+                         activity=game, status=status, **kwargs)
         self._before_invoke = self._before_invoke_
         self._after_invoke = self._after_invoke_
         self.resumes = 0
@@ -165,7 +165,7 @@ class LagBot(commands.Bot):
     async def set_game(self, name):
         if name is not None:
             game = discord.Game(name=f'{name} {self.resumes or ""}')
-        await self.change_presence(game=game, status=discord.Status.dnd if self._debug else discord.Status.online)
+        await self.change_presence(activity=game, status=discord.Status.dnd if self._debug else discord.Status.online)
         self.game = name
 
     def get_uptime(self, brief=False):
