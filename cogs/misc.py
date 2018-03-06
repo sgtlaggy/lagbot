@@ -2,15 +2,20 @@ from collections import OrderedDict
 import unicodedata
 import datetime
 import random
-import logging
+import string
 
 from discord.ext import commands
 import discord
-import zenhan
 
 from utils.utils import integer, pluralize
 from cogs.base import BaseCog
 from utils import dice
+
+
+_all_chars = string.punctuation + string.digits + string.ascii_letters
+_chars = {c: ord(c) + 65248 for c in _all_chars}
+_chars[' '] = ord(' ') + 12256
+FW_TRANS = str.maketrans(_chars)
 
 
 def fancy_time(orig_time, utc=False):
@@ -169,7 +174,7 @@ class Misc(BaseCog):
             await ctx.message.delete()
         except:
             pass
-        await ctx.send(zenhan.h2z(chars))
+        await ctx.send(chars.translate(FW_TRANS))
 
     @commands.command(usage='<rgb/hex>')
     async def color(self, ctx, *, color: hex_or_rgb):
