@@ -26,7 +26,6 @@ async def command_prefix(bot, message):
     if settings is None:
         return commands.when_mentioned_or(default)(bot, message)
     if settings['prefix'] is None:
-        print('prefix is None')
         return commands.when_mentioned(bot, message)
     valid = [settings['prefix']]
     if settings['allow_default']:
