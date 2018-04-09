@@ -158,7 +158,7 @@ class Meta(BaseCog):
         return discord.utils.oauth_url(self.bot.app.id, permissions=perms)
 
     @commands.command()
-    async def join(self, ctx):
+    async def invite(self, ctx):
         """Add bot to one of your servers.
 
         Bots can no longer accept instant invite links.

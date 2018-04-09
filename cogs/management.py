@@ -172,6 +172,48 @@ class Management(BaseCog):
             else:
                 await ctx.send(pluralize(f'Removed {len(to_remove)} message{{}}.'))
 
+    @commands.command(aliases=['join'])
+    @commands.guild_only()
+    async def addrole(self, ctx: commands.Context, *, name):
+        """Add yourself to a role/group.
+
+        To make a role available to these commands, it should have no permissions granted.
+        """
+        name = name.lower()
+        for r in ctx.guild.roles:
+            if r.name.lower() == name and r.permissions == discord.Permissions.none():
+                role = r
+                break
+            elif r.name.lower() == name:
+                await ctx.send('That role is not available for use with this command.')
+                return
+        else:
+            await ctx.send('That role does not exist.')
+            return
+        await ctx.author.add_roles(role)
+        await ctx.send(f'Added role "{role}".')
+
+    @commands.command(aliases=['leave'])
+    @commands.guild_only()
+    async def removerole(self, ctx, *, name):
+        """Remove yourself from a role/group.
+
+        To make a role available to these commands, it should have no permissions granted.
+        """
+        name = name.lower()
+        for r in ctx.author.roles:
+            if r.name.lower() == name and r.permissions == discord.Permissions.none():
+                role = r
+                break
+            elif r.name.lower() == name:
+                await ctx.send('That role is not available for use with this command.')
+                return
+        else:
+            await ctx.send('You do not have that role.')
+            return
+        await ctx.author.remove_roles(role)
+        await ctx.send(f'Removed role "{role}".')
+
     @commands.command()
     async def autotts(self, ctx, toggle: bool = None):
         """Automatically makes every message sent to this channel TTS."""
