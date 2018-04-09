@@ -172,7 +172,7 @@ class Management(BaseCog):
             else:
                 await ctx.send(pluralize(f'Removed {len(to_remove)} message{{}}.'))
 
-    @commands.command(aliases=['join'])
+    @commands.command(aliases=['join', 'add'])
     @commands.guild_only()
     async def addrole(self, ctx: commands.Context, *, name):
         """Add yourself to a role/group.
@@ -193,7 +193,7 @@ class Management(BaseCog):
         await ctx.author.add_roles(role)
         await ctx.send(f'Added role "{role}".')
 
-    @commands.command(aliases=['leave'])
+    @commands.command(aliases=['leave', 'remove'])
     @commands.guild_only()
     async def removerole(self, ctx, *, name):
         """Remove yourself from a role/group.
