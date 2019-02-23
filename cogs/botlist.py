@@ -2,6 +2,8 @@ import asyncio
 import logging
 import json
 
+from discord.ext.commands import Cog
+
 from .base import BaseCog
 import config
 
@@ -44,9 +46,9 @@ class BotList(BaseCog):
                 else:
                     logging.info(f'{site} returned {resp.status} for\n{json.dumps(dbots_payload, indent=2)}')
 
-    on_ready = update
-    on_guild_join = update
-    on_guild_remove = update
+    on_ready = Cog.listener('on_ready')(update)
+    on_guild_join = Cog.listener('on_guild_join')(update)
+    on_guild_remove = Cog.listener('on_guild_remove')(update)
 
 
 def setup(bot):

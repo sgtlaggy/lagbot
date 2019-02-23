@@ -248,16 +248,18 @@ class Management(BaseCog):
         if isinstance(error, commands.BadArgument):
             await ctx.send(error)
 
+    @commands.Cog.listener()
     async def on_message(self, message):
         view = commands.view.StringView(message.content)
         if self.tts.get(message.channel.id) and message.author.id != self.bot.user.id and \
-                not any(view.skip_string(p) for p in await bot.command_prefix(bot, msg)) and not message.tts:
+                not any(view.skip_string(p) for p in await self.bot.command_prefix(self.bot, message)) and not message.tts:
             try:
                 await message.delete()
             except:
                 pass
             await message.channel.send(f'{message.author.name} says {message.content}', tts=True)
 
+    @commands.Cog.listener()
     async def on_member_join(self, member):
         """Automatically assign roles if guild has a role set through `newrole` command."""
         if not member.guild.me.guild_permissions.manage_roles:
@@ -277,6 +279,7 @@ class Management(BaseCog):
                 return
         await member.add_roles(role, reason='New Member')
 
+    @commands.Cog.listener()
     async def on_member_update(self, before, after):
         """Remove new role when user is assigned another role."""
         len_before = len(before.roles)
