@@ -12,7 +12,7 @@ from discord.ext import commands
 import discord
 
 from utils.utils import UPPER_PATH, send_error
-from utils.checks import need_db
+from cogs.base import BaseCog
 from utils import checks
 
 
@@ -59,10 +59,10 @@ def get_env(ctx):
     )
 
 
-class Owner:
+class Owner(BaseCog, command_attrs=dict(hidden=True)):
     """Commands I stole from Robodanny (https://github.com/Rapptz/RoboDanny)."""
     def __init__(self, bot):
-        self.bot = bot
+        super().__init__(bot)
         self.last_eval = None
 
     def eval_output(self, out=None):
@@ -79,10 +79,10 @@ class Owner:
         else:
             return
 
-    async def __local_check(self, ctx):
+    async def cog_check(self, ctx):
         return await self.bot.is_owner(ctx.author)
 
-    @commands.command(aliases=['restart', 'kill'], hidden=True)
+    @commands.command(aliases=['restart', 'kill'])
     async def exit(self, ctx, code: int = None):
         """Restart/kill the bot.
 
@@ -96,8 +96,7 @@ class Owner:
         self.bot.exit_status = code
         await self.bot.logout()
 
-    @need_db
-    @commands.command(hidden=True, name='eval')
+    @commands.command(name='eval')
     async def eval_(self, ctx, *, code: cleanup_code):
         """Alternative to `debug` that executes code inside a coroutine.
 
@@ -132,8 +131,7 @@ class Owner:
             else:
                 await ctx.send(self.eval_output(value if ret is None else f'{value}{rep(ret)}'))
 
-    @need_db
-    @commands.command(hidden=True, aliases=['py'])
+    @commands.command(aliases=['py'])
     async def debug(self, ctx, *, code: cleanup_code):
         """Evaluates code."""
         result = None

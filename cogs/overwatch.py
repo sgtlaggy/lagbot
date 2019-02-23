@@ -8,7 +8,6 @@ import discord
 
 from utils.errors import NotFound, ServerError, NotInDB
 from utils.utils import pluralize
-from utils.checks import need_db
 from cogs.base import BaseCog
 
 
@@ -285,10 +284,12 @@ class Overwatch(BaseCog):
             mode = Mode.quickplay
         return data['stats'].get(mode.name), data['heroes']['playtime'][mode.name], tag, mode, region, platform
 
-    @need_db
     @commands.group(aliases=['ow'], usage='[tag] [mode] [region] [platform]', invoke_without_command=True)
     async def overwatch(self, ctx, *args):
         """See stats of yourself or another player.
+
+        Due to lack of support for an API on Blizzard's end, all Overwatch commands are deprecated and
+        will not be fixed if any issues arise. They may be removed at some point in the future.
 
         [tag], [mode], [region], and [platform] can be specified in any order.
         [tag] can be either BattleTag or a mention to someone in the db
@@ -346,9 +347,9 @@ class Overwatch(BaseCog):
             embed.add_field(name='Kill/Death', value=round(game['kpd'], 2))
             embed.add_field(name='Environmental Deaths', value=int(game.get('environmental_deaths', 0)))
             embed.set_author(name=api_to_btag(tag), icon_url=author_icon, url=links['official'])
+            embed.set_footer(text="These commands are deprecated. See `!help overwatch` for more info.")
         await ctx.send(embed=embed)
 
-    @need_db
     @overwatch.command(usage='[tag] [mode] [region] [platform]')
     async def heroes(self, ctx, *args):
         """Get playtime for each played hero.
@@ -383,9 +384,9 @@ class Overwatch(BaseCog):
             else:
                 author_icon = stats['overall_stats']['avatar']
             embed.set_author(name=api_to_btag(tag), icon_url=author_icon, url=links['official'])
+            embed.set_footer(text="These commands are deprecated. See `!help overwatch` for more info.")
         await ctx.send('\n'.join(message), embed=embed)
 
-    @need_db
     @overwatch.group(name='set', aliases=['save'], invoke_without_command=True,
                      usage='<tag> [mode = competitive] [region = us] [platform = pc]')
     async def ow_set(self, ctx, *args):
@@ -426,7 +427,6 @@ class Overwatch(BaseCog):
         else:
             await ctx.send('\N{THUMBS UP SIGN} Added to the db.')
 
-    @need_db
     @ow_set.command(name='tag', aliases=['btag', 'battletag'])
     async def set_tag(self, ctx, tag):
         """Change your BattleTag in the db."""
@@ -443,7 +443,6 @@ class Overwatch(BaseCog):
         else:
             await ctx.send('\N{THUMBS UP SIGN} Updated your BattleTag.')
 
-    @need_db
     @ow_set.command(name='mode')
     async def set_mode(self, ctx, mode):
         """Change your preferred mode in the db."""
@@ -457,7 +456,6 @@ class Overwatch(BaseCog):
         else:
             await ctx.send('\N{THUMBS UP SIGN} Updated your preferred mode.')
 
-    @need_db
     @ow_set.command(name='region')
     async def set_region(self, ctx, region):
         """Change your preferred region in the db."""
@@ -475,7 +473,6 @@ class Overwatch(BaseCog):
         else:
             await ctx.send('\N{THUMBS UP SIGN} Updated your region.')
 
-    @need_db
     @ow_set.command(name='platform')
     async def set_platform(self, ctx, platform):
         """Change your preferred platform in the db."""
@@ -493,7 +490,6 @@ class Overwatch(BaseCog):
         else:
             await ctx.send('\N{THUMBS UP SIGN} Updated your platform.')
 
-    @need_db
     @overwatch.command(name='unset', aliases=['delete', 'remove'])
     async def ow_unset(self, ctx):
         """Remove your BattleTag from the DB."""
@@ -507,7 +503,7 @@ class Overwatch(BaseCog):
         else:
             await ctx.send('\N{THUMBS UP SIGN} Removed from the db.')
 
-    async def __error(self, ctx, exc):
+    async def cog_command_error(self, ctx, exc):
         if isinstance(exc, commands.BadArgument):
             exc.handled = True
             await ctx.send(exc)

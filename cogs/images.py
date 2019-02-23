@@ -4,7 +4,6 @@ from discord.ext import commands
 import discord
 import asyncpg
 
-from utils.checks import need_db
 from utils.errors import NotFound
 from utils.utils import between, integer
 from cogs.base import BaseCog
@@ -81,7 +80,6 @@ class Images(BaseCog):
             # got yesterday's comic
             pass
 
-    @need_db
     @commands.command()
     async def xkcd(self, ctx, comic=''):
         """Get xkcd comics.

@@ -107,14 +107,10 @@ class LagBot(commands.Bot):
         await self.process_commands(msg)
 
     async def _before_invoke_(self, ctx):
-        if getattr(ctx.command, '_db', False):
-            ctx.con = await self.db_pool.acquire()
+        ctx.con = await self.db_pool.acquire()
 
     async def _after_invoke_(self, ctx):
-        try:
-            await self.db_pool.release(ctx.con)
-        except AttributeError:
-            pass
+        await self.db_pool.release(ctx.con)
 
     async def on_command_error(self, ctx, exc):
         """Emulate default on_command_error and add guild + channel info."""

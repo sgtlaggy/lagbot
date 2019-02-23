@@ -4,7 +4,6 @@ from discord.ext import commands
 import discord
 
 from utils.utils import pluralize, integer
-from utils.checks import need_db
 from cogs.base import BaseCog
 import config
 
@@ -26,7 +25,6 @@ class Management(BaseCog):
         super().__init__(bot)
         self.tts = {}
 
-    @need_db
     @commands.group(invoke_without_command=True)
     @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
@@ -65,7 +63,6 @@ class Management(BaseCog):
         if role is not None and role.position > bot_role.position:
             await ctx.send(f'Please move "{role}" above "{bot_role}" in the role list.')
 
-    @need_db
     @newrole.command()
     @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
@@ -88,7 +85,6 @@ class Management(BaseCog):
                     ''', toggle, ctx.guild.id)
             await ctx.send(f'New role adding is now {"enabled" if toggle else "disabled"}')
 
-    @need_db
     @newrole.command()
     @commands.guild_only()
     @commands.has_permissions(manage_roles=True)
@@ -111,7 +107,6 @@ class Management(BaseCog):
                     ''', toggle, ctx.guild.id)
             await ctx.send(f'New role removal is now {"enabled" if toggle else "disabled"}')
 
-    @need_db
     @newrole.command()
     @commands.guild_only()
     @commands.has_permissions(manage_roles=True)

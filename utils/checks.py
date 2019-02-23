@@ -3,12 +3,6 @@ from discord.ext import commands
 import config
 
 
-def need_db(command):
-    """Decorator, not check, to mark the command as needing a DB connection."""
-    command._db = True
-    return command
-
-
 def config_attr(attr):
     return commands.check(lambda _: getattr(config, attr, None) is not None)
 

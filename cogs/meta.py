@@ -1,7 +1,6 @@
 from discord.ext import commands
 import discord
 
-from utils.checks import need_db
 from cogs.base import BaseCog
 from utils import checks
 import config
@@ -62,7 +61,6 @@ class Meta(BaseCog):
             reason = f'{reason} -{ctx.message.author}'
         await ctx.guild.me.edit(nick=new_nick or None, reason=reason)
 
-    @need_db
     @commands.group(invoke_without_command=True)
     @checks.owner_or_permissions(manage_guild=True)
     async def prefix(self, ctx, new_prefix: str, allow_default=False):
@@ -85,7 +83,6 @@ class Meta(BaseCog):
         self.bot.invalidate_guild_prefix(guild.id)
         await ctx.send(f'Set custom prefix to "{new_prefix}".')
 
-    @need_db
     @prefix.command()
     @checks.owner_or_permissions(manage_guild=True)
     async def reset(self, ctx):
@@ -101,7 +98,6 @@ class Meta(BaseCog):
         else:
             await ctx.send('Removed custom prefix for this guild.')
 
-    @need_db
     @prefix.command()
     async def show(self, ctx):
         """Show the prefix set for this guild.
@@ -128,7 +124,6 @@ class Meta(BaseCog):
         embed.add_field(name='Valid Prefixes', value='\n'.join(valid))
         await ctx.send(embed=embed)
 
-    @need_db
     @prefix.command()
     async def disable(self, ctx):
         """Disable prefix for this guild. Only invoke commands with @LagBot"""
