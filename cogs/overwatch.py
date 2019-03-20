@@ -175,14 +175,14 @@ def ow_level(overall_stats):
 def time_str(decimal):
     hours, minutes = divmod(round(decimal * 60), 60)
     if hours:
-        fmt = '{h} hour{{}}'
+        time = pluralize('hour', 'hours', hours)
         if minutes:
-            fmt += ', {m} minute{{}}'
+            time += pluralize('minute', 'minute', minutes, ", {n} {s}")
     elif minutes:
-        fmt = '{m} minute{{}}'
+        time = pluralize('minute', 'minutes', minutes)
     else:
-        fmt = '<1 minute'
-    return pluralize(fmt.format(h=hours, m=minutes))
+        time = '<1 minute'
+    return time
 
 
 def most_played(hero_dict):

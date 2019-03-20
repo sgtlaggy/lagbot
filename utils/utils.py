@@ -1,5 +1,4 @@
 import traceback
-import base64
 import os
 
 from discord.ext.commands import BadArgument
@@ -7,33 +6,34 @@ from discord.ext import commands
 
 
 UPPER_PATH = os.path.split(os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])[0]
-TIME_BRIEF = ('{d}d', '{h}h', '{m}m', '{s}s')
-TIME_LONG = ('{d} day{{}}', '{h} hour{{}}', '{m} minute{{}}', '{s} second{{}}')
 
-
-def plural(num):
-    return 's' if num != 1 else ''
-
-
-def pluralize(s):
-    """Takes a string and returns it with pluralized words.
-
-    Any space that should be pluralized should be marked with '{}'
-    If '{}' appears before any numbers, it will be set to an empty string.
+def rzip(*iterables):
+    """Like builtin `zip`, but uses the right end of longer iterables instead of the left.
 
     Examples:
-    pluralize(f'{count} dog{{}}') -> '1 dog' / '2 dogs'
+    rzip([1,2,3], [4,5]) -> ((2, 4), (3, 5))
     """
-    last_num = None
-    plurals = []
-    for word in s.split():
-        if word.isdigit():
-            last_num = int(word)
-        elif '{}' in word:
-            if last_num is None:
-                last_num = 1
-            plurals.append(plural(last_num))
-    return s.format(*plurals)
+    lens = [len(it) for it in iterables]
+    min_len = min(lens)
+    diffs = [len_ - min_len for len_ in lens]
+    return tuple(tuple(it[i+diffs[diff_ind]] for diff_ind, it in enumerate(iterables)) for i in range(min_len))
+
+
+def pluralize(singular, plural, n, fmt='{n} {s}'):
+    """Similar to `gettext.ngettext`, but returns a string including the number.
+
+    `fmt` is an optional format string with fields `{n}` and `{s}` being replaced by
+    the number and singular or plural string, respectively.
+
+    Examples:
+    pluralize('dog', 'dogs', 1)                -> '1 dog'
+    pluralize('dog', 'dogs', 3)                -> '3 dogs'
+    pluralize('dog', 'dogs', 3, '{n} ... {s}') -> 'dogs ... 3'
+    """
+    if n == 1:
+        return fmt.format(n=n, s=singular)
+    else:
+        return fmt.format(n=n, s=plural)
 
 
 def between(num, num_min, num_max, inclusive=True):

@@ -151,21 +151,21 @@ class Management(BaseCog):
                     to_remove.append(msg)
                 if len(to_remove) == count:
                     break
+            remove_count = len(to_remove)
+            plural = pluralize('message', 'messages', remove_count)
             try:
-                if len(to_remove) == 0:
+                if remove_count == 0:
                     pass
-                elif len(to_remove) == 1:
+                elif remove_count == 1:
                     await to_remove[0].delete()
                 else:
                     await channel.delete_messages(to_remove)
             except discord.Forbidden:
-                await ctx.send("{} message{} couldn't be deleted.".format(
-                    *(('The', '') if len(to_remove) < 1 else ('Some', 's'))))
+                await ctx.send("The {} couldn't be deleted.".format(plural))
             except discord.HTTPException:
-                await ctx.send("There was an error deleting the message{}.".format(
-                    's' if len(to_remove) > 1 else ''))
+                await ctx.send("There was an error deleting the {}.".format(plural))
             else:
-                await ctx.send(pluralize(f'Removed {len(to_remove)} message{{}}.'))
+                await ctx.send("Removed {}.".format(plural))
 
     @commands.command(aliases=['join', 'add'])
     @commands.guild_only()

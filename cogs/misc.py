@@ -23,9 +23,9 @@ def fancy_time(orig_time, utc=False):
     nice = ''
     if diff.days >= 365:
         years = diff.days // 365
-        nice += pluralize(f'{years} year{{}}, ')
+        nice += pluralize('year', 'years', years, "{n} {s}, ")
     days = diff.days % 365
-    nice += pluralize(f'{days} day{{}} ago')
+    nice += pluralize('day', 'days', days, "{n} {s} ago")
     if utc:
         nice += f' ({orig_time} UTC)'
     else:

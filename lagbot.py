@@ -9,7 +9,7 @@ import discord
 import aiohttp
 import asyncpg
 
-from utils.utils import UPPER_PATH, TIME_BRIEF, TIME_LONG, tb_args, pluralize
+from utils.utils import UPPER_PATH, tb_args, pluralize, rzip
 from utils.cache import cache
 import config
 
@@ -171,10 +171,12 @@ class LagBot(commands.Bot):
         days, hours = divmod(hours, 24)
 
         if brief:
-            fmt = TIME_BRIEF
+            fmt = ('{n}{s}') * 4
+            units = ('dd', 'hh', 'mm', 'ss')
             joiner = ' '
         else:
-            fmt = TIME_LONG
+            fmt = ('{n} {s}') * 4
+            units = (('day', 'days'), ('hour', 'hours'), ('minute', 'minutes'), ('second', 'seconds'))
             joiner = ', '
 
         for ind, time in enumerate((days, hours, minutes, seconds, None)):
@@ -184,4 +186,4 @@ class LagBot(commands.Bot):
             elif time is None:
                 fmt = [fmt[3]]
 
-        return pluralize(joiner.join(fmt).format(d=days, h=hours, m=minutes, s=seconds))
+        return joiner.join(pluralize(*u, t, f) for u, t, f in rzip(units, (days, hours, minutes, seconds), fmt))
