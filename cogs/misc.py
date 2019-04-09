@@ -21,10 +21,9 @@ FW_TRANS = str.maketrans(_chars)
 def fancy_time(orig_time, utc=False):
     diff = datetime.datetime.utcnow() - orig_time
     nice = ''
-    if diff.days >= 365:
-        years = diff.days // 365
+    years, days = divmod(diff.days, 365)
+    if years:
         nice += pluralize('year', 'years', years, "{n} {s}, ")
-    days = diff.days % 365
     nice += pluralize('day', 'days', days, "{n} {s} ago")
     if utc:
         nice += f' ({orig_time} UTC)'
