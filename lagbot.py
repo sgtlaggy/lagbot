@@ -65,14 +65,10 @@ class LagBot(commands.Bot):
 
     invalidate_guild_prefix = get_guild_prefix.invalidate
 
-    async def logout(self):
-        self.http_.close()
+    async def close(self):
+        await self.http_.close()
         await self.db_pool.close()
-        await super().logout()
-
-    def logout_(self):
-        """Mainly for use in signal handler, may have other uses."""
-        self.loop.create_task(self.logout())
+        await super().close()
 
     def run(self, *args, **kwargs):
         super().run(config.token, *args, **kwargs)
