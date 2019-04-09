@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import asyncio
 import logging
-import signal
 import sys
 
 from lagbot import LagBot
