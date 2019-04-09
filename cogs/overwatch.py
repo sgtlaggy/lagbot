@@ -12,7 +12,7 @@ from cogs.base import BaseCog
 
 
 _platform = "?platform={platform}"
-_endpoint = "http://127.0.0.1:4444/api/v3/u/{btag}/"
+_endpoint = "http://owapi.net/api/v3/u/{btag}/"
 BLOB = _endpoint + "blob" + _platform
 STATS = _endpoint + "stats" + _platform
 HEROES = _endpoint + "heroes" + _platform
