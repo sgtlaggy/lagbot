@@ -7,6 +7,7 @@ from discord.ext import commands
 
 UPPER_PATH = os.path.split(os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])[0]
 
+
 def rzip(*iterables):
     """Like builtin `zip`, but uses the right end of longer iterables instead of the left.
 
@@ -16,7 +17,7 @@ def rzip(*iterables):
     lens = [len(it) for it in iterables]
     min_len = min(lens)
     diffs = [len_ - min_len for len_ in lens]
-    return tuple(tuple(it[i+diffs[diff_ind]] for diff_ind, it in enumerate(iterables)) for i in range(min_len))
+    return tuple(tuple(it[i + diffs[diff_ind]] for diff_ind, it in enumerate(iterables)) for i in range(min_len))
 
 
 def pluralize(singular, plural, n, fmt='{n} {s}'):

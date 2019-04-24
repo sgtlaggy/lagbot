@@ -165,11 +165,11 @@ class LagBot(commands.Bot):
         days, hours = divmod(hours, 24)
 
         if brief:
-            fmt = ('{n}{s}') * 4
+            fmt = ('{n}{s}',) * 4
             units = ('dd', 'hh', 'mm', 'ss')
             joiner = ' '
         else:
-            fmt = ('{n} {s}') * 4
+            fmt = ('{n} {s}',) * 4
             units = (('day', 'days'), ('hour', 'hours'), ('minute', 'minutes'), ('second', 'seconds'))
             joiner = ', '
 
