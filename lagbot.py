@@ -94,8 +94,6 @@ class LagBot(commands.Bot):
         await self.set_game(self.game)
 
     async def on_message(self, msg):
-        if msg.author.bot:
-            return
         if self._debug:
             debug_channel = config.debug_channel
             if debug_channel is None or msg.channel.id != int(debug_channel):
