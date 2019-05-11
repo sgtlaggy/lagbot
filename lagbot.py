@@ -76,14 +76,7 @@ class LagBot(commands.Bot):
         await super().close()
 
     def run(self, *args, **kwargs):
-        loop = self.loop
-        if sys.platform != 'win32':
-            loop.add_signal_handler(signal.SIGTERM, loop.stop)
-            loop.add_signal_handler(signal.SIGINT, loop.stop)
-        try:
-            super().run(config.token, *args, **kwargs)
-        except RuntimeError:
-            pass
+        super().run(config.token, *args, **kwargs)
         return self.exit_status
 
     async def on_ready(self):
