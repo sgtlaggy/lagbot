@@ -3,6 +3,8 @@ import traceback
 import datetime
 import asyncio
 import logging
+import signal
+import sys
 
 from discord.ext import commands
 import discord
@@ -48,6 +50,7 @@ class LagBot(commands.Bot):
         self._before_invoke = self._before_invoke_
         self._after_invoke = self._after_invoke_
         self.resumes = 0
+        self.exit_status = 0
         useragent = 'Discord Bot'
         source = config.source
         if source is not None:
@@ -66,16 +69,22 @@ class LagBot(commands.Bot):
     invalidate_guild_prefix = get_guild_prefix.invalidate
 
     async def close(self):
+        if self._closed:
+            return
         await self.http_.close()
         await self.db_pool.close()
         await super().close()
 
     def run(self, *args, **kwargs):
-        super().run(config.token, *args, **kwargs)
+        loop = self.loop
+        if sys.platform != 'win32':
+            loop.add_signal_handler(signal.SIGTERM, loop.stop)
+            loop.add_signal_handler(signal.SIGINT, loop.stop)
         try:
-            return self.exit_status
-        except AttributeError:
-            return 0
+            super().run(config.token, *args, **kwargs)
+        except RuntimeError:
+            pass
+        return self.exit_status
 
     async def on_ready(self):
         if hasattr(self, 'start_time'):
