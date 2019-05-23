@@ -9,9 +9,6 @@ from utils import checks
 
 class CogManagement(BaseCog):
     """Cog management commands, owner only."""
-    async def reload_ext_helper(self, ctx, ext):
-        self.bot.unload_extension(f'cogs.{ext}')
-        self.bot.load_extension(f'cogs.{ext}')
 
     @commands.command(name='cogs', hidden=True)
     @commands.is_owner()
@@ -31,7 +28,7 @@ class CogManagement(BaseCog):
                 await ctx.send(f'Cog {ext} is not loaded.')
                 continue
             try:
-                await self.reload_ext_helper(ctx, ext)
+                await self.bot.reload_extension(ext)
                 await ctx.send(f'Reloaded cog {ext}.')
             except Exception as e:
                 await ctx.send(f"Couldn't reload cog {ext}.\n{e}")
