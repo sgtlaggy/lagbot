@@ -7,7 +7,7 @@ def config_attr(attr):
     return commands.check(lambda _: getattr(config, attr, None) is not None)
 
 
-async def check_permissions(ctx, perms):
+def check_permissions(ctx, perms):
     if ctx.bot.app.owner.id == ctx.author.id:
         return True
     resolved = ctx.channel.permissions_for(ctx.author)
