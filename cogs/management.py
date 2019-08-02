@@ -146,7 +146,9 @@ class Management(BaseCog):
                 channel.permissions_for(author).manage_messages or \
                 (member == ctx.guild.me and author.id == self.bot.owner.id):
             to_remove = []
-            async for msg in channel.history(before=message, after=earliest, limit=1000, reverse=False):
+            history = await channel.history(before=message, after=earliest, limit=1000).flatten()
+            history.reverse()
+            for msg in history:
                 if member is None or msg.author == member:
                     to_remove.append(msg)
                 if len(to_remove) == count:
