@@ -18,9 +18,8 @@ debug = any('debug' in arg.lower() for arg in sys.argv)
 logging.basicConfig(level=logging.INFO if debug else logging.WARNING)
 
 help_attrs = {'hidden': True}
-initial_cogs = [f'cogs.{cog}' for cog in [
-    'cog', 'images', 'management', 'meta',
-    'misc', 'overwatch', 'owner']]
+initial_cogs = ['cogs.images', 'cogs.management', 'cogs.meta',
+                'cogs.misc', 'cogs.overwatch', 'jishaku']
 if not debug:
     initial_cogs.append('cogs.botlist')
 

@@ -245,6 +245,21 @@ class Management(BaseCog):
             except:
                 await ctx.send('\N{THUMBS DOWN SIGN} Could not pin message.')
 
+    @commands.command(aliases=['restart', 'kill'], hidden=True)
+    @commands.is_owner()
+    async def exit(self, ctx, code: int = None):
+        """Restart/kill the bot.
+
+        Optionally set exit code for custom handling.
+        """
+        codes = {'restart': 2, 'kill': 1}
+        code = codes.get(ctx.invoked_with, code)
+        if code is None:
+            await ctx.send('Invalid exit code.')
+            return
+        self.bot.exit_status = code
+        await self.bot.logout()
+
     @nostalgia.error
     async def nostalgia_error(self, ctx, error):
         if isinstance(error, commands.BadArgument):
