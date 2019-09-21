@@ -3,8 +3,6 @@ import traceback
 import datetime
 import asyncio
 import logging
-import signal
-import sys
 
 from discord.ext import commands
 import discord
@@ -40,16 +38,14 @@ async def command_prefix(bot, message):
 
 
 class LagBot(commands.Bot):
-    def __init__(self, *args, debug=False, **kwargs):
-        self._debug = debug
-        self.game = config.game
-        game = discord.Game(name=self.game)
-        status = discord.Status.dnd if self._debug else discord.Status.online
-        super().__init__(*args, command_prefix=command_prefix,
-                         activity=game, status=status, **kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args,
+                         command_prefix=command_prefix,
+                         help_command=commands.DefaultHelpCommand(command_attrs={'hidden': True}),
+                         activity=discord.Game(name=config.game),
+                         **kwargs)
         self._before_invoke = self._before_invoke_
         self._after_invoke = self._after_invoke_
-        self.resumes = 0
         self.exit_status = 0
         useragent = 'Discord Bot'
         source = config.source
@@ -81,26 +77,10 @@ class LagBot(commands.Bot):
 
     async def on_ready(self):
         if hasattr(self, 'start_time'):
-            logging.info('Ready again.')
-            self.resumes += 1
-            return await self.set_game(self.game)
+            return
         self.start_time = datetime.datetime.utcnow()
         self.app = await self.application_info()
         self.owner_id = self.app.owner.id
-        await self.app.owner.create_dm()
-        if self._debug:
-            logging.info('Ready.')
-
-    async def on_resumed(self):
-        self.resumes += 1
-        await self.set_game(self.game)
-
-    async def on_message(self, msg):
-        if self._debug:
-            debug_channel = config.debug_channel
-            if debug_channel is None or msg.channel.id != int(debug_channel):
-                return
-        await self.process_commands(msg)
 
     async def _before_invoke_(self, ctx):
         ctx.con = await self.db_pool.acquire()
@@ -136,7 +116,7 @@ class LagBot(commands.Bot):
             data = None
             try:
                 data = await getattr(resp, type_)()
-            except:
+            except:  # NOQA
                 logging.exception(f'Failed getting type {type_} from "{url}".')
             return Response(resp.status, data)
 
@@ -152,12 +132,6 @@ class LagBot(commands.Bot):
                 return Response(None, None)
         else:
             return await self._request(*args, **kwargs)
-
-    async def set_game(self, name):
-        if name is not None:
-            game = discord.Game(name=f'{name} {self.resumes or ""}')
-        await self.change_presence(activity=game, status=discord.Status.dnd if self._debug else discord.Status.online)
-        self.game = name
 
     def get_uptime(self, brief=False):
         now = datetime.datetime.utcnow()

@@ -3,6 +3,8 @@ import asyncio
 import logging
 import sys
 
+from discord.ext import commands
+
 from lagbot import LagBot
 
 # stolen from R.Danny
@@ -13,23 +15,18 @@ except ImportError:
 else:
     asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
 
+logging.basicConfig(level=logging.WARNING)
 
-debug = any('debug' in arg.lower() for arg in sys.argv)
-logging.basicConfig(level=logging.INFO if debug else logging.WARNING)
-
-help_attrs = {'hidden': True}
 initial_cogs = ['cogs.images', 'cogs.management', 'cogs.meta',
                 'cogs.misc', 'cogs.overwatch', 'jishaku']
-if not debug:
-    initial_cogs.append('cogs.botlist')
 
 if __name__ == '__main__':
-    bot = LagBot(help_attrs=help_attrs, debug=debug)
+    bot = LagBot()
 
     for cog in initial_cogs:
         try:
             bot.load_extension(cog)
-        except Exception as e:
+        except commands.ExtensionError:
             logging.exception(f"Couldn't load cog {cog}")
 
     status = bot.run()
