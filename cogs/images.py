@@ -1,4 +1,5 @@
 import datetime
+import asyncio
 
 from discord.ext import commands
 import discord
@@ -126,7 +127,7 @@ class Images(BaseCog):
 
             try:
                 fact = (await self.fetch_facts(1))[0]
-            except NotFound as e:
+            except NotFound:
                 fact = ''
 
             embed = discord.Embed(description=fact or None)
