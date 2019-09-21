@@ -127,7 +127,7 @@ class Management(BaseCog):
     @commands.command()
     @commands.guild_only()
     @commands.bot_has_permissions(manage_messages=True)
-    async def purge(self, ctx, count: integer, *, member: discord.Member=None):
+    async def purge(self, ctx, count: integer, *, member: discord.Member = None):
         """Purge up to 100 messages from the current channel.
 
         [member] is optional and will default to everyone.
@@ -242,7 +242,7 @@ class Management(BaseCog):
         async for m in ctx.history(after=date, limit=1):
             try:
                 await m.pin()
-            except:
+            except:  # NOQA
                 await ctx.send('\N{THUMBS DOWN SIGN} Could not pin message.')
 
     @commands.command(aliases=['restart', 'kill'], hidden=True)
@@ -272,7 +272,7 @@ class Management(BaseCog):
                 not any(view.skip_string(p) for p in await self.bot.command_prefix(self.bot, message)) and not message.tts:
             try:
                 await message.delete()
-            except:
+            except:  # NOQA
                 pass
             await message.channel.send(f'{message.author.name} says {message.content}', tts=True)
 
@@ -315,7 +315,7 @@ class Management(BaseCog):
                 async with con.transaction():
                     await con.execute('''
                         DELETE FROM newrole WHERE guild_id = $1
-                        ''', member.guild.id)
+                        ''', before.guild.id)
                 return
         if newrole.position > guild.me.top_role.position:
             return
