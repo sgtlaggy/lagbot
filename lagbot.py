@@ -9,43 +9,19 @@ import discord
 import aiohttp
 import asyncpg
 
-from utils.utils import UPPER_PATH, tb_args, pluralize, rzip
-from utils.cache import cache
+from utils import UPPER_PATH, tb_args, pluralize, rzip
 import config
 
-
 Response = namedtuple('Response', 'status data')
-
-
-async def command_prefix(bot, message):
-    """Custom prefix function for guild-specific prefixes."""
-    default = config.prefix
-    if message.guild is None:
-        return default
-    settings = await bot.get_guild_prefix(message.guild.id)
-    if settings is None:
-        return commands.when_mentioned_or(default)(bot, message)
-    if settings['prefix'] is None:
-        return commands.when_mentioned(bot, message)
-    valid = [settings['prefix']]
-    if settings['allow_default']:
-        if isinstance(default, (tuple, list)):
-            valid.extend(default)
-        else:
-            valid.append(default)
-    valid.sort(reverse=True)
-    return commands.when_mentioned_or(*valid)(bot, message)
 
 
 class LagBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args,
-                         command_prefix=command_prefix,
+                         command_prefix=commands.when_mentioned_or(config.prefix),
                          help_command=commands.DefaultHelpCommand(command_attrs={'hidden': True}),
                          activity=discord.Game(name=config.game),
                          **kwargs)
-        self._before_invoke = self._before_invoke_
-        self._after_invoke = self._after_invoke_
         self.exit_status = 0
         useragent = 'Discord Bot'
         source = config.source
@@ -54,15 +30,6 @@ class LagBot(commands.Bot):
         self.http_ = aiohttp.ClientSession(loop=self.loop, headers={'User-Agent': useragent})
         self.db_pool = self.loop.run_until_complete(
             asyncpg.create_pool(dsn=config.pg_dsn, command_timeout=10, loop=self.loop))
-
-    @cache()
-    async def get_guild_prefix(self, guild_id):
-        async with self.db_pool.acquire() as con:
-            return await con.fetchrow('''
-                SELECT * FROM prefixes WHERE guild_id = $1
-                ''', guild_id)
-
-    invalidate_guild_prefix = get_guild_prefix.invalidate
 
     async def close(self):
         if self._closed:
@@ -82,12 +49,6 @@ class LagBot(commands.Bot):
         self.app = await self.application_info()
         self.owner_id = self.app.owner.id
 
-    async def _before_invoke_(self, ctx):
-        ctx.con = await self.db_pool.acquire()
-
-    async def _after_invoke_(self, ctx):
-        await self.db_pool.release(ctx.con)
-
     async def on_command_error(self, ctx, exc):
         """Emulate default on_command_error and add guild + channel info."""
         if hasattr(ctx.command, 'on_error') or getattr(exc, 'handled', False) or \
@@ -97,41 +58,21 @@ class LagBot(commands.Bot):
         tb = ''.join(traceback.format_exception(*tb_args(exc.original))).replace(UPPER_PATH, '...')
         logging.error('\n'.join((msg, tb)))
 
-    async def wait_for(self, *args, ignore_timeout=False, **kwargs):
-        """Override default wait_for to allow ignoring TimeoutError."""
-        if ignore_timeout:
-            try:
-                return await super().wait_for(*args, **kwargs)
-            except asyncio.TimeoutError:
-                return None
-        else:
-            return await super().wait_for(*args, **kwargs)
-
-    async def _request(self, url, type_='json', *, timeout=10, method='GET', **kwargs):
+    async def request(self, url, type_='json', *, timeout=10, method='GET', **kwargs):
         if type_ not in {'json', 'read', 'text'}:
             return
         if kwargs.get('data') and method == 'GET':
             method = 'POST'
-        async with self.http_.request(method, url, timeout=timeout, **kwargs) as resp:
-            data = None
-            try:
-                data = await getattr(resp, type_)()
-            except:  # NOQA
-                logging.exception(f'Failed getting type {type_} from "{url}".')
-            return Response(resp.status, data)
-
-    async def request(self, *args, ignore_timeout=True, **kwargs):
-        """Utility request function.
-
-        type_ is the method to get data from response
-        """
-        if ignore_timeout:
-            try:
-                return await self._request(*args, **kwargs)
-            except asyncio.TimeoutError:
-                return Response(None, None)
-        else:
-            return await self._request(*args, **kwargs)
+        try:
+            async with self.http_.request(method, url, timeout=timeout, **kwargs) as resp:
+                data = None
+                try:
+                    data = await getattr(resp, type_)()
+                except:  # NOQA
+                    logging.exception(f'Failed getting type {type_} from "{url}".')
+                return Response(resp.status, data)
+        except asyncio.TimeoutError:
+            return Response(None, None)
 
     def get_uptime(self, brief=False):
         now = datetime.datetime.utcnow()

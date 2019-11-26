@@ -8,3 +8,11 @@ class ServerError(Exception):
 
 class NotInDB(Exception):
     pass
+
+
+class NotPlayed(Exception):
+    pass
+
+
+class InvalidBTag(Exception):
+    pass

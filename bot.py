@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-import asyncio
 import logging
 import sys
 
@@ -13,12 +12,11 @@ try:
 except ImportError:
     pass
 else:
-    asyncio.set_event_loop_policy(uvloop.EventLoopPolicy())
+    uvloop.install()
 
 logging.basicConfig(level=logging.WARNING)
 
-initial_cogs = ['cogs.images', 'cogs.management', 'cogs.meta',
-                'cogs.misc', 'cogs.overwatch', 'jishaku']
+initial_cogs = ['jishaku', 'cogs.meta', 'cogs.overwatch', 'cogs.smash']
 
 if __name__ == '__main__':
     bot = LagBot()

@@ -3,4 +3,3 @@ jishaku
 
 asyncpg>=0.5.4
 uvloop
-lru_dict

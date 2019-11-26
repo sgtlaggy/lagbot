@@ -2,12 +2,8 @@
 
 token = 'bot application token'
 game = 'playing game'
-prefix = '!'
+prefix = ','
 
 source = 'https://github.com/sgtlaggy/lagbot'
 
-dbotspw_key = 'bots.discord.pw api key'
-dbotsorg_key = 'discordbots.org api key'
-carbon_key = 'carbonitex api key'
-
-pg_dsn = 'postgres://postgres:password@localhost:5432/lagbot'
+pg_dsn = 'postgres://lagbot:password@localhost:5432/lagbot'

@@ -3,14 +3,7 @@
 This is a [Discord](https://discordapp.com) bot built using [discord.py by Danny/Rapptz](https://github.com/rapptz/discord.py).
 ---
 
-#### This bot requires you run Postgresql for the Overwatch, Images (XKCD), and Tags cogs.
-
-Before running the bot, you must create a new database owned by the `postgres` user and add several tables to it.
-To do this, run this command as the `postgres` user in this directory:
-
-    psql -f create_db.sql
-
-##### For Overwatch stats, you have 2 options:
-
-1. Run your own instance of [OW API](https://github.com/sundwarf/owapi)
-2. Change `127.0.0.1:4444` in `Overwatch.py` to `owapi.net`
+Before running the bot:
+* edit `create_db.sql` to use a better password
+* run `psql -f create_db.sql`
+* rename `config.py.example` to `config.py` and edit

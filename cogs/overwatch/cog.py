@@ -6,10 +6,9 @@ from discord.ext import commands
 import asyncpg
 import discord
 
-from utils.errors import NotFound, ServerError, NotInDB
-from utils.utils import pluralize
-from cogs.base import BaseCog
-
+from .errors import NotFound, ServerError, NotInDB, NotPlayed, InvalidBTag
+from .data import heroes as _heroes
+from utils import pluralize
 
 _platform = "?platform={platform}"
 _endpoint = "http://owapi.net/api/v3/u/{btag}/"
@@ -21,6 +20,8 @@ ID_RE = re.compile(r'<@!?([0-9]+)>$')
 
 PLATFORMS = ('pc', 'xbl', 'psn')
 REGIONS = ('us', 'eu', 'kr')
+
+SYMBOLS = string.punctuation + ' '
 
 
 class Mode(enum.Enum):
@@ -34,53 +35,18 @@ class Mode(enum.Enum):
     default = 1
 
 
-_heroes = {'ana': {'color': 0xCCC2AE, 'name': 'Ana'},
-           'bastion': {'color': 0x6E994D, 'name': 'Bastion'},
-           'doomfist': {'color': 0xE04E34, 'name': 'Doomfist'},
-           'dva': {'color': 0xFF7FD1, 'name': 'D.Va'},
-           'genji': {'color': 0x84FE01, 'name': 'Genji'},
-           'hanzo': {'color': 0x938848, 'name': 'Hanzo'},
-           'junkrat': {'color': 0xD39308, 'name': 'Junkrat'},
-           'lucio': {'color': 0x8BEC22, 'name': 'Lúcio'},
-           'mccree': {'color': 0x8D3939, 'name': 'McCree'},
-           'mei': {'color': 0x9ADBF4, 'name': 'Mei'},
-           'mercy': {'color': 0xFFE16C, 'name': 'Mercy'},
-           'orisa': {'color': 0xDC9A00, 'name': 'Orisa'},
-           'pharah': {'color': 0x1B65C6, 'name': 'Pharah'},
-           'reaper': {'color': 0x272725, 'name': 'Reaper'},
-           'reinhardt': {'color': 0xAA958E, 'name': 'Reinhardt'},
-           'roadhog': {'color': 0xC19477, 'name': 'Roadhog'},
-           'soldier76': {'color': 0x5870B6, 'name': 'Soldier: 76'},
-           'sombra': {'color': 0x751B9C, 'name': 'Sombra'},
-           'symmetra': {'color': 0x5CECFF, 'name': 'Symmetra'},
-           'torbjorn': {'color': 0xFF6200, 'name': 'Torbjörn'},
-           'tracer': {'color': 0xF8911B, 'name': 'Tracer'},
-           'widowmaker': {'color': 0x6F6FAE, 'name': 'Widowmaker'},
-           'winston': {'color': 0x4C505C, 'name': 'Winston'},
-           'zarya': {'color': 0xF571A8, 'name': 'Zarya'},
-           'zenyatta': {'color': 0xC79C00, 'name': 'Zenyatta'}}
-
-
-class NotPlayed(Exception):
-    pass
-
-
-class InvalidBTag(Exception):
-    pass
-
-
 class Hero:
     def __init__(self, name):
         self.api_name = name
         self.portrait = 'https://blzgdapipro-a.akamaihd.net/hero/{}/hero-select-portrait.png'.format(
-            'soldier-76' if self.api_name == 'soldier76' else self.api_name)
+            'soldier-76' if name == 'soldier76' else name)
         hero = _heroes.get(name)
         if hero:
             self.name = hero['name']
             self.color = hero['color']
         else:
             self.name = name.title()
-            self.color = 0xffffff
+            self.color = 0xfffffe
 
     def __str__(self):
         return self.name
@@ -102,11 +68,7 @@ class Rank:
 
 def stat_links(tag, region, platform):
     return dict(official=f'https://playoverwatch.com/en-us/career/{platform}/{region}/{tag}',
-                owapi=f'http://lag.b0ne.com/owapi/v3/u/{tag}/blob?platform={platform}&format=json_pretty',
-                webapp='http://lag.b0ne.com/ow/')
-
-
-SYMBOLS = string.punctuation + ' '
+                owapi=BLOB.format(tag, platform) + '&format=json_pretty')
 
 
 def fix_arg_order(*args):
@@ -192,7 +154,7 @@ def most_played(hero_dict):
             yield (hero, time_str(played))
 
 
-class Overwatch(BaseCog):
+class Overwatch(commands.Cog):
     """Commands for getting Overwatch stats.
 
     Any command argument named "tag" is a case-sensitive BattleTag.
@@ -200,6 +162,9 @@ class Overwatch(BaseCog):
     Any command argument named "region" is a region (us, eu, kr).
     Any command argument named "platform" is a platform (pc, xbl, psn).
     """
+    def __init__(self, bot):
+        self.bot = bot
+
     async def fetch_stats(self, tag, platform, end=BLOB):
         btag = api_to_btag(tag)
         status, data = await self.bot.request(end.format(btag=tag, platform=platform), timeout=20)
@@ -515,6 +480,8 @@ class Overwatch(BaseCog):
             await ctx.send(exc.original)
             return
 
+    async def cog_before_invoke(self, ctx):
+        ctx.con = await self.bot.db_pool.acquire()
 
-def setup(bot):
-    bot.add_cog(Overwatch(bot))
+    async def cog_after_invoke(self, ctx):
+        await self.bot.db_pool.release(ctx.con)
