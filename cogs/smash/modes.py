@@ -17,7 +17,6 @@ def mode(cls):
     MODES[name.lower()] = cls
 
 
-# TODO: add init to each, add available fighters and bans to each player
 @mode
 class Smash:
     description = 'You may pick any fighter.'

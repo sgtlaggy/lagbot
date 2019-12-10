@@ -56,7 +56,7 @@ class Smash(commands.Cog):
         else:
             fighter = Fighter.get_closest(fighter)
             if not game.mode.pick_check(player, fighter):
-                raise SmashError(f'{fighter} has already been picked or banned.')
+                raise SmashError(f'{fighter} cannot be picked.')
         if round_num is not None:
             player.play(fighter, round_num - 1)
         else:
@@ -71,7 +71,7 @@ class Smash(commands.Cog):
         if game.mode.ban_check(player, fighter):
             player.ban(fighter)
         else:
-            raise SmashError(f'Someone has already played or banned {fighter}.')
+            raise SmashError(f'{fighter} cannot be banned.')
         await game.update()
 
     @commands.command(aliases=['ub'])
