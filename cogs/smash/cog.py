@@ -5,9 +5,9 @@ import typing
 from discord.ext import commands
 import discord
 
-from .models import Fighter, FakeFighter, Game
-from .errors import SmashError
+from .models import Fighter, FakeFighter, Game, arena_id
 from .modes import MODES, inject_help_modes
+from .errors import SmashError
 from utils import commaize, clamp
 
 
@@ -55,8 +55,9 @@ class Smash(commands.Cog):
             fighter = FakeFighter(fighter)
         else:
             fighter = Fighter.get_closest(fighter)
-            if not game.mode.pick_check(player, fighter):
-                raise SmashError(f'{fighter} cannot be picked.')
+            allowed = game.mode.pick_check(player, fighter)
+            if not allowed:
+                raise SmashError(allowed)
         if round_num is not None:
             player.play(fighter, round_num - 1)
         else:
@@ -68,10 +69,10 @@ class Smash(commands.Cog):
     async def ban(self, ctx, *, fighter: Fighter):
         player = ctx.player
         game = player.game
-        if game.mode.ban_check(player, fighter):
-            player.ban(fighter)
-        else:
-            raise SmashError(f'{fighter} cannot be banned.')
+        allowed = game.mode.ban_check(player, fighter)
+        if not allowed:
+            raise SmashError(allowed)
+        player.ban(fighter)
         await game.update()
 
     @commands.command(aliases=['ub'])
@@ -137,6 +138,13 @@ class Smash(commands.Cog):
                 await game.update()
             else:
                 raise SmashError(f'{val} is not a valid ban amount.')
+        elif attr in {'a', 'arena', 'id'}:
+            try:
+                game.arena_id = arena_id(val)
+            except ValueError as e:
+                raise SmashError(e)
+            else:
+                await game.update()
 
     @commands.command()
     @game_in_progress()
@@ -154,7 +162,9 @@ class Smash(commands.Cog):
 
     @commands.command(name=_NAME, aliases=_ALIASES)
     @inject_help_modes
-    async def _smash(self, ctx, winning_score: int,
+    async def _smash(self, ctx,
+                     arena_id: typing.Optional[arena_id],
+                     winning_score: int,
                      players: commands.Greedy[discord.Member],
                      max_bans: typing.Optional[int] = None):
         """Start a smash match.
@@ -178,6 +188,7 @@ class Smash(commands.Cog):
         c w 3     "change" | change winning score to 3
         c m elimination    | change gamemode to elimination
         c b 2              | change allowed number of bans to 2
+        c a ABC12          | change arena id to ABC12
         ,repost #channel   | repost the board to another channel
         ,repost            | repost the board
         ,end               | vote to end the match. requires majority
@@ -187,7 +198,12 @@ class Smash(commands.Cog):
         """
         if ctx.author not in players:
             players = (ctx.author, *players)
-        if len(players) == 1:
+        count = len(players)
+        if count == 1:
+            await ctx.send('Not enough players to start a game.')
+            return
+        elif count > 25:
+            await ctx.send('Too many players to start a game. Limit of 25 players.')
             return
         winning_score = clamp(winning_score, low=0)
         already_in_game = [p for p in players if p in self.players]
@@ -198,7 +214,7 @@ class Smash(commands.Cog):
                 await ctx.send(f'{commaize(m.mention for m in already_in_game)} are already in a game.', delete_after=5)
             return
         mode = MODES[ctx.invoked_with]
-        game = Game(ctx, mode, players, winning_score, max_bans, ctx.message.created_at)
+        game = Game(ctx, arena_id, mode, players, winning_score, max_bans, ctx.message.created_at)
         self.players.update(game.players)
         game.message = await ctx.send(embed=game.embed)
 

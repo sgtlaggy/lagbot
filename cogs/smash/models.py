@@ -10,6 +10,13 @@ from .data import fighters as _fighters
 from .errors import SmashError
 
 WORD = re.compile(r'\W+')
+ARENA_ID = re.compile(r'^[0-9A-HJ-NP-Y]{5}$', flags=re.IGNORECASE)
+
+
+def arena_id(arg):
+    if ARENA_ID.match(arg):
+        return arg.upper()
+    raise ValueError(f'{arg} is not a valid Arena ID.')
 
 
 def find_ngrams(text: str, number: int = 3) -> set:
@@ -112,8 +119,9 @@ class Player:
 
 
 class Game:
-    def __init__(self, ctx, mode, members, winning_score, max_bans, created_at):
+    def __init__(self, ctx, arena_id, mode, members, winning_score, max_bans, created_at):
         self.ctx = ctx
+        self.arena_id = arena_id
         self.players = {}
         self.add_players(*members)
         self.mode = mode
@@ -122,6 +130,7 @@ class Game:
         self.created_at = created_at
         self.message = None
         self._ending = False
+        self.__hide_rounds = 0
 
     @property
     def channel(self):
@@ -151,7 +160,10 @@ class Game:
     @property
     def embed(self):
         e = discord.Embed()
-        e.title = self.mode.name
+        title = self.mode.name
+        if self.arena_id:
+            title = f'{title} - {self.arena_id}'
+        e.title = title
         desc = [self.mode.description]
         if self.max_bans:
             desc.append(f'Max bans: {self.max_bans}')
@@ -185,13 +197,15 @@ class Game:
                 winning=win_emoji, end=end_emoji,
                 active='' if player.active else '~~')
             fighters = []
-            for ind, fighter in enumerate(player.fighters):
+            for ind, fighter in enumerate(player.fighters[self.__hide_rounds:], self.__hide_rounds):
                 fighters.append('{0}. {2}{1}{2}'.format(ind + 1, fighter, '__' if ind in player.wins else ''))
             e.add_field(name=name, value='\n'.join(fighters) or '\u200b')
         e.set_footer(text=f'First to {self.winning_score} wins! | Started')
         e.timestamp = self.created_at
         if last_round > -1:
             e.color = last_fighter.color
+        if len(e) > 5000:
+            self.__hide_rounds += 1
         return e
 
     async def update(self, *, embed=None, repost_to=None):
