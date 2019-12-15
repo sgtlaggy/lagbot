@@ -47,6 +47,7 @@ class Smash(commands.Cog):
     @commands.command(aliases=['p'])
     @game_in_progress()
     async def pick(self, ctx, round_num: typing.Optional[int] = None, *, fighter=''):
+        """Pick a fighter to play in a given round."""
         player = ctx.player
         game = player.game
         if fighter in ('', 'rand', 'random'):
@@ -67,6 +68,7 @@ class Smash(commands.Cog):
     @commands.command(aliases=['b'])
     @game_in_progress()
     async def ban(self, ctx, *, fighter: Fighter):
+        """Ban a fighter for everyone playing."""
         player = ctx.player
         game = player.game
         allowed = game.mode.ban_check(player, fighter)
@@ -78,6 +80,9 @@ class Smash(commands.Cog):
     @commands.command(aliases=['ub'])
     @game_in_progress()
     async def unban(self, ctx, *, fighter: Fighter):
+        """Unban a fighter you have banned.
+
+        Note: This is not necessary with a ban limit, as the oldest will automatically be removed when banning another."""
         player = ctx.player
         if player.has_banned(fighter):
             player.unban(fighter)
@@ -88,6 +93,7 @@ class Smash(commands.Cog):
     @commands.command(aliases=['w'])
     @game_in_progress()
     async def win(self, ctx, round_num: typing.Optional[int] = 0):
+        """Mark a round as won by you."""
         player = ctx.player
         game = player.game
         round_num = round_num or (player.current_round + 1)
@@ -100,6 +106,7 @@ class Smash(commands.Cog):
     @commands.command(aliases=['u'])
     @game_in_progress()
     async def undo(self, ctx, round_num: typing.Optional[int] = None, action='p'):
+        """Undo round actions such as playing or winning."""
         action = {'p': 'play', 'play': 'play', 'w': 'win', 'win': 'win'}.get(action, None)
         if action is None:
             return
@@ -113,6 +120,14 @@ class Smash(commands.Cog):
     @commands.command(aliases=['c'])
     @game_in_progress()
     async def change(self, ctx, attr, val: typing.Union[int, str]):
+        """Change various aspects of your game.
+
+        Available options:
+        w, win - Wins required to end the game. Will end immediately if someone is at or above the given value.
+        m, mode, gamemode - Change the mode/ruleset.
+        b, bans, maxbans - Change the allowed number of bans. If reduced, only the most recent bans will be kept.
+        a, arena, id - Change the Arena ID listed. Omit value to remove the ID.
+        """
         game = ctx.player.game
         if attr in {'w', 'win'}:
             if isinstance(val, int):
@@ -140,7 +155,10 @@ class Smash(commands.Cog):
                 raise SmashError(f'{val} is not a valid ban amount.')
         elif attr in {'a', 'arena', 'id'}:
             try:
-                game.arena_id = arena_id(val)
+                if val == '':
+                    game.arena_id = None
+                else:
+                    game.arena_id = arena_id(val)
             except ValueError as e:
                 raise SmashError(e)
             else:
@@ -149,11 +167,13 @@ class Smash(commands.Cog):
     @commands.command()
     @game_in_progress()
     async def repost(self, ctx, channel: discord.TextChannel = None):
+        """Repost the game embed to this, or another, channel."""
         await ctx.player.game.update(repost_to=channel or ctx)
 
     @commands.command()
     @game_in_progress()
     async def end(self, ctx):
+        """Vote to end the game. Requires majority vote to succeed."""
         game = ctx.player.game
         ctx.player.vote_to_end()
         await game.update()
@@ -189,6 +209,7 @@ class Smash(commands.Cog):
         c m elimination    | change gamemode to elimination
         c b 2              | change allowed number of bans to 2
         c a ABC12          | change arena id to ABC12
+        c a                | remove arena id
         ,repost #channel   | repost the board to another channel
         ,repost            | repost the board
         ,end               | vote to end the match. requires majority
@@ -221,6 +242,9 @@ class Smash(commands.Cog):
     @commands.command()
     @game_in_progress()
     async def add(self, ctx, *new_players: discord.Member):
+        """Add users to your game.
+
+        Note: This will add blank rounds for them to join you on your current round."""
         player = ctx.player
         game = player.game
         already_in_game, to_add = [], []
@@ -249,12 +273,17 @@ class Smash(commands.Cog):
     @commands.command()
     @game_in_progress()
     async def leave(self, ctx):
+        """Leave your current game.
+
+        Note: This does not free you up to join another game.
+        You may rejoin with the `rejoin` command."""
         ctx.player.active = False
         await ctx.player.game.update()
 
     @commands.command()
     @game_in_progress(player_active=False)
     async def rejoin(self, ctx):
+        """Rejoin your game."""
         ctx.player.active = True
         await ctx.player.game.update()
 
