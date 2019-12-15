@@ -1,6 +1,6 @@
 import os
 
-UPPER_PATH = os.path.split(os.path.split(os.path.split(os.path.abspath(__file__))[0])[0])[0]
+UPPER_PATH = os.path.split(os.path.abspath(__file__))[0]
 
 
 def rzip(*iterables):
