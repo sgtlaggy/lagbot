@@ -52,7 +52,7 @@ class Smash(commands.Cog):
         game = player.game
         if fighter in ('', 'rand', 'random'):
             fighter = random.choice([f for f in Fighter.all() if game.mode.pick_check(player, f)])
-        elif fighter in FakeFighter.ALLOWED:
+        elif fighter in FakeFighter.names:
             fighter = FakeFighter(fighter)
         else:
             fighter = Fighter.get_closest(fighter)

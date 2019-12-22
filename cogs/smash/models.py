@@ -1,6 +1,5 @@
 from functools import lru_cache
 from collections import deque
-import abc
 import re
 
 from discord.ext import commands
@@ -57,7 +56,7 @@ class Player:
         self.active = True
 
     def has_played(self, fighter):
-        return fighter in self.fighters and not isinstance(fighter, FakeFighter)
+        return fighter in self.fighters and isinstance(fighter, Fighter)
 
     def has_banned(self, fighter):
         return fighter in self.bans
@@ -80,7 +79,7 @@ class Player:
             round_diff = round_num - self.current_round
             if round_diff > 0:
                 self.fighters.extend([FakeFighter('-')] * round_diff)
-            if isinstance(self.fighters[round_num], FakeFighter):
+            if self.fighters[round_num].replace_on_insert:
                 self.fighters[round_num] = fighter
             else:
                 self.fighters.insert(round_num, fighter)
@@ -241,6 +240,7 @@ class Fighter(commands.Converter):
         self = cls()
         self.name = name
         self.color = color
+        self.replace_on_insert = False
         self.__ngrams = find_ngrams(name)
         cls.__fighters[name] = self
 
@@ -269,25 +269,30 @@ class Fighter(commands.Converter):
         return self.name
 
 
-class _FakeFighter(abc.ABC):
-    ALLOWED = ('-', '???')
+class _FakeFighter:
+    ALLOWED = (('-', True), ('???', False))
     __instances = {}  # hack to only ever have 1 + len(ALLOWED) instances
 
     @classmethod
     def populate(cls):
-        for val in cls.ALLOWED:
+        for val, replace in cls.ALLOWED:
             self = cls()
             self.name = val
             self.color = 0xfffffe
+            self.replace_on_insert = replace
             cls.__instances[val] = self
+
+    @property
+    def names(self):
+        return self.__instances.keys()
+
+    def __instancecheck__(self, instance):  # allows instance to act as class in `isinstance`
+        return isinstance(instance, self.__class__)
 
     def __call__(self, val):
         if val not in self.ALLOWED:
             raise ValueError(f'Argument must be one of {self.ALLOWED}')
         return self.__instances[val]
-
-    def __instancecheck__(self, instance):
-        return isinstance(instance, self.__class__)
 
     def __str__(self):
         return self.name

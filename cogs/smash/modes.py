@@ -18,6 +18,7 @@ class CheckResult:
 
 
 def inject_help_modes(func):
+    """Decorator to format modes into the `modes` field in the docstring of a function."""
     modes = [f'{m.name} - {m.description}' for m in MODES.values()]
     doc = inspect.getdoc(func)
     func.__doc__ = doc.format(modes='\n'.join(modes))
