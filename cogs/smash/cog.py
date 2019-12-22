@@ -184,7 +184,7 @@ class Smash(commands.Cog):
     @inject_help_modes
     async def _smash(self, ctx,
                      arena_id: typing.Optional[arena_id],
-                     winning_score: int,
+                     winning_score: typing.Optional[int],
                      players: commands.Greedy[discord.Member],
                      max_bans: typing.Optional[int] = None):
         """Start a smash match.
@@ -226,7 +226,10 @@ class Smash(commands.Cog):
         elif count > 25:
             await ctx.send('Too many players to start a game. Limit of 25 players.')
             return
-        winning_score = clamp(winning_score, low=0)
+        if winning_score is None:
+            winning_score = 0
+        else:
+            winning_score = clamp(winning_score, low=0)
         already_in_game = [p for p in players if p in self.players]
         if already_in_game:
             if len(already_in_game) == 1:
