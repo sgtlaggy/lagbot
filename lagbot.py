@@ -20,7 +20,7 @@ class LagBot(commands.Bot):
         super().__init__(*args,
                          command_prefix=commands.when_mentioned_or(config.prefix),
                          help_command=commands.DefaultHelpCommand(command_attrs={'hidden': True}),
-                         activity=discord.Game(name=config.game),
+                         activity=discord.Activity(type=discord.ActivityType[config.activity], name=config.activity_name),
                          **kwargs)
         self.exit_status = 0
         useragent = 'Discord Bot'

@@ -1,7 +1,8 @@
 # Set any variable to `None` if not applicable.
 
 token = 'bot application token'
-game = 'playing game'
+activity = 'playing'  # playing listening watching
+activity_name = 'game name'
 prefix = ','
 
 source = 'https://github.com/sgtlaggy/lagbot'
