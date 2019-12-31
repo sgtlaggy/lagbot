@@ -24,7 +24,7 @@ class Meta(commands.Cog):
         self.bot.exit_status = code
         await self.bot.logout()
 
-    @commands.group()
+    @commands.group(hidden=True)
     @commands.is_owner()
     async def manage(self, ctx):
         """Manage bot user attributes."""
