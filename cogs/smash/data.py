@@ -5,6 +5,7 @@ fighters = (
     ('Bayonetta', 0xa5a1e0),
     ('Bowser Jr.', 0x59bf38),
     ('Bowser', 0x44745e),
+    ('Byleth', 0xcee0d4),
     ('Captain Falcon', 0x8e8adc),
     ('Chrom', 0xb4b4cf),
     ('Cloud', 0x419384),
