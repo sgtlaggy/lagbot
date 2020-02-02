@@ -46,8 +46,11 @@ class LagBot(commands.Bot):
         if hasattr(self, 'start_time'):
             return
         self.start_time = datetime.datetime.utcnow()
-        self.app = await self.application_info()
-        self.owner_id = self.app.owner.id
+        self.app = app = await self.application_info()
+        if app.team:
+            self.owner_ids = {m.id for m in app.team.members}
+        else:
+            self.owner_id = app.owner.id
 
     async def on_command_error(self, ctx, exc):
         """Emulate default on_command_error and add guild + channel info."""

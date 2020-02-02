@@ -83,7 +83,11 @@ class Meta(commands.Cog):
         """Display bot information."""
         description = f'Uptime: {self.bot.get_uptime(brief=True)}'
         embed = discord.Embed(title='Invite me to your server!', url=self.oauth_url, description=description)
-        embed.set_author(name=str(self.bot.app.owner), icon_url=self.bot.app.owner.avatar_url)
+        app = self.bot.app
+        if app.team:
+            embed.add_field(name='Team', value='\n'.join(str(m) for m in app.team.members))
+        else:
+            embed.set_author(name=str(app.owner), icon_url=app.owner.avatar_url)
         embed.add_field(name='Guilds', value=str(len(self.bot.guilds)))
         source = config.source
         if source:
