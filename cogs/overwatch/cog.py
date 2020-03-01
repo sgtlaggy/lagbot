@@ -68,7 +68,7 @@ class Rank:
 
 def stat_links(tag, region, platform):
     return dict(official=f'https://playoverwatch.com/en-us/career/{platform}/{region}/{tag}',
-                owapi=BLOB.format(tag, platform) + '&format=json_pretty')
+                owapi=BLOB.format(btag=tag, platform=platform) + '&format=json_pretty')
 
 
 def fix_arg_order(*args):
