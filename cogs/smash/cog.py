@@ -1,4 +1,3 @@
-import traceback
 import random
 import typing
 
@@ -58,7 +57,7 @@ class Smash(commands.Cog):
             fighter = Fighter.get_closest(fighter)
             allowed = game.mode.pick_check(player, fighter)
             if not allowed:
-                raise SmashError(allowed)
+                raise SmashError(str(allowed))
         if round_num is not None:
             player.play(fighter, round_num - 1)
         else:
@@ -73,7 +72,7 @@ class Smash(commands.Cog):
         game = player.game
         allowed = game.mode.ban_check(player, fighter)
         if not allowed:
-            raise SmashError(allowed)
+            raise SmashError(str(allowed))
         player.ban(fighter)
         await game.update()
 
@@ -300,14 +299,16 @@ class Smash(commands.Cog):
             return
         try:
             await cmd.invoke(ctx)
-        except (commands.ConversionError, commands.CommandInvokeError) as e:
+        except commands.CommandInvokeError as e:
+            self.bot.dispatch('command_error', ctx, e)
             await msg.channel.send(e.original, delete_after=5)
-        except (commands.UserInputError, SmashError) as e:
+        except (commands.ConversionError, commands.UserInputError, SmashError) as e:
+            e = getattr(e, 'original', e)
             await msg.channel.send(e, delete_after=5)
         except commands.CommandError:  # don't care about check error/command not found
             pass
-        except Exception:
-            print(traceback.format_exc(), flush=True)
+        except Exception as e:
+            self.bot.dispatch('command_error', ctx, commands.CommandInvokeError(e))
 
     async def cog_check(self, ctx):
         return ctx.guild

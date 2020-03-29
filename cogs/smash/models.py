@@ -270,12 +270,12 @@ class Fighter(commands.Converter):
 
 
 class _FakeFighter:
-    ALLOWED = (('-', True), ('???', False))
+    ALLOWED = {'-': True, '???': False}
     __instances = {}  # hack to only ever have 1 + len(ALLOWED) instances
 
     @classmethod
     def populate(cls):
-        for val, replace in cls.ALLOWED:
+        for val, replace in cls.ALLOWED.items():
             self = cls()
             self.name = val
             self.color = 0xfffffe
@@ -291,7 +291,7 @@ class _FakeFighter:
 
     def __call__(self, val):
         if val not in self.ALLOWED:
-            raise ValueError(f'Argument must be one of {self.ALLOWED}')
+            raise ValueError(f'Argument must be one of ({", ".join(self.ALLOWED)})')
         return self.__instances[val]
 
     def __str__(self):

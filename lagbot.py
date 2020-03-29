@@ -57,9 +57,8 @@ class LagBot(commands.Bot):
         if hasattr(ctx.command, 'on_error') or getattr(exc, 'handled', False) or \
                 not isinstance(exc, commands.CommandInvokeError) or isinstance(exc.original, discord.Forbidden):
             return
-        msg = f'{ctx.message.content}\nin {"guild" if ctx.guild else "DM"}'
         tb = ''.join(traceback.format_exception(*tb_args(exc.original))).replace(UPPER_PATH, '...')
-        logging.error('\n'.join((msg, tb)))
+        logging.error(tb)
 
     async def request(self, url, type_='json', *, timeout=10, method='GET', **kwargs):
         if type_ not in {'json', 'read', 'text'}:
