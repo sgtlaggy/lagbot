@@ -207,16 +207,17 @@ class Game:
             self.__hide_rounds += 1
         return e
 
-    async def update(self, *, embed=None, repost_to=None):
+    async def update(self, *, embed=None, destination=None):
         embed = embed or self.embed
-        if repost_to:
+        if destination:
             old_msg = self.message
             try:
-                self.message = await repost_to.send(embed=embed)
+                self.message = await destination.send(embed=embed)
             except Exception as e:
                 await self.send(e, delete_after=5)
             else:
-                await old_msg.delete()
+                if old_msg:
+                    await old_msg.delete()
         else:
             await self.message.edit(embed=embed)
 

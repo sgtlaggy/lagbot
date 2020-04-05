@@ -167,7 +167,7 @@ class Smash(commands.Cog):
     @game_in_progress()
     async def repost(self, ctx, channel: discord.TextChannel = None):
         """Repost the game embed to this, or another, channel."""
-        await ctx.player.game.update(repost_to=channel or ctx)
+        await ctx.player.game.update(destination=channel or ctx)
 
     @commands.command()
     @game_in_progress()
@@ -239,7 +239,7 @@ class Smash(commands.Cog):
         mode = MODES[ctx.invoked_with]
         game = Game(ctx, arena_id, mode, players, winning_score, max_bans, ctx.message.created_at)
         self.players.update(game.players)
-        game.message = await ctx.send(embed=game.embed)
+        await game.update(destination=ctx)
 
     @commands.command()
     @game_in_progress()
