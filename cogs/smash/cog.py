@@ -122,13 +122,13 @@ class Smash(commands.Cog):
         """Change various aspects of your game.
 
         Available options:
-        w, win - Wins required to end the game. Will end immediately if someone is at or above the given value.
+        w, win, wins - Wins required to end the game. Will end immediately if someone is at or above the given value.
         m, mode, gamemode - Change the mode/ruleset.
         b, bans, maxbans - Change the allowed number of bans. If reduced, only the most recent bans will be kept.
         a, arena, id - Change the Arena ID listed. Omit value to remove the ID.
         """
         game = ctx.player.game
-        if attr in {'w', 'win'}:
+        if attr in {'w', 'win', 'wins'}:
             if isinstance(val, int):
                 val = clamp(val, low=0)
                 game.winning_score = val
