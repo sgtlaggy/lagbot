@@ -230,21 +230,23 @@ class Game:
             if latest_win > last_round:
                 last_fighter = player.fighters[latest_win]
                 last_round = latest_win
-            if self._ending:
-                win_emoji = '\\\N{TROPHY}' if win_count >= self.winning_score else ''
-                end_emoji = ''
+            if self._ending and win_count >= self.winning_score:
+                status = '\\\N{TROPHY}'
+            elif player.end:
+                status = '\\\N{CROSS MARK}'
             else:
-                win_emoji = ''
-                end_emoji = '\\\N{CROSS MARK}' if player.end else ''
-            name = '{active}**{name}**{active}\n{winning}{end}Wins: {wins}'.format(
-                name=member.name, wins=win_count,
-                winning=win_emoji, end=end_emoji,
+                status = ''
+            name = '{active}**{name}**{active}\n{status}Wins: {wins}'.format(
+                name=member.name, wins=win_count, status=status,
                 active='' if player.active else '~~')
             fighters = []
             for ind, fighter in enumerate(player.fighters[self.__hide_rounds:], self.__hide_rounds):
                 fighters.append('{0}. {2}{1}{2}'.format(ind + 1, fighter, '__' if ind in player.wins else ''))
             e.add_field(name=name, value='\n'.join(fighters) or '\u200b')
-        e.set_footer(text=f'First to {self.winning_score} wins! | Started')
+        if self.winning_score:
+            e.set_footer(text=f'First to {self.winning_score} wins! | Started')
+        else:
+            e.set_footer(text='Started')
         e.timestamp = self.created_at
         if last_round > -1:
             e.color = last_fighter.color
