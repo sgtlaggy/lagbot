@@ -4,7 +4,7 @@ import typing
 from discord.ext import commands
 import discord
 
-from .models import Fighter, FakeFighter, Game, arena_id
+from .models import Fighter, FakeFighter, Game, EndReason, arena_id
 from .modes import MODES, inject_help_modes
 from .errors import SmashError
 from utils import commaize, clamp
@@ -30,18 +30,6 @@ class Smash(commands.Cog):
         self.players = {}  # {member: Player}
         self.short_commands = short = (self.pick, self.ban, self.unban, self.win, self.undo, self.change)
         self.delete_commands = (*short, self.end, self.repost, self.add, self.leave, self.rejoin)
-
-    async def end_game(self, game, early=False):
-        game._ending = True
-        await game.update()
-        mentions = [m.mention for m in game.players]
-        if early:
-            await game.send(f'{" ".join(mentions)}\nThe game ended by majority vote.', delete_after=15)
-        else:
-            member, player = max(game.players.items(), key=lambda p: len(p[1].wins))
-            await game.send(f'{" ".join(mentions)}\n**{member.display_name} won!**', delete_after=15)
-        for m in game.players:
-            self.players.pop(m, None)
 
     @commands.command(aliases=['p'])
     @game_in_progress()
@@ -98,7 +86,7 @@ class Smash(commands.Cog):
         round_num = round_num or (player.current_round + 1)
         if player.win(round_num - 1):
             if len(player.wins) == game.winning_score:
-                await self.end_game(game)
+                await game.end(reason=EndReason.win)
             else:
                 await game.update()
 
@@ -133,9 +121,8 @@ class Smash(commands.Cog):
                 val = clamp(val, low=0)
                 game.winning_score = val
                 if val > 0 and any(len(p.wins) >= val for p in game.players.values()):
-                    await self.end_game(game)
-                else:
-                    await game.update()
+                    await game.end(reason=EndReason.win)
+                    return
             else:
                 raise SmashError(f'{val} is not a valid score.')
         elif attr in {'m', 'mode', 'gamemode'}:
@@ -143,13 +130,10 @@ class Smash(commands.Cog):
                 game.mode = MODES[val]
             except KeyError:
                 raise SmashError(f'{val} is not a valid mode.')
-            else:
-                await game.update()
         elif attr in {'b', 'bans', 'maxbans'}:
             if isinstance(val, int):
                 val = clamp(val, low=0)
                 game.max_bans = val
-                await game.update()
             else:
                 raise SmashError(f'{val} is not a valid ban amount.')
         elif attr in {'a', 'arena', 'id'}:
@@ -160,8 +144,7 @@ class Smash(commands.Cog):
                     game.arena_id = arena_id(val)
             except ValueError as e:
                 raise SmashError(e)
-            else:
-                await game.update()
+        await game.update()
 
     @commands.command()
     @game_in_progress()
@@ -175,9 +158,10 @@ class Smash(commands.Cog):
         """Vote to end the game. Requires majority vote to succeed."""
         game = ctx.player.game
         ctx.player.vote_to_end()
-        await game.update()
         if sum(p.end for p in game.players.values() if p.active) >= game.votes_to_end:
-            await self.end_game(game, early=True)
+            await game.end(reason=EndReason.vote)
+        else:
+            await game.update()
 
     @commands.command(name=_NAME, aliases=_ALIASES)
     @inject_help_modes

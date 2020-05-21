@@ -1,5 +1,7 @@
 from functools import lru_cache
 from collections import deque
+from enum import Enum
+import asyncio
 import re
 
 from discord.ext import commands
@@ -43,6 +45,12 @@ def compare_ngrams(ngrams1, ngrams2):
     unique = len(ngrams1 | ngrams2)
     equal = len(ngrams1 & ngrams2)
     return float(equal) / float(unique)
+
+
+class EndReason(Enum):
+    win = 0
+    vote = 1
+    inactivity = 2
 
 
 class Player:
@@ -119,7 +127,8 @@ class Player:
 
 class Game:
     def __init__(self, ctx, arena_id, mode, members, winning_score, max_bans, created_at):
-        self.ctx = ctx
+        self.context = ctx
+        self.loop = ctx.bot.loop
         self.arena_id = arena_id
         self.players = {}
         self.add_players(*members)
@@ -130,6 +139,42 @@ class Game:
         self.message = None
         self._ending = False
         self.__hide_rounds = 0
+        self._timer = None
+
+    def restart_timer(self):
+        if self._timer:
+            self._timer.cancel()
+        self._timer = self.loop.create_task(self.__inactivity_timer())
+
+    async def __inactivity_timer(self):
+        await asyncio.sleep(60 * 10)
+
+        confirmation = await self.send('Are you still playing?')
+        emojis = ('\N{WHITE HEAVY CHECK MARK}', '\N{CROSS MARK}')
+        for emoji in emojis:
+            await confirmation.add_reaction(emoji)
+        votes = {}
+
+        def check(reaction, user):
+            if not (user in self.players and reaction.message.id == confirmation.id):
+                return False
+            elif reaction.emoji == emojis[0]:
+                return True
+            elif reaction.emoji == emojis[1] and user not in votes:
+                votes.add(user)
+                return len(votes) == self.votes_to_end
+
+        try:
+            reaction, user = await self.context.bot.wait_for('reaction_add', check=check, timeout=60)
+        except asyncio.TimeoutError:
+            await self.end(reason=EndReason.inactivity)
+        else:
+            if reaction.emoji == emojis[1]:
+                await self.end(reason=EndReason.vote)
+        finally:
+            await confirmation.delete()
+            if not self._ending:
+                self.restart_timer()
 
     @property
     def channel(self):
@@ -140,7 +185,7 @@ class Game:
 
     @property
     def send(self):
-        return self.message.channel.send
+        return self.channel.send
 
     @property
     def max_bans(self):
@@ -220,6 +265,7 @@ class Game:
                     await old_msg.delete()
         else:
             await self.message.edit(embed=embed)
+        self.restart_timer()
 
     def add_players(self, *members):
         players = {member: Player(member, self) for member in members}
@@ -228,6 +274,22 @@ class Game:
 
     def is_banned(self, fighter):
         return any(p.has_banned(fighter) for p in self.players.values())
+
+    async def end(self, reason=EndReason.win):
+        self._ending = True
+        if self._timer:
+            self._timer.cancel()
+        await self.update()
+        mentions = ' '.join([m.mention for m in self.players])
+        if reason is EndReason.vote:
+            await self.send(f'{mentions}\nThe game ended by majority vote.', delete_after=15)
+        elif reason is EndReason.inactivity:
+            await self.send(f'{mentions}\nThe game ended due to inactivity.', delete_after=15)
+        else:
+            member, player = max(self.players.items(), key=lambda p: len(p[1].wins))
+            await self.send(f'{mentions}\n**{member.display_name} won!**', delete_after=15)
+        for m in self.players:
+            self.context.cog.players.pop(m, None)
 
 
 class Fighter(commands.Converter):
