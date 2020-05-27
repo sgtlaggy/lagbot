@@ -1,5 +1,6 @@
 from functools import lru_cache
 from collections import deque
+from dataclasses import dataclass
 from enum import Enum
 import asyncio
 import re
@@ -53,25 +54,126 @@ class EndReason(Enum):
     inactivity = 2
 
 
+class Fighter(commands.Converter):
+    __fighters = {}
+
+    async def convert(self, ctx, arg):
+        return self.get_closest(arg)
+
+    @classmethod
+    def add(cls, name, color):
+        self = cls()
+        self.name = name
+        self.color = color
+        self.replace_on_insert = False
+        self.__ngrams = find_ngrams(name)
+        cls.__fighters[name] = self
+
+    @classmethod
+    def all(cls):
+        return list(cls.__fighters.values())
+
+    @classmethod
+    def get(cls, name):
+        try:
+            return cls.__fighters.get(name)
+        except KeyError:
+            raise SmashError(f'{name} is not a valid fighter.')
+
+    @classmethod
+    @lru_cache()
+    def get_closest(cls, name):
+        ngrams = find_ngrams(name)
+        similarities = {fighter: compare_ngrams(fighter.__ngrams, ngrams) for fighter in cls.__fighters.values()}
+        most_similar = max(similarities.items(), key=lambda p: p[1])
+        if most_similar[1] == 0:
+            raise SmashError(f'{name} is not a valid fighter.')
+        return most_similar[0]
+
+    def __str__(self):
+        return self.name
+
+
+class _FakeFighter:
+    ALLOWED = {'-': True, '???': False}
+    __instances = {}  # hack to only ever have 1 + len(ALLOWED) instances
+
+    @classmethod
+    def populate(cls):
+        for val, replace in cls.ALLOWED.items():
+            self = cls()
+            self.name = val
+            self.color = 0xfffffe
+            self.replace_on_insert = replace
+            cls.__instances[val] = self
+
+    @property
+    def names(self):
+        return self.__instances.keys()
+
+    def __instancecheck__(self, instance):  # allows instance to act as class in `isinstance`
+        return isinstance(instance, self.__class__)
+
+    def __call__(self, val):
+        if val not in self.ALLOWED:
+            raise ValueError(f'Argument must be one of ({", ".join(self.ALLOWED)})')
+        return self.__instances[val]
+
+    def __str__(self):
+        return self.name
+
+
+FakeFighter = _FakeFighter()
+FakeFighter.populate()
+
+
+for fighter_data in _fighters:
+    Fighter.add(*fighter_data)
+
+
+@dataclass
+class Round:
+    fighter: Fighter
+    win: bool = False
+
+    def __str__(self):
+        return '{1}{0}{1}'.format(self.fighter, '__' if self.win else '')
+
+
 class Player:
     def __init__(self, member, game):
         self.member = member
         self.game = game
-        self.fighters = []
-        self.wins = []
+        self.rounds = []
         self.bans = deque()
         self.end = False
         self.active = True
 
+    @property
+    def current_round(self):
+        return len(self.rounds) - 1
+
+    @property
+    def wins(self):
+        return sum(r.win for r in self.rounds)
+
+    @property
+    def latest_win_round(self):
+        for ind, round_ in enumerate(reversed(self.rounds), 1):
+            if round_.win:
+                return len(self.rounds) - ind
+        return -1
+
     def has_played(self, fighter):
-        return fighter in self.fighters and isinstance(fighter, Fighter)
+        if isinstance(fighter, FakeFighter):
+            return False
+        for round_ in self.rounds:
+            if round_.fighter == fighter:
+                return True
+        return False
 
     def has_banned(self, fighter):
         return fighter in self.bans
-
-    @property
-    def current_round(self):
-        return len(self.fighters) - 1
 
     def ban(self, fighter):
         self.bans.append(fighter)
@@ -86,42 +188,44 @@ class Player:
         if round_num is not None:
             round_diff = round_num - self.current_round
             if round_diff > 0:
-                self.fighters.extend([FakeFighter('-')] * round_diff)
-            if self.fighters[round_num].replace_on_insert:
-                self.fighters[round_num] = fighter
+                self.rounds.extend(Round(FakeFighter('-')) for _ in range(round_diff))
+            if self.rounds[round_num].fighter.replace_on_insert:
+                self.rounds[round_num].fighter = fighter
             else:
-                self.fighters.insert(round_num, fighter)
-                for i, rnum in enumerate(self.wins):
-                    if rnum >= round_num:
-                        self.wins[i] += 1
+                self.rounds.insert(round_num, Round(fighter))
         else:
-            self.fighters.append(fighter)
+            self.rounds.append(Round(fighter))
 
     def win(self, round_num=None):
         if round_num is None:
             round_num = self.current_round
-        if not self.fighters or self.fighters[round_num] is None or round_num in self.wins:
+        try:
+            round_ = self.rounds[round_num]
+        except IndexError:
             return False
-        self.wins.append(round_num)
-        return True
+        else:
+            if round_.win:
+                return False
+            round_.win = True
+            return True
 
     def undo(self, remove_action=None, round_num=None):
-        if not self.fighters:
+        if not self.rounds:
             return False
         if round_num is None:
-            round_num = self.current_round
-            if remove_action is None and round_num not in self.wins:
+            round_num = -1
+            round_ = self.rounds[round_num]
+            if remove_action is None and not round_.win:
                 remove_action = 'play'
-        removed = False
+        else:
+            try:
+                round_ = self.rounds[round_num]
+            except IndexError:
+                return False
         if remove_action == 'play':
-            self.fighters.pop(round_num)
-            removed = True
-        if round_num in self.wins:
-            self.wins.remove(round_num)
-        if removed:
-            for i, rnum in enumerate(self.wins):
-                if rnum >= round_num:
-                    self.wins[i] -= 1
+            self.rounds.pop(round_num)
+        else:
+            round_.win = False
         return True
 
 
@@ -222,13 +326,13 @@ class Game:
         last_fighter, last_round = None, -1
         for index, pair in enumerate(self.players.items()):
             member, player = pair
-            win_count = len(player.wins)
+            win_count = player.wins
             try:
-                latest_win = max(player.wins)
+                latest_win = player.latest_win_round
             except ValueError:
                 latest_win = -1
             if latest_win > last_round:
-                last_fighter = player.fighters[latest_win]
+                last_fighter = player.rounds[latest_win].fighter
                 last_round = latest_win
             if self._ending and win_count >= self.winning_score:
                 status = '\\\N{TROPHY}'
@@ -239,10 +343,10 @@ class Game:
             name = '{active}**{name}**{active}\n{status}Wins: {wins}'.format(
                 name=member.name, wins=win_count, status=status,
                 active='' if player.active else '~~')
-            fighters = []
-            for ind, fighter in enumerate(player.fighters[self.__hide_rounds:], self.__hide_rounds):
-                fighters.append('{0}. {2}{1}{2}'.format(ind + 1, fighter, '__' if ind in player.wins else ''))
-            e.add_field(name=name, value='\n'.join(fighters) or '\u200b')
+            rounds = []
+            for ind, round_ in enumerate(player.rounds[self.__hide_rounds:], self.__hide_rounds):
+                rounds.append(f'{ind + 1}. {round_}')
+            e.add_field(name=name, value='\n'.join(rounds) or '\u200b')
         if self.winning_score:
             e.set_footer(text=f'First to {self.winning_score} wins! | Started')
         else:
@@ -288,84 +392,7 @@ class Game:
         elif reason is EndReason.inactivity:
             await self.send(f'{mentions}\nThe game ended due to inactivity.', delete_after=15)
         else:
-            member, player = max(self.players.items(), key=lambda p: len(p[1].wins))
+            member, player = max(self.players.items(), key=lambda p: p[1].wins)
             await self.send(f'{mentions}\n**{member.display_name} won!**', delete_after=15)
         for m in self.players:
             self.context.cog.players.pop(m, None)
-
-
-class Fighter(commands.Converter):
-    __fighters = {}
-
-    async def convert(self, ctx, arg):
-        return self.get_closest(arg)
-
-    @classmethod
-    def add(cls, name, color):
-        self = cls()
-        self.name = name
-        self.color = color
-        self.replace_on_insert = False
-        self.__ngrams = find_ngrams(name)
-        cls.__fighters[name] = self
-
-    @classmethod
-    def all(cls):
-        return list(cls.__fighters.values())
-
-    @classmethod
-    def get(cls, name):
-        try:
-            return cls.__fighters.get(name)
-        except KeyError:
-            raise SmashError(f'{name} is not a valid fighter.')
-
-    @classmethod
-    @lru_cache()
-    def get_closest(cls, name):
-        ngrams = find_ngrams(name)
-        similarities = {fighter: compare_ngrams(fighter.__ngrams, ngrams) for fighter in cls.__fighters.values()}
-        most_similar = max(similarities.items(), key=lambda p: p[1])
-        if most_similar[1] == 0:
-            raise SmashError(f'{name} is not a valid fighter.')
-        return most_similar[0]
-
-    def __str__(self):
-        return self.name
-
-
-class _FakeFighter:
-    ALLOWED = {'-': True, '???': False}
-    __instances = {}  # hack to only ever have 1 + len(ALLOWED) instances
-
-    @classmethod
-    def populate(cls):
-        for val, replace in cls.ALLOWED.items():
-            self = cls()
-            self.name = val
-            self.color = 0xfffffe
-            self.replace_on_insert = replace
-            cls.__instances[val] = self
-
-    @property
-    def names(self):
-        return self.__instances.keys()
-
-    def __instancecheck__(self, instance):  # allows instance to act as class in `isinstance`
-        return isinstance(instance, self.__class__)
-
-    def __call__(self, val):
-        if val not in self.ALLOWED:
-            raise ValueError(f'Argument must be one of ({", ".join(self.ALLOWED)})')
-        return self.__instances[val]
-
-    def __str__(self):
-        return self.name
-
-
-FakeFighter = _FakeFighter()
-FakeFighter.populate()
-
-
-for fighter_data in _fighters:
-    Fighter.add(*fighter_data)

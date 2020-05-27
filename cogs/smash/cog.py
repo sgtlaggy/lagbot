@@ -85,7 +85,7 @@ class Smash(commands.Cog):
         game = player.game
         round_num = round_num or (player.current_round + 1)
         if player.win(round_num - 1):
-            if len(player.wins) == game.winning_score:
+            if player.wins == game.winning_score:
                 await game.end(reason=EndReason.win)
             else:
                 await game.update()
@@ -120,7 +120,7 @@ class Smash(commands.Cog):
             if isinstance(val, int):
                 val = clamp(val, low=0)
                 game.winning_score = val
-                if val > 0 and any(len(p.wins) >= val for p in game.players.values()):
+                if val > 0 and any(p.wins >= val for p in game.players.values()):
                     await game.end(reason=EndReason.win)
                     return
             else:

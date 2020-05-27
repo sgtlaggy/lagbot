@@ -1,7 +1,5 @@
 import inspect
 
-from .models import Fighter
-
 MODES = {}
 
 
@@ -101,8 +99,9 @@ class Smasharound:
         if game.is_banned(fighter):
             return CheckResult(False, f'{fighter} is banned.')
         for p in game.players.values():
-            if fighter in [p.fighters[i] for i in p.wins] and isinstance(fighter, Fighter):
-                return CheckResult(False, f'{fighter} has already won.')
+            for round_ in p.rounds:
+                if round_.win and round_.fighter == fighter:
+                    return CheckResult(False, f'{fighter} has already won.')
         return CheckResult(True)
 
     @staticmethod
@@ -111,6 +110,7 @@ class Smasharound:
         if game.is_banned(fighter):
             return CheckResult(False, f'{fighter} is already banned.')
         for p in game.players.values():
-            if fighter in [p.fighters[i] for i in p.wins] and isinstance(fighter, Fighter):
-                return CheckResult(False, f'{fighter} has already won.')
+            for round_ in p.rounds:
+                if round_.win and round_.fighter == fighter:
+                    return CheckResult(False, f'{fighter} has already won.')
         return CheckResult(True)
