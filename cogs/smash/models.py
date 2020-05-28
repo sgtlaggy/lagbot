@@ -41,11 +41,12 @@ def find_ngrams(text: str, number: int = 3) -> set:
 def compare_ngrams(ngrams1, ngrams2):
     """https://stackoverflow.com/a/52389482
     Finds the similarity between 2 ngrams.
-    0 being completely different, and 1 being equal
+    ~~0 being completely different, and 1 being equal~~
+
+    Keeping above reference, though it has been modified.
+    Instead of 0-1, this function returns the number of similar ngrams.
     """
-    unique = len(ngrams1 | ngrams2)
-    equal = len(ngrams1 & ngrams2)
-    return float(equal) / float(unique)
+    return len(ngrams1 & ngrams2)
 
 
 class EndReason(Enum):
@@ -61,12 +62,13 @@ class Fighter(commands.Converter):
         return self.get_closest(arg)
 
     @classmethod
-    def add(cls, name, color):
+    def add(cls, name, color, aliases=()):
         self = cls()
         self.name = name
         self.color = color
+        self.aliases = aliases
         self.replace_on_insert = False
-        self.__ngrams = find_ngrams(name)
+        self.__ngrams = frozenset(find_ngrams(name).union(*(find_ngrams(alias) for alias in aliases)))
         cls.__fighters[name] = self
 
     @classmethod
@@ -85,9 +87,13 @@ class Fighter(commands.Converter):
     def get_closest(cls, name):
         ngrams = find_ngrams(name)
         similarities = {fighter: compare_ngrams(fighter.__ngrams, ngrams) for fighter in cls.__fighters.values()}
-        most_similar = max(similarities.items(), key=lambda p: p[1])
-        if most_similar[1] == 0:
+        sorted_sims = sorted(similarities.items(), key=lambda pair: (pair[1], len(pair[0].name)))
+        highest = max(pair[1] for pair in sorted_sims)
+        if highest == 0:
             raise SmashError(f'{name} is not a valid fighter.')
+
+        filtered = filter(lambda pair: pair[1] == highest, sorted_sims)
+        most_similar = next(filtered)
         return most_similar[0]
 
     def __str__(self):
