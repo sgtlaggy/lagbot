@@ -45,7 +45,7 @@ class Smash(commands.Cog):
             fighter = Fighter.get_closest(fighter)
             allowed = game.mode.pick_check(player, fighter)
             if not allowed:
-                raise SmashError(str(allowed))
+                raise SmashError(allowed)
         if round_num is not None:
             player.play(fighter, round_num - 1)
         else:
@@ -60,7 +60,7 @@ class Smash(commands.Cog):
         game = player.game
         allowed = game.mode.ban_check(player, fighter)
         if not allowed:
-            raise SmashError(str(allowed))
+            raise SmashError(allowed)
         player.ban(fighter)
         await game.update()
 
