@@ -6,4 +6,4 @@ class SmashError(commands.CommandError):
         if message is not None:
             super().__init__(str(message), *args)
         else:
-            super().__init__(*args)
+            super().__init__(message, *args)
