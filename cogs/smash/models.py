@@ -263,7 +263,7 @@ class Game:
         emojis = ('\N{WHITE HEAVY CHECK MARK}', '\N{CROSS MARK}')
         for emoji in emojis:
             await confirmation.add_reaction(emoji)
-        votes = {}
+        votes = set()
 
         def check(reaction, user):
             if not (user in self.players and reaction.message.id == confirmation.id):
