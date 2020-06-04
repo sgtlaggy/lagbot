@@ -38,7 +38,7 @@ def compare_ngrams(ngrams1, ngrams2):
 
 
 class Fighter(commands.Converter):
-    __fighters = {}
+    __fighters = []
 
     async def convert(self, ctx, arg):
         return self.get_closest(arg)
@@ -51,24 +51,17 @@ class Fighter(commands.Converter):
         self.aliases = aliases
         self.replace_on_insert = False
         self.__ngrams = frozenset(find_ngrams(name).union(*(find_ngrams(alias) for alias in aliases)))
-        cls.__fighters[name] = self
+        cls.__fighters.append(self)
 
     @classmethod
     def all(cls):
-        return list(cls.__fighters.values())
-
-    @classmethod
-    def get(cls, name):
-        try:
-            return cls.__fighters.get(name)
-        except KeyError:
-            raise SmashError(f'{name} is not a valid fighter.')
+        return iter(cls.__fighters)
 
     @classmethod
     @lru_cache()
     def get_closest(cls, name):
         ngrams = find_ngrams(name)
-        similarities = {fighter: compare_ngrams(fighter.__ngrams, ngrams) for fighter in cls.__fighters.values()}
+        similarities = {fighter: compare_ngrams(fighter.__ngrams, ngrams) for fighter in cls.all()}
         sorted_sims = sorted(similarities.items(), key=lambda pair: (pair[1], len(pair[0].name)))
         highest = max(pair[1] for pair in sorted_sims)
         if highest == 0:
