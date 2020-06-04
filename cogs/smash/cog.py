@@ -4,9 +4,10 @@ import typing
 from discord.ext import commands
 import discord
 
-from .models import Fighter, FakeFighter, Game, EndReason, arena_id
-from .modes import MODES, inject_help_modes
-from .errors import SmashError
+from .models import (Fighter, FakeFighter,
+                     Game, EndReason, arena_id,
+                     MODES, inject_help_modes,
+                     SmashError)
 from utils import commaize, clamp
 
 
