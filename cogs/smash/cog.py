@@ -30,7 +30,8 @@ class Smash(commands.Cog):
         self.bot = bot
         self.players = {}  # {member: Player}
         self.short_commands = short = (self.pick, self.ban, self.unban, self.win, self.undo, self.change)
-        self.delete_commands = (*short, self.end, self.repost, self.add, self.leave, self.rejoin)
+        self.delete_commands = (*short, *self.change.commands,
+                                self.end, self.repost, self.add, self.leave, self.rejoin)
 
     @commands.command(aliases=['p'])
     @game_in_progress()
@@ -105,46 +106,58 @@ class Smash(commands.Cog):
         if undone:
             await ctx.player.game.update()
 
-    @commands.command(aliases=['c'])
+    @commands.group(aliases=['c'], invoke_without_command=True)
     @game_in_progress()
-    async def change(self, ctx, attr, val: typing.Union[int, str]):
-        """Change various aspects of your game.
+    async def change(self, ctx):
+        """Change various aspects of your game."""
+        await ctx.send_help(ctx.command)
 
-        Available options:
-        w, win, wins - Wins required to end the game. Will end immediately if someone is at or above the given value.
-        m, mode, gamemode - Change the mode/ruleset.
-        b, bans, maxbans - Change the allowed number of bans. If reduced, only the most recent bans will be kept.
-        a, arena, id - Change the Arena ID listed. Omit value to remove the ID.
+    @change.command(aliases=['w', 'win'])
+    @game_in_progress()
+    async def wins(self, ctx, number: int):
+        """Change number of wins required to end the game.
+
+        If any player meets or exceeds the new value, the game will immediately end.
         """
         game = ctx.player.game
-        if attr in {'w', 'win', 'wins'}:
-            if isinstance(val, int):
-                val = clamp(val, low=0)
-                game.winning_score = val
-                if val > 0 and any(p.wins >= val for p in game.players.values()):
-                    await game.end(reason=EndReason.win)
-                    return
-            else:
-                raise SmashError(f'{val} is not a valid score.')
-        elif attr in {'m', 'mode', 'gamemode'}:
-            try:
-                game.mode = MODES[val]
-            except KeyError:
-                raise SmashError(f'{val} is not a valid mode.')
-        elif attr in {'b', 'bans', 'maxbans'}:
-            if isinstance(val, int):
-                val = clamp(val, low=0)
-                game.max_bans = val
-            else:
-                raise SmashError(f'{val} is not a valid ban amount.')
-        elif attr in {'a', 'arena', 'id'}:
-            try:
-                if val == '':
-                    game.arena_id = None
-                else:
-                    game.arena_id = arena_id(val)
-            except ValueError as e:
-                raise SmashError(e)
+        number = clamp(number, low=0)
+        game.winning_score = number
+        if number > 0 and any(p.wins >= number for p in game.players.values()):
+            await game.end(reason=EndReason.win)
+        await game.update()
+
+    @change.command(aliases=['m', 'gamemode'])
+    @game_in_progress()
+    async def mode(self, ctx, mode):
+        """Change the gamemode.
+
+        Previous rounds will count toward restrictions in the new mode.
+        """
+        game = ctx.player.game
+        try:
+            game.mode = MODES[mode.lower()]
+        except KeyError:
+            raise SmashError(f'{mode} is not a valid mode.')
+        await game.update()
+
+    @change.command(aliases=['b', 'maxbans'])
+    @game_in_progress()
+    async def bans(self, ctx, number: int):
+        """Change the allowed number of bans.
+
+        If someone has banned more than the new number of bans, only the most recent will be kept.
+        """
+        game = ctx.player.game
+        number = clamp(number, low=0)
+        game.max_bans = number
+        await game.update()
+
+    @change.command(aliases=['a', 'id'])
+    @game_in_progress()
+    async def arena(self, ctx, arena_id: typing.Optional[arena_id]):
+        """Change, set, or remove the arena ID."""
+        game = ctx.player.game
+        game.arena_id = arena_id
         await game.update()
 
     @commands.command()
@@ -279,7 +292,14 @@ class Smash(commands.Cog):
         if not msg.content:
             return
         ctx = await self.bot.get_context(msg)
+        if ctx.valid:
+            return
         cmd = self.bot.get_command(ctx.view.get_word().lower())
+        prefix = await self.bot.get_prefix(msg)
+        if isinstance(prefix, list):
+            ctx.prefix = prefix[-1]
+        else:
+            ctx.prefix = prefix
         if cmd is None or cmd.cog is not self or cmd not in self.short_commands:
             return
         try:
