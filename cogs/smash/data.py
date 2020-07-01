@@ -47,6 +47,7 @@ fighters = (
     ('Mii Brawler', 0x5dc1e6),
     ('Mii Gunner', 0x5dc1e6),
     ('Mii Swordfighter', 0x5dc1e6),
+    ('Min Min', 0xffff5a),
     ('Mr. Game & Watch', 0xa4a190),
     ('Ness', 0xde413d),
     ('Olimar', 0xccefb0, ('Alph',)),
