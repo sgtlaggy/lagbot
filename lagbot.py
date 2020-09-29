@@ -14,13 +14,19 @@ import config
 
 Response = namedtuple('Response', 'status data')
 
+INTENTS = discord.Intents(members=True,  # priveleged
+                          guilds=True,
+                          messages=True)
+
 
 class LagBot(commands.Bot):
     def __init__(self, *args, **kwargs):
         super().__init__(*args,
                          command_prefix=commands.when_mentioned_or(config.prefix),
                          help_command=commands.DefaultHelpCommand(command_attrs={'hidden': True}),
-                         activity=discord.Activity(type=discord.ActivityType[config.activity], name=config.activity_name),
+                         activity=discord.Activity(type=discord.ActivityType[config.activity],
+                                                   name=config.activity_name),
+                         intents=INTENTS,
                          **kwargs)
         self.exit_status = 0
         useragent = 'Discord Bot'
