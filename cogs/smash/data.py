@@ -72,6 +72,7 @@ fighters = (
     ('Simon', 0x76150e),
     ('Snake', 0x658198),
     ('Sonic', 0x659deb),
+    ('Steve', 0x5abeff, ('Alex', 'Zombie', 'Enderman')),
     ('Terry', 0x6eb5ff),
     ('Toon Link', 0x8ce689),
     ('Villager', 0x83a88e),
