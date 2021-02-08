@@ -34,20 +34,20 @@ class Meta(commands.Cog):
     @commands.is_owner()
     async def name(self, ctx, *, new_name):
         """Rename bot."""
-        await self.bot.edit_profile(username=new_name)
+        await self.bot.user.edit(username=new_name)
 
     async def set_avatar_by_url(self, url):
         status, image = await self.bot.request(url, 'read')
         if status != 200:
             return
-        await self.bot.edit_profile(avatar=image)
+        await self.bot.user.edit(avatar=image)
 
     @manage.command()
     @commands.is_owner()
     async def avatar(self, ctx, new_avatar=None):
         """Change bot's avatar.
 
-        `new_avatar` values:
+        Accepted values:
         image link
         omitted, attach image
         omitted, no attachment (reset avatar to default)
@@ -55,10 +55,9 @@ class Meta(commands.Cog):
         if new_avatar is not None:
             await self.set_avatar_by_url(new_avatar)
         else:
-            if len(ctx.message.attachments):
-                await self.set_avatar_by_url(ctx.message.attachments[0]['url'])
-            else:
-                await self.bot.edit_profile(avatar=None)
+            if ctx.message.attachments:
+                new_avatar = await ctx.message.attachments[0].read()
+            await self.bot.user.edit(avatar=new_avatar)
 
     @property
     def oauth_url(self):
