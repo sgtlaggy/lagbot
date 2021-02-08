@@ -7,7 +7,6 @@ import logging
 from discord.ext import commands
 import discord
 import aiohttp
-import asyncpg
 
 from utils import UPPER_PATH, tb_args, pluralize, rzip
 import config
@@ -34,14 +33,11 @@ class LagBot(commands.Bot):
         if source is not None:
             useragent += ' ' + source
         self.http_ = aiohttp.ClientSession(loop=self.loop, headers={'User-Agent': useragent})
-        self.db_pool = self.loop.run_until_complete(
-            asyncpg.create_pool(dsn=config.pg_dsn, command_timeout=10, loop=self.loop))
 
     async def close(self):
         if self._closed:
             return
         await self.http_.close()
-        await self.db_pool.close()
         await super().close()
 
     def run(self, *args, **kwargs):

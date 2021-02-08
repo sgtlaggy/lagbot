@@ -6,5 +6,3 @@ activity_name = 'game name'
 prefix = ','
 
 source = 'https://github.com/sgtlaggy/lagbot'
-
-pg_dsn = 'postgres://lagbot:password@localhost:5432/lagbot'
