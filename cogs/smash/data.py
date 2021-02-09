@@ -67,6 +67,7 @@ fighters = (
     ('Roy', 0x74b65b),
     ('Ryu', 0xd0504d),
     ('Samus', 0x353f56),
+    ('Sephiroth', 0x374b4b),
     ('Sheik', 0x756fd0),
     ('Shulk', 0xd5647a),
     ('Simon', 0x76150e),
