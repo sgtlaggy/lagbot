@@ -59,6 +59,7 @@ fighters = (
     ('Piranha Plant', 0x00aa82),
     ('Pit', 0xacdafa),
     ('Pokemon Trainer', 0xffc004, ('Squirtle', 'Ivysaur', 'Charizard')),
+    ('Pyra', 0x69e6c3, ('Mythra', 'Homura')),
     ('R.O.B.', 0xb2b8bd, ('Robotic Operating Buddy',)),
     ('Richter', 0x2a6db0),
     ('Ridley', 0x71456f),
