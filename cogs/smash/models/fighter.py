@@ -44,8 +44,9 @@ class Fighter(commands.Converter):
         return self.get_closest(arg)
 
     @classmethod
-    def add(cls, name, color, aliases=()):
+    def add(cls, number, name, color, aliases=()):
         self = cls()
+        self.number = number
         self.name = name
         self.color = color
         self.aliases = aliases
