@@ -7,7 +7,8 @@ import discord
 from .models import (Fighter, FakeFighter,
                      Game, EndReason, arena_id,
                      MODES, inject_help_modes,
-                     SmashError)
+                     SmashError,
+                     FighterMenu, FighterPageSource)
 from utils import commaize, clamp
 
 
@@ -32,6 +33,17 @@ class Smash(commands.Cog):
         self.short_commands = short = (self.pick, self.ban, self.unban, self.win, self.undo, self.change)
         self.delete_commands = (*short, *self.change.commands,
                                 self.end, self.repost, self.add, self.leave, self.rejoin)
+
+    @commands.command()
+    async def fighters(self, ctx):
+        """List all fighters in a neat menu."""
+        users = None
+        if ctx.author in self.players:
+            users = self.players[ctx.author].game.players
+
+        source = FighterPageSource(list(Fighter.all()), per_page=20)
+        menu = FighterMenu(source, timeout=300, delete_message_after=True)
+        await menu.start(ctx, users=users)
 
     @commands.command(aliases=['p'])
     @game_in_progress()

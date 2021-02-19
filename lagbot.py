@@ -15,7 +15,8 @@ Response = namedtuple('Response', 'status data')
 
 INTENTS = discord.Intents(members=True,  # priveleged
                           guilds=True,
-                          messages=True)
+                          messages=True,
+                          reactions=True)
 
 
 class LagBot(commands.Bot):
