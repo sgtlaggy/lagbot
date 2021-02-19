@@ -39,6 +39,7 @@ def compare_ngrams(ngrams1, ngrams2):
 
 class Fighter(commands.Converter):
     __fighters = []
+    replace_on_insert = False
 
     async def convert(self, ctx, arg):
         return self.get_closest(arg)
@@ -50,7 +51,6 @@ class Fighter(commands.Converter):
         self.name = name
         self.color = color
         self.aliases = aliases
-        self.replace_on_insert = False
         self.__ngrams = frozenset(find_ngrams(name).union(*(find_ngrams(alias) for alias in aliases)))
         cls.__fighters.append(self)
 
