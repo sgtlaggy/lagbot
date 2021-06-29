@@ -16,7 +16,7 @@ else:
 
 logging.basicConfig(level=logging.WARNING)
 
-initial_cogs = ['cogs.meta', 'cogs.smash']
+initial_cogs = ['cogs.meta', 'cogs.smash', 'jishaku']
 
 if __name__ == '__main__':
     bot = LagBot()
