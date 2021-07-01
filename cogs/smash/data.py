@@ -85,4 +85,5 @@ fighters = (
     ('77', 'Steve', 0x5abeff, ('Alex', 'Zombie', 'Enderman')),
     ('78', 'Sephiroth', 0x374b4b),
     ('79-80', 'Pyra', 0x69e6c3, ('Mythra',)),
+    ('81', 'Kazuya', 0xa52319),
 )
