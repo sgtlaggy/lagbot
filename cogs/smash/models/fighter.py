@@ -45,11 +45,12 @@ class Fighter(commands.Converter):
         return self.get_closest(arg)
 
     @classmethod
-    def add(cls, number, name, color, aliases=()):
+    def add(cls, number, name, color, emoji, aliases=()):
         self = cls()
         self.number = number
         self.name = name
         self.color = color
+        self.emoji = emoji
         self.aliases = aliases
         self.__ngrams = frozenset(find_ngrams(name).union(*(find_ngrams(alias) for alias in aliases)))
         cls.__fighters.append(self)
