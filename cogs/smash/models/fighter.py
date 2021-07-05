@@ -2,6 +2,7 @@ from functools import lru_cache
 import re
 
 from discord.ext import commands
+import discord
 
 from ..data import fighters as _fighters
 from .errors import SmashError
@@ -72,6 +73,11 @@ class Fighter(commands.Converter):
         filtered = filter(lambda pair: pair[1] == highest, sorted_sims)
         most_similar = next(filtered)
         return most_similar[0]
+    
+    @classmethod
+    @lru_cache()
+    def get_exact(cls, name):
+        return discord.utils.get(cls.all(), name=name)
 
     def __str__(self):
         return self.name
