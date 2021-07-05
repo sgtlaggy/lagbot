@@ -8,7 +8,8 @@ from .models import (Fighter, FakeFighter,
                      Game, EndReason, arena_id,
                      MODES, inject_help_modes,
                      SmashError,
-                     FighterMenu, FighterPageSource)
+                     FighterMenu, FighterPageSource,
+                     GameView)
 from utils import commaize, clamp
 
 
@@ -249,7 +250,7 @@ class Smash(commands.Cog):
         mode = MODES[ctx.invoked_with]
         game = Game(ctx, arena_id, mode, players, winning_score, max_bans, ctx.message.created_at)
         self.players.update(game.players)
-        await game.update(destination=ctx)
+        await game.update(destination=ctx, view=GameView(game))
 
     @commands.command()
     @game_in_progress()

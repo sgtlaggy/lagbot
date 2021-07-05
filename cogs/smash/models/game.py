@@ -152,19 +152,23 @@ class Game:
             self.__hide_rounds += 1
         return e
 
-    async def update(self, *, embed=None, destination=None):
+    async def update(self, *, embed=None, destination=None, view=discord.utils.MISSING):
+        if view is not discord.utils.MISSING:
+            self.view = view
         embed = embed or self.embed
+        
         if destination:
             old_msg = self.message
             try:
-                self.message = await destination.send(embed=embed)
+                self.message = await destination.send(embed=embed, view=view)
             except Exception as e:
                 await self.send(e, delete_after=5)
             else:
                 if old_msg:
                     await old_msg.delete()
         else:
-            await self.message.edit(embed=embed)
+            await self.message.edit(embed=embed, view=view)
+            
         self.restart_timer()
 
     def add_players(self, *members):
@@ -177,9 +181,10 @@ class Game:
 
     async def end(self, reason=EndReason.win):
         self._ending = True
+        self.view.stop()
         if self._timer:
             self._timer.cancel()
-        await self.update()
+        await self.update(view=None)
         mentions = ' '.join([m.mention for m in self.players])
         if reason is EndReason.vote:
             await self.send(f'{mentions}\nThe game ended by majority vote.', delete_after=15)
