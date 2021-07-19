@@ -47,7 +47,7 @@ class Smash:
 
 @mode
 class Elimination:
-    description = 'You may not pick any fighter you have already played.'
+    description = 'You may only pick your unplayed fighters.'
 
     @staticmethod
     def pick_check(player, fighter):
@@ -68,7 +68,7 @@ class Elimination:
 
 @mode
 class Smashdown:
-    description = 'You may not pick any fighter that has already been played.'
+    description = 'You may only pick unplayed fighters.'
 
     @staticmethod
     def pick_check(player, fighter):
