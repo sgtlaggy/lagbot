@@ -1,3 +1,4 @@
+from typing import Union
 import functools
 import random
 
@@ -21,8 +22,10 @@ FIGHTER_OPTIONS[-1] += [RANDOM_FIGHTER, UNPLAYED_ROUND]
 
 class FakeContext:
     def __init__(self, view: ui.View, interaction: discord.Interaction):
-        self.interaction = interaction
         self.author = interaction.user
+        self.channel = self
+
+        self.interaction = interaction
         _, self.player = view.get_models(interaction)
 
     async def send(self, *args, delete_after=None, **kwargs):
@@ -30,20 +33,24 @@ class FakeContext:
 
 
 class GameSelect(ui.Select):
-    def get_command(self, command: str) -> commands.Command:
+    def get_command(self, command: str) -> Union[commands.Command, commands.Group]:
         return self.view.game.context.bot.get_command(command)
+
+    async def callback(self, interaction: discord.Interaction):
+        try:
+            await self._callback(interaction)
+        except SmashError as err:
+            await interaction.response.send_message(str(err), ephemeral=True)
 
 
 class PickFighterMenu(GameSelect):
     def __init__(self, *args, options: list[discord.SelectOption], **kwargs):
-        super().__init__(placeholder=str(options[0]), options=options)
+        super().__init__(*args, placeholder=str(options[0]), options=options, **kwargs)
 
-    async def callback(self, interaction: discord.Interaction):
+    async def _callback(self, interaction: discord.Interaction):
+        ctx = FakeContext(self.view, interaction)
         cmd = self.get_command('pick')
-        try:
-            await cmd(FakeContext(self.view, interaction), fighter=self.values[0])
-        except SmashError as err:
-            await interaction.response.send_message(str(err), ephemeral=True)
+        await cmd(ctx, fighter=self.values[0])
 
 
 class GameView(ui.View):
