@@ -96,7 +96,7 @@ class ActionMenu(GameSelect):
 class GameView(ui.View):
     def __init__(self, game: Game, *args, **kwargs):
         self.game = game
-        super().__init__(*args, **kwargs)
+        super().__init__(*args, timeout=None, **kwargs)
 
         for row, options in enumerate(FIGHTER_OPTIONS):
             self.add_item(PickFighterMenu(options=options, row=row))
