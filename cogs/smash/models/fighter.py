@@ -39,7 +39,7 @@ def compare_ngrams(ngrams1, ngrams2):
 
 
 class Fighter(commands.Converter):
-    __fighters = []
+    __fighters = {}
     replace_on_insert = False
 
     async def convert(self, ctx, arg):
@@ -54,11 +54,11 @@ class Fighter(commands.Converter):
         self.emoji = emoji
         self.aliases = aliases
         self.__ngrams = frozenset(find_ngrams(name).union(*(find_ngrams(alias) for alias in aliases)))
-        cls.__fighters.append(self)
+        cls.__fighters[name] = self
 
     @classmethod
     def all(cls):
-        return iter(cls.__fighters)
+        return cls.__fighters.values()
 
     @classmethod
     @lru_cache()
@@ -73,11 +73,10 @@ class Fighter(commands.Converter):
         filtered = filter(lambda pair: pair[1] == highest, sorted_sims)
         most_similar = next(filtered)
         return most_similar[0]
-    
+
     @classmethod
-    @lru_cache()
     def get_exact(cls, name):
-        return discord.utils.get(cls.all(), name=name)
+        return cls.__fighters[name]
 
     def __str__(self):
         return self.name
