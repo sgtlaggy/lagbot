@@ -1,7 +1,8 @@
 from __future__ import annotations
 from typing import Coroutine, Optional, Union
+from datetime import datetime
 
-from discord import ui, Interaction, SelectOption, ButtonStyle, Embed
+from discord import ui, Interaction, SelectOption, ButtonStyle, Embed, Color
 from discord.ext.commands import Cog, Command, Group, DefaultHelpCommand
 
 
@@ -10,7 +11,21 @@ Entity = Optional[Union[Cog, Command]]
 
 
 class ComponentHelp(DefaultHelpCommand):
-    _mapping = None
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._mapping = None
+        self._embed = Embed(color=self.color, timestamp=datetime.now().astimezone())
+
+    @property
+    def embed(self):
+        return self._embed.copy() \
+            .set_footer(icon_url=self.context.author.avatar.url,  # update footer if user changes name/avatar
+                        text=f'For @{self.context.author} at')
+
+    @staticmethod
+    def enumerate_commands(commands: list[Command]):
+        for command in commands:
+            yield f'`{command}` - {command.brief}'
 
     async def get_filtered_mapping(self) -> BotMapping:
         if self._mapping is None:
@@ -19,11 +34,6 @@ class ComponentHelp(DefaultHelpCommand):
             # filter out cogs with no commands post-filter
             self._mapping = {cog: cmds for cog, cmds in mapping.items() if cmds}
         return self._mapping
-
-    @staticmethod
-    def enumerate_commands(commands: list[Command]):
-        for command in commands:
-            yield f'`{command}` - {command.brief}'
 
     async def send_view(self, embed: Embed, entity: Entity):
         mapping = await self.get_filtered_mapping()
@@ -56,32 +66,39 @@ class ComponentHelp(DefaultHelpCommand):
     async def get_bot_help(self, mapping: BotMapping) -> Embed:
         cogs = sorted(cog.qualified_name for cog in mapping if cog)
 
-        description = '\n'.join(['Categories:',
-                                 '\n'.join(cogs), '',
-                                 f'\n{self.no_category}:',
-                                 *self.enumerate_commands(mapping[None])])
-
-        return Embed(title='Categories', description=description)
+        embed = self.embed
+        embed.title = 'Categories'
+        embed.description = '\n'.join(['Categories:',
+                                       '\n'.join(cogs), '',
+                                       f'\n{self.no_category}:',
+                                       *self.enumerate_commands(mapping[None])])
+        return embed
 
     async def get_cog_help(self, cog: Cog) -> Embed:
         mapping = await self.get_filtered_mapping()
         commands = mapping[cog]
-        return Embed(title=f'{cog.qualified_name} Commands',
-                     description='\n'.join(self.enumerate_commands(commands)))
+
+        embed = self.embed
+        embed.title = f'{cog.qualified_name} Commands',
+        embed.description = '\n'.join(self.enumerate_commands(commands))
+        return embed
 
     async def get_group_help(self, group: Group) -> Embed:
         commands = await self.filter_commands(group.commands)
 
-        description = '\n'.join([f'Usage: `{self.get_command_signature(group)}`', '',
-                                 group.help, '',
-                                 *self.enumerate_commands(commands)])
-
-        return Embed(title=f'{group}', description=description)
+        embed = self.embed
+        embed.title = group.qualified_name
+        embed.description = '\n'.join([f'Usage: `{self.get_command_signature(group)}`', '',
+                                       group.help, '',
+                                       *self.enumerate_commands(commands)])
+        return embed
 
     async def get_command_help(self, command: Command) -> Embed:
-        description = '\n'.join([f'Usage: `{self.get_command_signature(command)}`',
-                                 command.help])
-        return Embed(title=command.qualified_name, description=description)
+        embed = self.embed
+        embed.title = command.qualified_name
+        embed.description = '\n'.join([f'Usage: `{self.get_command_signature(command)}`',
+                                       command.help])
+        return embed
 
 
 class HelpView(ui.View):
