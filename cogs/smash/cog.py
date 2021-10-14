@@ -43,8 +43,8 @@ class Smash(commands.Cog):
             users = self.players[ctx.author].game.players
 
         source = FighterPageSource(list(Fighter.all()), per_page=20)
-        menu = FighterMenu(source, timeout=300, delete_message_after=True)
-        await menu.start(ctx, users=users)
+        menu = FighterMenu(source)
+        await menu.start(ctx)
 
     @commands.command(aliases=['p'])
     @game_in_progress()
