@@ -13,8 +13,9 @@ Entity = Optional[Union[Cog, Command]]
 class ComponentHelp(DefaultHelpCommand):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.no_category = 'Uncategorized'
         self._mapping = None
-        self._embed = Embed(color=self.color, timestamp=datetime.now().astimezone())
+        self._embed = Embed(color=Color.random(), timestamp=datetime.now().astimezone())
 
     @property
     def embed(self):
@@ -25,12 +26,12 @@ class ComponentHelp(DefaultHelpCommand):
     @staticmethod
     def enumerate_commands(commands: list[Command]):
         for command in commands:
-            yield f'`{command}` - {command.brief}'
+            yield f'`{command}` - {command.short_doc}'
 
     async def get_filtered_mapping(self) -> BotMapping:
         if self._mapping is None:
             mapping = {cog: await self.filter_commands(cmds)
-                   for cog, cmds in self.get_bot_mapping().items()}
+                       for cog, cmds in self.get_bot_mapping().items()}
             # filter out cogs with no commands post-filter
             self._mapping = {cog: cmds for cog, cmds in mapping.items() if cmds}
         return self._mapping
@@ -48,10 +49,13 @@ class ComponentHelp(DefaultHelpCommand):
 
     async def send_cog_help(self, cog: Cog):
         mapping = await self.get_filtered_mapping()
-        if cog not in mapping:
-            return
 
-        embed = await self.get_cog_help(cog)
+        if cog in mapping:
+            embed = await self.get_cog_help(cog)
+        else:
+            cog = None
+            embed = await self.get_bot_help(mapping)
+
         await self.send_view(embed, cog)
 
     async def send_group_help(self, group: Group):
@@ -66,12 +70,14 @@ class ComponentHelp(DefaultHelpCommand):
     async def get_bot_help(self, mapping: BotMapping) -> Embed:
         cogs = sorted(cog.qualified_name for cog in mapping if cog)
 
+        description = ['\n'.join(cogs), '']
+        if (commands := mapping.get(None, [])):
+            description.extend([f'{self.no_category}',
+                                *self.enumerate_commands(commands)])
+
         embed = self.embed
         embed.title = 'Categories'
-        embed.description = '\n'.join(['Categories:',
-                                       '\n'.join(cogs), '',
-                                       f'\n{self.no_category}:',
-                                       *self.enumerate_commands(mapping[None])])
+        embed.description = '\n'.join(description)
         return embed
 
     async def get_cog_help(self, cog: Cog) -> Embed:
@@ -79,7 +85,7 @@ class ComponentHelp(DefaultHelpCommand):
         commands = mapping[cog]
 
         embed = self.embed
-        embed.title = f'{cog.qualified_name} Commands',
+        embed.title = f'{cog.qualified_name} Commands'
         embed.description = '\n'.join(self.enumerate_commands(commands))
         return embed
 
@@ -124,7 +130,7 @@ class HelpView(ui.View):
         # always add "No Category" at the end
         names.append(self.help.no_category)
         options = [SelectOption(label=name) for name in names]
-        self.children[0].options = options
+        self.cog_select.options = options
 
     async def update_commands(self):
         entity = self.entity
@@ -136,10 +142,18 @@ class HelpView(ui.View):
         if isinstance(entity, Group):
             cmds = await self.help.filter_commands(entity.commands)
         else:
-            cmds = self.mapping[entity]
+            cmds = self.mapping.get(entity, [])
 
         options = [SelectOption(label=f'{cmd}') for cmd in cmds]
-        self.children[1].options = options
+
+        if options:
+            self.command_select.label = 'Commands'
+            self.command_select.disabled = False
+            self.command_select.options = options
+        else:
+            self.command_select.label = 'No Commands'
+            self.command_select.disabled = True
+            self.command_select.options = [SelectOption(label='N/A')]
 
     def get_embed(self) -> Coroutine[None, None, Embed]:
         entity = self.entity
