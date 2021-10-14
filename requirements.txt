@@ -1,4 +1,4 @@
-discord.py
+git+https://github.com/Rapptz/discord.py.git
 git+https://github.com/Rapptz/discord-ext-menus.git
 jishaku
 
