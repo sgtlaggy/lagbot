@@ -65,9 +65,6 @@ fighters = (
     ('48', 'Rosalina & Luma', 0x98d5cd, MAGIC),
     ('49', 'Little Mac', 0x5d8f72, FISTS),
     ('50', 'Greninja', 0x5673a5, FISTS),
-    ('51', 'Mii Brawler', 0x5dc1e6, TRASH),
-    ('52', 'Mii Swordfighter', 0x5dc1e6, TRASH),
-    ('53', 'Mii Gunner', 0x5dc1e6, TRASH),
     ('54', 'Palutena', 0x91e5c1, MAGIC),
     ('55', 'Pac-Man', 0xfcb541, FISTS),
     ('56', 'Robin', 0xc387d9, MAGIC),
@@ -98,4 +95,7 @@ fighters = (
     ('79-80', 'Pyra', 0x69e6c3, SWORD, ('Mythra',)),
     ('81', 'Kazuya', 0xa52319, ARCADE),
     ('82', 'Sora', 0xf9f9f9, SWORD),
+    ('51', 'Mii Brawler', 0x5dc1e6, TRASH),
+    ('52', 'Mii Swordfighter', 0x5dc1e6, TRASH),
+    ('53', 'Mii Gunner', 0x5dc1e6, TRASH),
 )
