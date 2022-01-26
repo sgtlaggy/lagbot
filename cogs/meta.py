@@ -86,7 +86,7 @@ class Meta(commands.Cog):
         if app.team:
             embed.add_field(name='Team', value='\n'.join(str(m) for m in app.team.members))
         else:
-            embed.set_author(name=str(app.owner), icon_url=app.owner.avatar_url)
+            embed.set_author(name=str(app.owner), icon_url=app.owner.display_avatar)
         embed.add_field(name='Guilds', value=str(len(self.bot.guilds)))
         source = config.source
         if source:

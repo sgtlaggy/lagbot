@@ -20,7 +20,7 @@ class ComponentHelp(DefaultHelpCommand):
     @property
     def embed(self):
         return self._embed.copy() \
-            .set_footer(icon_url=self.context.author.avatar.url,  # update footer if user changes name/avatar
+            .set_footer(icon_url=self.context.author.display_avatar.url,  # update footer if user changes name/avatar
                         text=f'For @{self.context.author} at')
 
     @staticmethod
