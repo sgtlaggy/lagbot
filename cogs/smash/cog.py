@@ -107,7 +107,7 @@ class Smash(commands.Cog):
 
     @commands.command(aliases=['u'])
     @game_in_progress()
-    async def undo(self, ctx, round_num: typing.Optional[int], action='p'):
+    async def undo(self, ctx, round_num: typing.Optional[int] = None, action='p'):
         """Undo round actions such as playing or winning."""
         action = {'p': 'play', 'play': 'play', 'w': 'win', 'win': 'win'}.get(action, None)
         if action is None:
